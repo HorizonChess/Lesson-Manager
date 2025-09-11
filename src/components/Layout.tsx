@@ -1,9 +1,11 @@
 import { Outlet } from 'react-router-dom'
 import { useAppStore } from '../stores/useAppStore'
+import { useAuth } from '../contexts/AuthContext'
 import { useEffect } from 'react'
 
 export function Layout() {
   const { isDarkMode, isRTL, toggleDarkMode, toggleRTL } = useAppStore()
+  const { user, signOut } = useAuth()
 
   useEffect(() => {
     document.documentElement.className = isDarkMode ? 'dark' : ''
@@ -15,7 +17,12 @@ export function Layout() {
       <header className="bg-blue-600 dark:bg-blue-800 text-white p-4">
         <div className="container mx-auto flex justify-between items-center">
           <h1 className="text-xl font-bold">Teacher Scheduler</h1>
-          <div className="flex gap-2">
+          <div className="flex gap-2 items-center">
+            {user && (
+              <span className="text-sm text-blue-200">
+                {user.email}
+              </span>
+            )}
             <button
               onClick={toggleDarkMode}
               className="px-3 py-1 bg-blue-700 hover:bg-blue-800 rounded text-sm"
@@ -28,6 +35,14 @@ export function Layout() {
             >
               {isRTL ? 'LTR' : 'RTL'}
             </button>
+            {user && (
+              <button
+                onClick={() => signOut()}
+                className="px-3 py-1 bg-red-600 hover:bg-red-700 rounded text-sm"
+              >
+                Sign Out
+              </button>
+            )}
           </div>
         </div>
       </header>
