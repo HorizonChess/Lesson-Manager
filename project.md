@@ -90,7 +90,7 @@ RLS-secured per user; device lock optional
 - **M1**: Supabase Auth + User bootstrap - Authentication working correctly ✅
 - **M2**: Schools & Subjects CRUD - Full implementation with user testing ✅
 
-**🎯 CURRENT TARGET:** M7 — Materials & Tags
+**🎯 CURRENT TARGET:** M8 — Tasks
 
 **📊 Progress Summary:**
 - Phase 1 (M0-M1): Authentication & Infrastructure ✅ Complete
@@ -99,7 +99,8 @@ RLS-secured per user; device lock optional
 - Phase 4 (M4): Lessons & Recurring Scheduling ✅ Complete
 - Phase 5 (M5): Lesson Record ✅ Complete
 - Phase 6 (M6): Attendance ✅ Complete
-- Phase 7 (M7): Materials & Tags - Next milestone
+- Phase 7 (M7): Lesson Plans & Tags ✅ Complete
+- Phase 8 (M8): Tasks - Next milestone
 
 Milestones (incremental, small steps)
 M0 — Project Skeleton ✅ COMPLETE
@@ -186,11 +187,26 @@ Acceptance: Attendance % computed for a date range; persisted per lesson.
 - ✅ Mobile-friendly touch controls (44px minimum button size)
 - ✅ Data persistence and proper state management
 
-M7 — Materials & Tags
+M7 — Lesson Plans & Tags ✅ COMPLETE
 
-Personal library; tag management; attach materials to lesson record; reuse.
+Personal library; tag management; attach lesson plans to lesson record; reuse.
 
-Acceptance: One material attached to two different lessons; no duplication.
+Acceptance: One lesson plan attached to two different lessons; no duplication.
+
+**✅ VERIFIED COMPLETE:**
+- ✅ **Renamed to "Lesson Plans"**: More pedagogically appropriate than "Materials"
+- ✅ Full CRUD operations for lesson plans (Create, Read, Update, Delete)
+- ✅ Lesson plan properties: title, description, file URL
+- ✅ **Subject-organized tag management**: Tags attributed to specific subjects during creation
+- ✅ **n+1 collapsible sections**: General tags + one section per subject
+- ✅ Color-coded tag categories (General: gray, Subject-specific: blue)
+- ✅ Tag lesson plans with multiple tags and filter by tags
+- ✅ **Lesson plan attachment system**: Attach plans to lesson records via modal selector
+- ✅ **Reusability verified**: Same lesson plan can be attached to multiple lessons without duplication
+- ✅ Remove lesson plans from lessons individually
+- ✅ Mobile-responsive interface with touch-friendly controls
+- ✅ Search and filtering functionality for large libraries
+- ✅ **Database migration**: Added subject_id to tags table with proper RLS policies
 
 M8 — Tasks
 
