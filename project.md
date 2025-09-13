@@ -90,7 +90,7 @@ RLS-secured per user; device lock optional
 - **M1**: Supabase Auth + User bootstrap - Authentication working correctly ✅
 - **M2**: Schools & Subjects CRUD - Full implementation with user testing ✅
 
-**🎯 CURRENT TARGET:** M9 — Reports
+**🎯 CURRENT TARGET:** M8.5 — Housekeeping
 
 **📊 Progress Summary:**
 - Phase 1 (M0-M1): Authentication & Infrastructure ✅ Complete
@@ -101,7 +101,8 @@ RLS-secured per user; device lock optional
 - Phase 6 (M6): Attendance ✅ Complete
 - Phase 7 (M7): Lesson Plans & Tags ✅ Complete
 - Phase 8 (M8): Tasks ✅ Complete
-- Phase 9 (M9): Reports - Next milestone
+- Phase 8.5 (M8.5): Housekeeping - Next milestone
+- Phase 9 (M9): Reports - Pending
 
 Milestones (incremental, small steps)
 M0 — Project Skeleton ✅ COMPLETE
@@ -225,6 +226,21 @@ Acceptance: Task list filters correctly; linked entities navigable.
 - ✅ Real-time task counters (open vs completed)
 - ✅ Mobile-responsive interface with inline editing
 - ✅ Proper database relations and real-time updates
+
+M8.5 — Housekeeping
+
+Unified School/Subject/Group Management UX: Consolidate the fragmented workflow where users currently need to navigate between separate pages (Schools → Subjects, then Groups page) to set up their teaching structure.
+
+**Current Problem:**
+- Create school in Schools page
+- Add subjects to school in same Schools page
+- Navigate to separate Groups page to create groups
+- Select school + subject in Groups page
+- Fragmented, non-intuitive workflow
+
+**Goal:** Create a unified management interface where the entire teaching structure (School → Subjects → Groups) can be managed in one cohesive location.
+
+Acceptance: Teachers can set up complete teaching structure (school, subjects, groups with rosters) without navigating between multiple pages.
 
 M9 — Reports
 
