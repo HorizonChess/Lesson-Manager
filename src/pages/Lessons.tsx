@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react'
 import { useAuth } from '../contexts/AuthContext'
 import { supabase } from '../lib/supabase'
-import type { Lesson, Group } from '../types/database'
+import type { Lesson, Group, LessonRecord } from '../types/database'
 
 interface LessonWithGroup extends Lesson {
   group: {
@@ -15,6 +15,7 @@ export function Lessons() {
   const { user } = useAuth()
   const [lessons, setLessons] = useState<LessonWithGroup[]>([])
   const [groups, setGroups] = useState<Group[]>([])
+  const [lessonRecords, setLessonRecords] = useState<Record<string, LessonRecord>>({})
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
 
@@ -27,6 +28,15 @@ export function Lessons() {
 
   // View states
   const [viewMode, setViewMode] = useState<'upcoming' | 'all'>('upcoming')
+
+  // Lesson record states
+  const [openLessonRecord, setOpenLessonRecord] = useState<string | null>(null)
+  const [recordData, setRecordData] = useState({
+    covered: '',
+    planned: '',
+    homework: '',
+    notes: ''
+  })
 
   useEffect(() => {
     if (user) {
@@ -65,8 +75,22 @@ export function Lessons() {
 
       if (lessonsError) throw lessonsError
 
+      // Fetch lesson records
+      const { data: recordsData, error: recordsError } = await supabase
+        .from('lesson_records')
+        .select('*')
+
+      if (recordsError) throw recordsError
+
+      // Index lesson records by lesson_id
+      const recordsByLesson = (recordsData || []).reduce((acc, record) => {
+        acc[record.lesson_id] = record
+        return acc
+      }, {} as Record<string, LessonRecord>)
+
       setGroups(groupsData || [])
       setLessons(lessonsData || [])
+      setLessonRecords(recordsByLesson)
     } catch (err: any) {
       setError(err.message)
     } finally {
@@ -210,9 +234,91 @@ export function Lessons() {
       if (error) throw error
 
       setLessons(lessons.filter(lesson => lesson.id !== lessonId))
+      // Remove lesson record if it exists
+      const newRecords = { ...lessonRecords }
+      delete newRecords[lessonId]
+      setLessonRecords(newRecords)
     } catch (err: any) {
       setError(err.message)
     }
+  }
+
+  const openLessonRecordForm = async (lessonId: string) => {
+    try {
+      // Check if lesson record exists, create if not
+      let record = lessonRecords[lessonId]
+
+      if (!record) {
+        const { data, error } = await supabase
+          .from('lesson_records')
+          .insert({
+            lesson_id: lessonId,
+            covered: '',
+            planned: '',
+            homework: '',
+            notes: ''
+          })
+          .select()
+          .single()
+
+        if (error) throw error
+
+        record = data
+        setLessonRecords({
+          ...lessonRecords,
+          [lessonId]: record
+        })
+      }
+
+      // Load existing data into form
+      setRecordData({
+        covered: record.covered || '',
+        planned: record.planned || '',
+        homework: record.homework || '',
+        notes: record.notes || ''
+      })
+
+      setOpenLessonRecord(lessonId)
+    } catch (err: any) {
+      setError(err.message)
+    }
+  }
+
+  const saveLessonRecord = async () => {
+    if (!openLessonRecord) return
+
+    try {
+      const { data, error } = await supabase
+        .from('lesson_records')
+        .update({
+          covered: recordData.covered,
+          planned: recordData.planned,
+          homework: recordData.homework,
+          notes: recordData.notes
+        })
+        .eq('lesson_id', openLessonRecord)
+        .select()
+        .single()
+
+      if (error) throw error
+
+      setLessonRecords({
+        ...lessonRecords,
+        [openLessonRecord]: data
+      })
+
+      setOpenLessonRecord(null)
+      setRecordData({ covered: '', planned: '', homework: '', notes: '' })
+    } catch (err: any) {
+      setError(err.message)
+    }
+  }
+
+  const copyPlannedToCovered = () => {
+    setRecordData({
+      ...recordData,
+      covered: recordData.planned
+    })
   }
 
   const filteredLessons = viewMode === 'upcoming'
@@ -424,6 +530,12 @@ export function Lessons() {
                       </div>
                       <div className="flex gap-1">
                         <button
+                          onClick={() => openLessonRecordForm(lesson.id)}
+                          className="bg-blue-600 text-white px-2 py-1 rounded text-xs hover:bg-blue-700"
+                        >
+                          {lessonRecords[lesson.id] ? 'Edit Record' : 'Open Lesson'}
+                        </button>
+                        <button
                           onClick={() => toggleLessonCancellation(lesson.id, lesson.is_cancelled)}
                           className={`px-2 py-1 rounded text-xs ${
                             lesson.is_cancelled
@@ -448,6 +560,96 @@ export function Lessons() {
           ))
         )}
       </div>
+
+      {/* Lesson Record Modal */}
+      {openLessonRecord && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white dark:bg-gray-800 rounded-lg p-6 max-w-2xl w-full mx-4 max-h-[90vh] overflow-y-auto">
+            <div className="flex justify-between items-center mb-6">
+              <h2 className="text-xl font-bold">Lesson Record</h2>
+              <button
+                onClick={() => {
+                  setOpenLessonRecord(null)
+                  setRecordData({ covered: '', planned: '', homework: '', notes: '' })
+                }}
+                className="text-gray-500 hover:text-gray-700 text-xl"
+              >
+                ×
+              </button>
+            </div>
+
+            <div className="space-y-6">
+              <div>
+                <div className="flex justify-between items-center mb-2">
+                  <label className="block text-sm font-medium">What was covered today?</label>
+                  {recordData.planned && (
+                    <button
+                      onClick={copyPlannedToCovered}
+                      className="bg-green-600 text-white px-3 py-1 rounded text-xs hover:bg-green-700"
+                    >
+                      Copy Planned → Covered
+                    </button>
+                  )}
+                </div>
+                <textarea
+                  value={recordData.covered}
+                  onChange={(e) => setRecordData({ ...recordData, covered: e.target.value })}
+                  placeholder="Topics covered, activities completed, progress made..."
+                  className="w-full px-3 py-2 border border-gray-300 rounded focus:outline-none focus:border-blue-500 h-24 resize-none"
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium mb-2">Planned for next lesson</label>
+                <textarea
+                  value={recordData.planned}
+                  onChange={(e) => setRecordData({ ...recordData, planned: e.target.value })}
+                  placeholder="Topics to cover, activities to do, goals for next lesson..."
+                  className="w-full px-3 py-2 border border-gray-300 rounded focus:outline-none focus:border-blue-500 h-24 resize-none"
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium mb-2">Homework assigned</label>
+                <textarea
+                  value={recordData.homework}
+                  onChange={(e) => setRecordData({ ...recordData, homework: e.target.value })}
+                  placeholder="Homework assignments, practice exercises, reading..."
+                  className="w-full px-3 py-2 border border-gray-300 rounded focus:outline-none focus:border-blue-500 h-20 resize-none"
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium mb-2">Notes</label>
+                <textarea
+                  value={recordData.notes}
+                  onChange={(e) => setRecordData({ ...recordData, notes: e.target.value })}
+                  placeholder="Additional notes, student behavior, important observations..."
+                  className="w-full px-3 py-2 border border-gray-300 rounded focus:outline-none focus:border-blue-500 h-20 resize-none"
+                />
+              </div>
+            </div>
+
+            <div className="flex gap-3 mt-6 pt-4 border-t">
+              <button
+                onClick={saveLessonRecord}
+                className="bg-blue-600 text-white px-6 py-2 rounded hover:bg-blue-700 flex-1"
+              >
+                Save Record
+              </button>
+              <button
+                onClick={() => {
+                  setOpenLessonRecord(null)
+                  setRecordData({ covered: '', planned: '', homework: '', notes: '' })
+                }}
+                className="bg-gray-300 text-gray-700 px-6 py-2 rounded hover:bg-gray-400"
+              >
+                Cancel
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 }

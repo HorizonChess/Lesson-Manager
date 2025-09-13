@@ -90,13 +90,14 @@ RLS-secured per user; device lock optional
 - **M1**: Supabase Auth + User bootstrap - Authentication working correctly ✅
 - **M2**: Schools & Subjects CRUD - Full implementation with user testing ✅
 
-**🎯 CURRENT TARGET:** M4 — Lessons & Recurring Scheduling
+**🎯 CURRENT TARGET:** M5 — Lesson Record
 
 **📊 Progress Summary:**
 - Phase 1 (M0-M1): Authentication & Infrastructure ✅ Complete
 - Phase 2 (M2): Schools & Subjects Management ✅ Complete
 - Phase 3 (M3): Groups & Roster ✅ Complete
-- Phase 4 (M4): Lessons & Recurring Scheduling - Next milestone
+- Phase 4 (M4): Lessons & Recurring Scheduling ✅ Complete
+- Phase 5 (M5): Lesson Record - Next milestone
 
 Milestones (incremental, small steps)
 M0 — Project Skeleton ✅ COMPLETE
@@ -136,7 +137,7 @@ Acceptance: Group details view shows timeslots; add 5 students to roster.
 - ✅ Inline editing with Enter/Escape keyboard shortcuts
 - ✅ Dynamic timeslot management (add/remove multiple slots)
 
-M4 — Lessons & Recurring Scheduling
+M4 — Lessons & Recurring Scheduling ✅ COMPLETE
 
 Create individual lessons (ad-hoc) and recurring lessons (from group timeslots); agenda/week list UI (no conflict logic).
 
@@ -147,6 +148,14 @@ Create individual lessons (ad-hoc) and recurring lessons (from group timeslots);
 - Cancel individual lessons without affecting recurrence pattern
 
 Acceptance: Create recurring lessons from group timeslots; upcoming 7–14 days show lessons; canceled flag hides from hours report.
+
+**✅ VERIFIED COMPLETE:**
+- ✅ Manual lesson creation with group/date/time selection
+- ✅ Recurring lesson generation from group timeslots (12 weeks)
+- ✅ Calendar agenda view grouped by date
+- ✅ Lesson cancellation/restoration functionality
+- ✅ Delete lessons permanently
+- ✅ Toggle between upcoming and all lessons view
 
 M5 — Lesson Record
 
