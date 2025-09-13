@@ -27,7 +27,7 @@ export function Lessons() {
   const [endTime, setEndTime] = useState('')
 
   // View states
-  const [viewMode, setViewMode] = useState<'upcoming' | 'all'>('upcoming')
+  const [lessonFilter, setLessonFilter] = useState<'upcoming' | 'all'>('upcoming')
 
   // Lesson record states
   const [openLessonRecord, setOpenLessonRecord] = useState<string | null>(null)
@@ -37,6 +37,8 @@ export function Lessons() {
     homework: '',
     notes: ''
   })
+  const [lessonViewMode, setLessonViewMode] = useState<'simple' | 'advanced'>('simple')
+  const [previousLessonData, setPreviousLessonData] = useState<LessonRecord | null>(null)
 
   useEffect(() => {
     if (user) {
@@ -270,6 +272,25 @@ export function Lessons() {
         })
       }
 
+      // Find previous lesson for the same group
+      const currentLesson = lessons.find(l => l.id === lessonId)
+      if (currentLesson) {
+        const groupLessons = lessons
+          .filter(l => l.group_id === currentLesson.group_id && l.id !== lessonId)
+          .sort((a, b) => new Date(a.start_time).getTime() - new Date(b.start_time).getTime())
+
+        const currentLessonTime = new Date(currentLesson.start_time).getTime()
+        const previousLesson = groupLessons
+          .filter(l => new Date(l.start_time).getTime() < currentLessonTime)
+          .pop() // Get the most recent previous lesson
+
+        if (previousLesson && lessonRecords[previousLesson.id]) {
+          setPreviousLessonData(lessonRecords[previousLesson.id])
+        } else {
+          setPreviousLessonData(null)
+        }
+      }
+
       // Load existing data into form
       setRecordData({
         covered: record.covered || '',
@@ -277,6 +298,10 @@ export function Lessons() {
         homework: record.homework || '',
         notes: record.notes || ''
       })
+
+      // Set mobile-first default (simple view on mobile, advanced on desktop)
+      const isMobile = window.innerWidth < 768
+      setLessonViewMode(isMobile ? 'simple' : 'advanced')
 
       setOpenLessonRecord(lessonId)
     } catch (err: any) {
@@ -321,7 +346,16 @@ export function Lessons() {
     })
   }
 
-  const filteredLessons = viewMode === 'upcoming'
+  const copyPreviousToCovered = () => {
+    if (previousLessonData?.planned) {
+      setRecordData({
+        ...recordData,
+        covered: previousLessonData.planned
+      })
+    }
+  }
+
+  const filteredLessons = lessonFilter === 'upcoming'
     ? lessons.filter(lesson => new Date(lesson.start_time) >= new Date())
     : lessons
 
@@ -354,10 +388,10 @@ export function Lessons() {
         <h2 className="text-2xl font-bold">Lessons</h2>
         <div className="flex gap-2">
           <button
-            onClick={() => setViewMode(viewMode === 'upcoming' ? 'all' : 'upcoming')}
+            onClick={() => setLessonFilter(lessonFilter === 'upcoming' ? 'all' : 'upcoming')}
             className="bg-gray-600 text-white px-3 py-2 rounded hover:bg-gray-700 text-sm"
           >
-            {viewMode === 'upcoming' ? 'Show All' : 'Show Upcoming'}
+            {lessonFilter === 'upcoming' ? 'Show All' : 'Show Upcoming'}
           </button>
           <button
             onClick={() => setShowAddLesson(true)}
@@ -533,7 +567,7 @@ export function Lessons() {
                           onClick={() => openLessonRecordForm(lesson.id)}
                           className="bg-blue-600 text-white px-2 py-1 rounded text-xs hover:bg-blue-700"
                         >
-                          {lessonRecords[lesson.id] ? 'Edit Record' : 'Open Lesson'}
+                          View Lesson
                         </button>
                         <button
                           onClick={() => toggleLessonCancellation(lesson.id, lesson.is_cancelled)}
@@ -561,91 +595,172 @@ export function Lessons() {
         )}
       </div>
 
-      {/* Lesson Record Modal */}
+      {/* Enhanced Lesson Record Modal */}
       {openLessonRecord && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white dark:bg-gray-800 rounded-lg p-6 max-w-2xl w-full mx-4 max-h-[90vh] overflow-y-auto">
-            <div className="flex justify-between items-center mb-6">
-              <h2 className="text-xl font-bold">Lesson Record</h2>
-              <button
-                onClick={() => {
-                  setOpenLessonRecord(null)
-                  setRecordData({ covered: '', planned: '', homework: '', notes: '' })
-                }}
-                className="text-gray-500 hover:text-gray-700 text-xl"
-              >
-                ×
-              </button>
-            </div>
-
-            <div className="space-y-6">
-              <div>
-                <div className="flex justify-between items-center mb-2">
-                  <label className="block text-sm font-medium">What was covered today?</label>
-                  {recordData.planned && (
-                    <button
-                      onClick={copyPlannedToCovered}
-                      className="bg-green-600 text-white px-3 py-1 rounded text-xs hover:bg-green-700"
-                    >
-                      Copy Planned → Covered
-                    </button>
-                  )}
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white dark:bg-gray-800 rounded-lg w-full max-w-4xl max-h-[90vh] overflow-hidden flex flex-col">
+            {/* Header */}
+            <div className="flex justify-between items-center p-4 border-b">
+              <div className="flex-1">
+                <h2 className="text-xl font-bold">
+                  {lessons.find(l => l.id === openLessonRecord)?.group.name} - Lesson Record
+                </h2>
+                <p className="text-sm text-gray-500">
+                  {lessons.find(l => l.id === openLessonRecord)?.group.school.name} • {lessons.find(l => l.id === openLessonRecord)?.group.subject.name}
+                </p>
+              </div>
+              <div className="flex items-center gap-2">
+                {/* View Toggle */}
+                <div className="flex bg-gray-100 dark:bg-gray-700 rounded-lg p-1">
+                  <button
+                    onClick={() => setLessonViewMode('simple')}
+                    className={`px-3 py-1 rounded-md text-xs font-medium transition-colors ${
+                      lessonViewMode === 'simple'
+                        ? 'bg-white dark:bg-gray-600 text-gray-900 dark:text-white shadow-sm'
+                        : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white'
+                    }`}
+                  >
+                    Simple
+                  </button>
+                  <button
+                    onClick={() => setLessonViewMode('advanced')}
+                    className={`px-3 py-1 rounded-md text-xs font-medium transition-colors ${
+                      lessonViewMode === 'advanced'
+                        ? 'bg-white dark:bg-gray-600 text-gray-900 dark:text-white shadow-sm'
+                        : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white'
+                    }`}
+                  >
+                    Advanced
+                  </button>
                 </div>
-                <textarea
-                  value={recordData.covered}
-                  onChange={(e) => setRecordData({ ...recordData, covered: e.target.value })}
-                  placeholder="Topics covered, activities completed, progress made..."
-                  className="w-full px-3 py-2 border border-gray-300 rounded focus:outline-none focus:border-blue-500 h-24 resize-none"
-                />
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium mb-2">Planned for next lesson</label>
-                <textarea
-                  value={recordData.planned}
-                  onChange={(e) => setRecordData({ ...recordData, planned: e.target.value })}
-                  placeholder="Topics to cover, activities to do, goals for next lesson..."
-                  className="w-full px-3 py-2 border border-gray-300 rounded focus:outline-none focus:border-blue-500 h-24 resize-none"
-                />
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium mb-2">Homework assigned</label>
-                <textarea
-                  value={recordData.homework}
-                  onChange={(e) => setRecordData({ ...recordData, homework: e.target.value })}
-                  placeholder="Homework assignments, practice exercises, reading..."
-                  className="w-full px-3 py-2 border border-gray-300 rounded focus:outline-none focus:border-blue-500 h-20 resize-none"
-                />
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium mb-2">Notes</label>
-                <textarea
-                  value={recordData.notes}
-                  onChange={(e) => setRecordData({ ...recordData, notes: e.target.value })}
-                  placeholder="Additional notes, student behavior, important observations..."
-                  className="w-full px-3 py-2 border border-gray-300 rounded focus:outline-none focus:border-blue-500 h-20 resize-none"
-                />
+                <button
+                  onClick={() => {
+                    setOpenLessonRecord(null)
+                    setRecordData({ covered: '', planned: '', homework: '', notes: '' })
+                    setPreviousLessonData(null)
+                  }}
+                  className="text-gray-500 hover:text-gray-700 text-xl min-w-[44px] min-h-[44px] flex items-center justify-center"
+                >
+                  ×
+                </button>
               </div>
             </div>
 
-            <div className="flex gap-3 mt-6 pt-4 border-t">
-              <button
-                onClick={saveLessonRecord}
-                className="bg-blue-600 text-white px-6 py-2 rounded hover:bg-blue-700 flex-1"
-              >
-                Save Record
-              </button>
-              <button
-                onClick={() => {
-                  setOpenLessonRecord(null)
-                  setRecordData({ covered: '', planned: '', homework: '', notes: '' })
-                }}
-                className="bg-gray-300 text-gray-700 px-6 py-2 rounded hover:bg-gray-400"
-              >
-                Cancel
-              </button>
+            {/* Content - Responsive Layout */}
+            <div className="flex-1 overflow-y-auto">
+              <div className={`${lessonViewMode === 'advanced' ? 'md:flex' : ''} h-full`}>
+                {/* Previous Lesson Context - Advanced View Only */}
+                {lessonViewMode === 'advanced' && (
+                  <div className="md:w-80 border-b md:border-b-0 md:border-r bg-gray-50 dark:bg-gray-900/50 p-4">
+                    <h3 className="font-semibold text-sm mb-3">Previous Lesson</h3>
+                    {previousLessonData ? (
+                      <div className="space-y-3">
+                        {previousLessonData.planned && (
+                          <div>
+                            <p className="text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">Planned:</p>
+                            <div className="text-sm bg-white dark:bg-gray-800 p-2 rounded border">
+                              {previousLessonData.planned}
+                            </div>
+                            <button
+                              onClick={copyPreviousToCovered}
+                              className="mt-1 bg-blue-600 text-white px-2 py-1 rounded text-xs hover:bg-blue-700 w-full"
+                            >
+                              Copy → Covered
+                            </button>
+                          </div>
+                        )}
+                        {previousLessonData.homework && (
+                          <div>
+                            <p className="text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">Homework:</p>
+                            <div className="text-sm bg-white dark:bg-gray-800 p-2 rounded border">
+                              {previousLessonData.homework}
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                    ) : (
+                      <p className="text-sm text-gray-500 italic">No previous lesson found</p>
+                    )}
+                  </div>
+                )}
+
+                {/* Lesson Record Form */}
+                <div className="flex-1 p-4">
+                  <div className="space-y-4">
+                    <div>
+                      <div className="flex flex-wrap gap-2 items-center mb-2">
+                        <label className="block text-sm font-medium">What was covered today?</label>
+                        {recordData.planned && (
+                          <button
+                            onClick={copyPlannedToCovered}
+                            className="bg-green-600 text-white px-2 py-1 rounded text-xs hover:bg-green-700"
+                          >
+                            Copy Planned → Covered
+                          </button>
+                        )}
+                      </div>
+                      <textarea
+                        value={recordData.covered}
+                        onChange={(e) => setRecordData({ ...recordData, covered: e.target.value })}
+                        placeholder="Topics covered, activities completed, progress made..."
+                        className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded focus:outline-none focus:border-blue-500 h-20 md:h-24 resize-none text-sm"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-sm font-medium mb-2">Planned for next lesson</label>
+                      <textarea
+                        value={recordData.planned}
+                        onChange={(e) => setRecordData({ ...recordData, planned: e.target.value })}
+                        placeholder="Topics to cover, activities to do, goals for next lesson..."
+                        className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded focus:outline-none focus:border-blue-500 h-20 md:h-24 resize-none text-sm"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-sm font-medium mb-2">Homework assigned</label>
+                      <textarea
+                        value={recordData.homework}
+                        onChange={(e) => setRecordData({ ...recordData, homework: e.target.value })}
+                        placeholder="Homework assignments, practice exercises, reading..."
+                        className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded focus:outline-none focus:border-blue-500 h-16 md:h-20 resize-none text-sm"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-sm font-medium mb-2">Notes</label>
+                      <textarea
+                        value={recordData.notes}
+                        onChange={(e) => setRecordData({ ...recordData, notes: e.target.value })}
+                        placeholder="Additional notes, student behavior, important observations..."
+                        className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded focus:outline-none focus:border-blue-500 h-16 md:h-20 resize-none text-sm"
+                      />
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Footer */}
+            <div className="border-t p-4">
+              <div className="flex gap-3">
+                <button
+                  onClick={saveLessonRecord}
+                  className="bg-blue-600 text-white px-6 py-3 rounded hover:bg-blue-700 flex-1 font-medium min-h-[44px]"
+                >
+                  Save Record
+                </button>
+                <button
+                  onClick={() => {
+                    setOpenLessonRecord(null)
+                    setRecordData({ covered: '', planned: '', homework: '', notes: '' })
+                    setPreviousLessonData(null)
+                  }}
+                  className="bg-gray-300 dark:bg-gray-600 text-gray-700 dark:text-gray-300 px-6 py-3 rounded hover:bg-gray-400 dark:hover:bg-gray-500 min-h-[44px]"
+                >
+                  Cancel
+                </button>
+              </div>
             </div>
           </div>
         </div>
