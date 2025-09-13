@@ -90,14 +90,15 @@ RLS-secured per user; device lock optional
 - **M1**: Supabase Auth + User bootstrap - Authentication working correctly ✅
 - **M2**: Schools & Subjects CRUD - Full implementation with user testing ✅
 
-**🎯 CURRENT TARGET:** M5 — Lesson Record
+**🎯 CURRENT TARGET:** M6 — Attendance
 
 **📊 Progress Summary:**
 - Phase 1 (M0-M1): Authentication & Infrastructure ✅ Complete
 - Phase 2 (M2): Schools & Subjects Management ✅ Complete
 - Phase 3 (M3): Groups & Roster ✅ Complete
 - Phase 4 (M4): Lessons & Recurring Scheduling ✅ Complete
-- Phase 5 (M5): Lesson Record - Next milestone
+- Phase 5 (M5): Lesson Record ✅ Complete
+- Phase 6 (M6): Attendance - Next milestone
 
 Milestones (incremental, small steps)
 M0 — Project Skeleton ✅ COMPLETE
@@ -157,11 +158,18 @@ Acceptance: Create recurring lessons from group timeslots; upcoming 7–14 days 
 - ✅ Delete lessons permanently
 - ✅ Toggle between upcoming and all lessons view
 
-M5 — Lesson Record
+M5 — Lesson Record ✅ COMPLETE
 
-Auto-create LessonRecord on open; sections: Covered, Planned, Homework, Notes; “Copy Planned → Covered”.
+Auto-create LessonRecord on open; sections: Covered, Planned, Homework, Notes; "Copy Planned → Covered".
 
 Acceptance: Edits persist; reload shows data unchanged.
+
+**✅ VERIFIED COMPLETE:**
+- ✅ Auto-create lesson record on first open
+- ✅ Four sections: Covered, Planned, Homework, Notes
+- ✅ "Copy Planned → Covered" functionality
+- ✅ Data persistence across sessions
+- ✅ **BONUS: Enhanced UX** - Single "View Lesson" button, mobile-responsive modal, Simple/Advanced toggle, Previous lesson context
 
 M6 — Attendance
 

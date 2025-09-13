@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react'
 import { useAuth } from '../contexts/AuthContext'
 import { supabase } from '../lib/supabase'
-import type { Lesson, Group, LessonRecord } from '../types/database'
+import type { Lesson, Group, LessonRecord, RosterItem, Attendance } from '../types/database'
 
 interface LessonWithGroup extends Lesson {
   group: {
@@ -39,6 +39,13 @@ export function Lessons() {
   })
   const [lessonViewMode, setLessonViewMode] = useState<'simple' | 'advanced'>('simple')
   const [previousLessonData, setPreviousLessonData] = useState<LessonRecord | null>(null)
+
+  // Attendance states
+  const [groupRoster, setGroupRoster] = useState<RosterItem[]>([])
+  const [attendance, setAttendance] = useState<Record<string, Attendance>>({})
+  const [bulkAttendanceStatus, setBulkAttendanceStatus] = useState<'present' | 'absent' | 'late'>('present')
+  const [editingAttendanceNote, setEditingAttendanceNote] = useState<string | null>(null)
+  const [attendanceNoteText, setAttendanceNoteText] = useState('')
 
   useEffect(() => {
     if (user) {
@@ -299,6 +306,40 @@ export function Lessons() {
         notes: record.notes || ''
       })
 
+      // Fetch group roster and attendance
+      if (currentLesson) {
+        // Get roster for this group
+        const { data: rosterData, error: rosterError } = await supabase
+          .from('roster_items')
+          .select('*')
+          .eq('group_id', currentLesson.group_id)
+          .order('student_name')
+
+        if (rosterError) throw rosterError
+
+        setGroupRoster(rosterData || [])
+
+        // Get existing attendance for this lesson
+        if (record.id) {
+          const { data: attendanceData, error: attendanceError } = await supabase
+            .from('attendance')
+            .select('*')
+            .eq('lesson_record_id', record.id)
+
+          if (attendanceError) throw attendanceError
+
+          // Index attendance by roster_item_id
+          const attendanceByStudent = (attendanceData || []).reduce((acc, att) => {
+            acc[att.roster_item_id] = att
+            return acc
+          }, {} as Record<string, Attendance>)
+
+          setAttendance(attendanceByStudent)
+        } else {
+          setAttendance({})
+        }
+      }
+
       // Set mobile-first default (simple view on mobile, advanced on desktop)
       const isMobile = window.innerWidth < 768
       setLessonViewMode(isMobile ? 'simple' : 'advanced')
@@ -352,6 +393,152 @@ export function Lessons() {
         ...recordData,
         covered: previousLessonData.planned
       })
+    }
+  }
+
+  const markAllAttendance = async (status: 'present' | 'absent' | 'late') => {
+    if (!openLessonRecord) return
+
+    const currentRecord = lessonRecords[openLessonRecord]
+    if (!currentRecord) return
+
+    try {
+      const attendanceRecords = groupRoster.map(student => ({
+        lesson_record_id: currentRecord.id,
+        roster_item_id: student.id,
+        status: status,
+        note: null
+      }))
+
+      // Delete existing attendance for this lesson record
+      await supabase
+        .from('attendance')
+        .delete()
+        .eq('lesson_record_id', currentRecord.id)
+
+      // Insert new attendance records
+      const { data, error } = await supabase
+        .from('attendance')
+        .insert(attendanceRecords)
+        .select()
+
+      if (error) throw error
+
+      // Update local state
+      const newAttendance = (data || []).reduce((acc, att) => {
+        acc[att.roster_item_id] = att
+        return acc
+      }, {} as Record<string, Attendance>)
+
+      setAttendance(newAttendance)
+    } catch (err: any) {
+      setError(err.message)
+    }
+  }
+
+  const updateStudentAttendance = async (
+    studentId: string,
+    status: 'present' | 'absent' | 'late',
+    note?: string
+  ) => {
+    if (!openLessonRecord) return
+
+    const currentRecord = lessonRecords[openLessonRecord]
+    if (!currentRecord) return
+
+    try {
+      const existingAttendance = attendance[studentId]
+
+      if (existingAttendance) {
+        // Update existing attendance
+        const { data, error } = await supabase
+          .from('attendance')
+          .update({ status, note: note || null })
+          .eq('id', existingAttendance.id)
+          .select()
+          .single()
+
+        if (error) throw error
+
+        setAttendance({
+          ...attendance,
+          [studentId]: data
+        })
+      } else {
+        // Create new attendance record
+        const { data, error } = await supabase
+          .from('attendance')
+          .insert({
+            lesson_record_id: currentRecord.id,
+            roster_item_id: studentId,
+            status,
+            note: note || null
+          })
+          .select()
+          .single()
+
+        if (error) throw error
+
+        setAttendance({
+          ...attendance,
+          [studentId]: data
+        })
+      }
+    } catch (err: any) {
+      setError(err.message)
+    }
+  }
+
+  const saveAttendanceNote = async (studentId: string) => {
+    if (!openLessonRecord) return
+
+    const currentRecord = lessonRecords[openLessonRecord]
+    if (!currentRecord) return
+
+    try {
+      const existingAttendance = attendance[studentId]
+      const currentStatus = existingAttendance?.status || 'present'
+
+      if (existingAttendance) {
+        // Update existing attendance note
+        const { data, error } = await supabase
+          .from('attendance')
+          .update({ note: attendanceNoteText || null })
+          .eq('id', existingAttendance.id)
+          .select()
+          .single()
+
+        if (error) throw error
+
+        setAttendance({
+          ...attendance,
+          [studentId]: data
+        })
+      } else {
+        // Create new attendance record with note
+        const { data, error } = await supabase
+          .from('attendance')
+          .insert({
+            lesson_record_id: currentRecord.id,
+            roster_item_id: studentId,
+            status: currentStatus,
+            note: attendanceNoteText || null
+          })
+          .select()
+          .single()
+
+        if (error) throw error
+
+        setAttendance({
+          ...attendance,
+          [studentId]: data
+        })
+      }
+
+      setEditingAttendanceNote(null)
+      setAttendanceNoteText('')
+    } catch (err: any) {
+      setError(err.message)
     }
   }
 
@@ -638,6 +825,10 @@ export function Lessons() {
                     setOpenLessonRecord(null)
                     setRecordData({ covered: '', planned: '', homework: '', notes: '' })
                     setPreviousLessonData(null)
+                    setGroupRoster([])
+                    setAttendance({})
+                    setEditingAttendanceNote(null)
+                    setAttendanceNoteText('')
                   }}
                   className="text-gray-500 hover:text-gray-700 text-xl min-w-[44px] min-h-[44px] flex items-center justify-center"
                 >
@@ -736,6 +927,137 @@ export function Lessons() {
                         className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded focus:outline-none focus:border-blue-500 h-16 md:h-20 resize-none text-sm"
                       />
                     </div>
+
+                    {/* Attendance Section */}
+                    {groupRoster.length > 0 && (
+                      <div className="border-t pt-4">
+                        <div className="flex justify-between items-center mb-4">
+                          <h3 className="text-lg font-semibold">Attendance</h3>
+                          <div className="flex items-center gap-2">
+                            <select
+                              value={bulkAttendanceStatus}
+                              onChange={(e) => setBulkAttendanceStatus(e.target.value as 'present' | 'absent' | 'late')}
+                              className="text-xs border border-gray-300 dark:border-gray-600 rounded px-2 py-1"
+                            >
+                              <option value="present">Present</option>
+                              <option value="absent">Absent</option>
+                              <option value="late">Late</option>
+                            </select>
+                            <button
+                              onClick={() => markAllAttendance(bulkAttendanceStatus)}
+                              className="bg-purple-600 text-white px-3 py-1 rounded text-xs hover:bg-purple-700 min-h-[32px]"
+                            >
+                              Mark All {bulkAttendanceStatus}
+                            </button>
+                          </div>
+                        </div>
+
+                        <div className="space-y-2 max-h-48 overflow-y-auto">
+                          {groupRoster.map((student) => {
+                            const studentAttendance = attendance[student.id]
+                            const attendanceStatus = studentAttendance?.status || 'present'
+
+                            return (
+                              <div key={student.id} className="p-2 bg-gray-50 dark:bg-gray-800 rounded">
+                                <div className="flex items-center gap-2 mb-2">
+                                  <div className="flex-1 font-medium text-sm">
+                                    {student.student_name}
+                                  </div>
+                                  <div className="flex gap-1">
+                                    <button
+                                      onClick={() => updateStudentAttendance(student.id, 'present')}
+                                      className={`px-2 py-1 rounded text-xs min-w-[60px] ${
+                                        attendanceStatus === 'present'
+                                          ? 'bg-green-600 text-white'
+                                          : 'bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-green-100 dark:hover:bg-green-900'
+                                      }`}
+                                    >
+                                      Present
+                                    </button>
+                                    <button
+                                      onClick={() => updateStudentAttendance(student.id, 'absent')}
+                                      className={`px-2 py-1 rounded text-xs min-w-[60px] ${
+                                        attendanceStatus === 'absent'
+                                          ? 'bg-red-600 text-white'
+                                          : 'bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-red-100 dark:hover:bg-red-900'
+                                      }`}
+                                    >
+                                      Absent
+                                    </button>
+                                    <button
+                                      onClick={() => updateStudentAttendance(student.id, 'late')}
+                                      className={`px-2 py-1 rounded text-xs min-w-[60px] ${
+                                        attendanceStatus === 'late'
+                                          ? 'bg-yellow-600 text-white'
+                                          : 'bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-yellow-100 dark:hover:bg-yellow-900'
+                                      }`}
+                                    >
+                                      Late
+                                    </button>
+                                  </div>
+                                  <button
+                                    onClick={() => {
+                                      setEditingAttendanceNote(student.id)
+                                      setAttendanceNoteText(studentAttendance?.note || '')
+                                    }}
+                                    className="text-gray-500 hover:text-gray-700 text-xs px-1 py-1 rounded"
+                                    title="Add note"
+                                  >
+                                    📝
+                                  </button>
+                                </div>
+
+                                {editingAttendanceNote === student.id ? (
+                                  <div className="flex gap-2 items-center">
+                                    <input
+                                      type="text"
+                                      value={attendanceNoteText}
+                                      onChange={(e) => setAttendanceNoteText(e.target.value)}
+                                      placeholder="Add attendance note..."
+                                      className="flex-1 text-xs px-2 py-1 border border-gray-300 dark:border-gray-600 rounded focus:outline-none focus:border-blue-500"
+                                      autoFocus
+                                    />
+                                    <button
+                                      onClick={() => saveAttendanceNote(student.id)}
+                                      className="bg-blue-600 text-white px-2 py-1 rounded text-xs hover:bg-blue-700"
+                                    >
+                                      Save
+                                    </button>
+                                    <button
+                                      onClick={() => {
+                                        setEditingAttendanceNote(null)
+                                        setAttendanceNoteText('')
+                                      }}
+                                      className="bg-gray-300 text-gray-700 px-2 py-1 rounded text-xs hover:bg-gray-400"
+                                    >
+                                      Cancel
+                                    </button>
+                                  </div>
+                                ) : studentAttendance?.note ? (
+                                  <div className="text-xs text-gray-500 italic bg-white dark:bg-gray-700 p-1 rounded border">
+                                    {studentAttendance.note}
+                                  </div>
+                                ) : null}
+                              </div>
+                            )
+                          })}
+                        </div>
+
+                        {/* Attendance Summary */}
+                        {Object.keys(attendance).length > 0 && (
+                          <div className="mt-3 text-sm text-gray-600 dark:text-gray-400">
+                            Present: {Object.values(attendance).filter(a => a.status === 'present').length} •
+                            Absent: {Object.values(attendance).filter(a => a.status === 'absent').length} •
+                            Late: {Object.values(attendance).filter(a => a.status === 'late').length}
+                            {groupRoster.length > 0 && (
+                              <span className="ml-2 font-medium">
+                                ({Math.round((Object.values(attendance).filter(a => a.status === 'present' || a.status === 'late').length / groupRoster.length) * 100)}% attended)
+                              </span>
+                            )}
+                          </div>
+                        )}
+                      </div>
+                    )}
                   </div>
                 </div>
               </div>
@@ -755,6 +1077,10 @@ export function Lessons() {
                     setOpenLessonRecord(null)
                     setRecordData({ covered: '', planned: '', homework: '', notes: '' })
                     setPreviousLessonData(null)
+                    setGroupRoster([])
+                    setAttendance({})
+                    setEditingAttendanceNote(null)
+                    setAttendanceNoteText('')
                   }}
                   className="bg-gray-300 dark:bg-gray-600 text-gray-700 dark:text-gray-300 px-6 py-3 rounded hover:bg-gray-400 dark:hover:bg-gray-500 min-h-[44px]"
                 >
