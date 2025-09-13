@@ -21,6 +21,7 @@ export function Schools() {
   // Collapsing states
   const [collapsedSchools, setCollapsedSchools] = useState<Record<string, boolean>>({})
   const [collapsedSubjects, setCollapsedSubjects] = useState<Record<string, boolean>>({})
+  const [collapsedGroups, setCollapsedGroups] = useState<Record<string, boolean>>({})
 
   // Add states
   const [showAddSchool, setShowAddSchool] = useState(false)
@@ -135,6 +136,8 @@ export function Schools() {
 
         // Implement smart collapsing logic
         const newCollapsedSubjects: Record<string, boolean> = {}
+        const newCollapsedGroups: Record<string, boolean> = {}
+
         schoolsData.forEach(school => {
           const schoolSubjects = subjectsBySchool[school.id] || []
           const totalGroups = schoolSubjects.reduce((sum, subject) => {
@@ -147,8 +150,18 @@ export function Schools() {
               newCollapsedSubjects[subject.id] = true
             })
           }
+
+          // Initialize all groups as collapsed by default (student lists hidden)
+          schoolSubjects.forEach(subject => {
+            const subjectGroups = groupsBySubject[subject.id] || []
+            subjectGroups.forEach(group => {
+              newCollapsedGroups[group.id] = true
+            })
+          })
         })
+
         setCollapsedSubjects(newCollapsedSubjects)
+        setCollapsedGroups(newCollapsedGroups)
       }
     } catch (err: any) {
       setError(err.message)
@@ -169,6 +182,13 @@ export function Schools() {
     setCollapsedSubjects(prev => ({
       ...prev,
       [subjectId]: !prev[subjectId]
+    }))
+  }
+
+  const toggleGroupCollapse = (groupId: string) => {
+    setCollapsedGroups(prev => ({
+      ...prev,
+      [groupId]: !prev[groupId]
     }))
   }
 
@@ -366,6 +386,11 @@ export function Schools() {
       setGroups({
         ...groups,
         [subjectId]: [...(groups[subjectId] || []), data]
+      })
+      // Set new group as collapsed by default
+      setCollapsedGroups({
+        ...collapsedGroups,
+        [data.id]: true
       })
       setNewGroupName('')
       setTimeslots([])
@@ -1111,74 +1136,84 @@ export function Schools() {
                                         </div>
                                       )}
 
-                                      {/* Students */}
+                                      {/* Students - Collapsible */}
                                       {rosters[group.id] && rosters[group.id].length > 0 && (
                                         <div className="mt-2">
-                                          <h6 className="text-xs font-medium mb-1">Students ({rosters[group.id].length}):</h6>
-                                          <div className="space-y-1">
-                                            {rosters[group.id].map((student) => (
-                                              <div
-                                                key={student.id}
-                                                className="flex justify-between items-center bg-gray-50 dark:bg-gray-700 p-1 rounded text-xs"
-                                              >
-                                                {editingStudent === student.id ? (
-                                                  <div className="flex gap-1 items-center flex-1">
-                                                    <input
-                                                      type="text"
-                                                      value={editStudentName}
-                                                      onChange={(e) => setEditStudentName(e.target.value)}
-                                                      className="flex-1 bg-transparent border-b border-blue-500 focus:outline-none"
-                                                      onKeyDown={(e) => {
-                                                        if (e.key === 'Enter') {
-                                                          updateStudent(student.id, editStudentName, group.id)
-                                                        } else if (e.key === 'Escape') {
-                                                          setEditingStudent(null)
-                                                          setEditStudentName('')
-                                                        }
-                                                      }}
-                                                      autoFocus
-                                                    />
-                                                    <button
-                                                      onClick={() => updateStudent(student.id, editStudentName, group.id)}
-                                                      className="text-green-600 hover:text-green-800"
-                                                    >
-                                                      ✓
-                                                    </button>
-                                                    <button
-                                                      onClick={() => {
-                                                        setEditingStudent(null)
-                                                        setEditStudentName('')
-                                                      }}
-                                                      className="text-gray-600 hover:text-gray-800"
-                                                    >
-                                                      ✕
-                                                    </button>
-                                                  </div>
-                                                ) : (
-                                                  <>
-                                                    <span>{student.student_name}</span>
-                                                    <div className="flex gap-1">
+                                          <div
+                                            className="flex items-center gap-1 cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-600 p-1 rounded"
+                                            onClick={() => toggleGroupCollapse(group.id)}
+                                          >
+                                            <span className="text-xs">
+                                              {collapsedGroups[group.id] ? '👥' : '👤'}
+                                            </span>
+                                            <h6 className="text-xs font-medium">Students ({rosters[group.id].length})</h6>
+                                          </div>
+                                          {!collapsedGroups[group.id] && (
+                                            <div className="space-y-1 mt-1">
+                                              {rosters[group.id].map((student) => (
+                                                <div
+                                                  key={student.id}
+                                                  className="flex justify-between items-center bg-gray-50 dark:bg-gray-700 p-1 rounded text-xs"
+                                                >
+                                                  {editingStudent === student.id ? (
+                                                    <div className="flex gap-1 items-center flex-1">
+                                                      <input
+                                                        type="text"
+                                                        value={editStudentName}
+                                                        onChange={(e) => setEditStudentName(e.target.value)}
+                                                        className="flex-1 bg-transparent border-b border-blue-500 focus:outline-none"
+                                                        onKeyDown={(e) => {
+                                                          if (e.key === 'Enter') {
+                                                            updateStudent(student.id, editStudentName, group.id)
+                                                          } else if (e.key === 'Escape') {
+                                                            setEditingStudent(null)
+                                                            setEditStudentName('')
+                                                          }
+                                                        }}
+                                                        autoFocus
+                                                      />
+                                                      <button
+                                                        onClick={() => updateStudent(student.id, editStudentName, group.id)}
+                                                        className="text-green-600 hover:text-green-800"
+                                                      >
+                                                        ✓
+                                                      </button>
                                                       <button
                                                         onClick={() => {
-                                                          setEditingStudent(student.id)
-                                                          setEditStudentName(student.student_name)
+                                                          setEditingStudent(null)
+                                                          setEditStudentName('')
                                                         }}
-                                                        className="text-blue-600 hover:text-blue-800"
+                                                        className="text-gray-600 hover:text-gray-800"
                                                       >
-                                                        ✎
-                                                      </button>
-                                                      <button
-                                                        onClick={() => deleteStudent(student.id, group.id)}
-                                                        className="text-red-600 hover:text-red-800"
-                                                      >
-                                                        ×
+                                                        ✕
                                                       </button>
                                                     </div>
-                                                  </>
-                                                )}
-                                              </div>
-                                            ))}
-                                          </div>
+                                                  ) : (
+                                                    <>
+                                                      <span>{student.student_name}</span>
+                                                      <div className="flex gap-1">
+                                                        <button
+                                                          onClick={() => {
+                                                            setEditingStudent(student.id)
+                                                            setEditStudentName(student.student_name)
+                                                          }}
+                                                          className="text-blue-600 hover:text-blue-800"
+                                                        >
+                                                          ✎
+                                                        </button>
+                                                        <button
+                                                          onClick={() => deleteStudent(student.id, group.id)}
+                                                          className="text-red-600 hover:text-red-800"
+                                                        >
+                                                          ×
+                                                        </button>
+                                                      </div>
+                                                    </>
+                                                  )}
+                                                </div>
+                                              ))}
+                                            </div>
+                                          )}
                                         </div>
                                       )}
                                     </div>

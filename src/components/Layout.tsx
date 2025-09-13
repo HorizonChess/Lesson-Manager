@@ -75,18 +75,6 @@ export function Layout() {
               School Overview
             </NavLink>
             <NavLink
-              to="/groups"
-              className={({ isActive }) =>
-                `py-4 px-2 border-b-2 transition-colors whitespace-nowrap ${
-                  isActive
-                    ? 'border-blue-500 text-blue-600 dark:text-blue-400'
-                    : 'border-transparent text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200'
-                }`
-              }
-            >
-              Groups
-            </NavLink>
-            <NavLink
               to="/lessons"
               className={({ isActive }) =>
                 `py-4 px-2 border-b-2 transition-colors whitespace-nowrap ${
