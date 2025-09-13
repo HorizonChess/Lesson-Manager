@@ -1,4 +1,4 @@
-import { Outlet } from 'react-router-dom'
+import { Outlet, NavLink } from 'react-router-dom'
 import { useAppStore } from '../stores/useAppStore'
 import { useAuth } from '../contexts/AuthContext'
 import { useEffect } from 'react'
@@ -46,6 +46,98 @@ export function Layout() {
           </div>
         </div>
       </header>
+      
+      <nav className="bg-gray-100 dark:bg-gray-800 border-b">
+        <div className="container mx-auto px-4">
+          <div className="flex space-x-8 overflow-x-auto">
+            <NavLink
+              to="/"
+              className={({ isActive }) =>
+                `py-4 px-2 border-b-2 transition-colors whitespace-nowrap ${
+                  isActive
+                    ? 'border-blue-500 text-blue-600 dark:text-blue-400'
+                    : 'border-transparent text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200'
+                }`
+              }
+            >
+              Dashboard
+            </NavLink>
+            <NavLink
+              to="/schools"
+              className={({ isActive }) =>
+                `py-4 px-2 border-b-2 transition-colors whitespace-nowrap ${
+                  isActive
+                    ? 'border-blue-500 text-blue-600 dark:text-blue-400'
+                    : 'border-transparent text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200'
+                }`
+              }
+            >
+              Schools
+            </NavLink>
+            <NavLink
+              to="/groups"
+              className={({ isActive }) =>
+                `py-4 px-2 border-b-2 transition-colors whitespace-nowrap ${
+                  isActive
+                    ? 'border-blue-500 text-blue-600 dark:text-blue-400'
+                    : 'border-transparent text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200'
+                }`
+              }
+            >
+              Groups
+            </NavLink>
+            <NavLink
+              to="/lessons"
+              className={({ isActive }) =>
+                `py-4 px-2 border-b-2 transition-colors whitespace-nowrap ${
+                  isActive
+                    ? 'border-blue-500 text-blue-600 dark:text-blue-400'
+                    : 'border-transparent text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200'
+                }`
+              }
+            >
+              Lessons
+            </NavLink>
+            <NavLink
+              to="/materials"
+              className={({ isActive }) =>
+                `py-4 px-2 border-b-2 transition-colors whitespace-nowrap ${
+                  isActive
+                    ? 'border-blue-500 text-blue-600 dark:text-blue-400'
+                    : 'border-transparent text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200'
+                }`
+              }
+            >
+              Materials
+            </NavLink>
+            <NavLink
+              to="/tasks"
+              className={({ isActive }) =>
+                `py-4 px-2 border-b-2 transition-colors whitespace-nowrap ${
+                  isActive
+                    ? 'border-blue-500 text-blue-600 dark:text-blue-400'
+                    : 'border-transparent text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200'
+                }`
+              }
+            >
+              Tasks
+            </NavLink>
+            <NavLink
+              to="/reports"
+              className={({ isActive }) =>
+                `py-4 px-2 border-b-2 transition-colors whitespace-nowrap ${
+                  isActive
+                    ? 'border-blue-500 text-blue-600 dark:text-blue-400'
+                    : 'border-transparent text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200'
+                }`
+              }
+            >
+              Reports
+            </NavLink>
+          </div>
+        </div>
+      </nav>
+
       <main className="container mx-auto p-4">
         <Outlet />
       </main>

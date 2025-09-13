@@ -1,6 +1,7 @@
 import { Routes, Route } from 'react-router-dom'
 import { Layout } from './components/Layout'
 import { Dashboard } from './pages/Dashboard'
+import { Schools } from './pages/Schools'
 import { AuthProvider } from './contexts/AuthContext'
 import { ProtectedRoute } from './components/auth/ProtectedRoute'
 
@@ -10,7 +11,7 @@ function App() {
       <Routes>
         <Route path="/" element={<ProtectedRoute><Layout /></ProtectedRoute>}>
           <Route index element={<Dashboard />} />
-          <Route path="schools" element={<div>Schools (Coming Soon)</div>} />
+          <Route path="schools" element={<Schools />} />
           <Route path="groups" element={<div>Groups (Coming Soon)</div>} />
           <Route path="lessons" element={<div>Lessons (Coming Soon)</div>} />
           <Route path="materials" element={<div>Materials (Coming Soon)</div>} />

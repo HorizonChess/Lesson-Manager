@@ -71,11 +71,14 @@ export function AuthProvider({ children }: AuthProviderProps) {
       console.log('Bootstrapping user:', user.id)
       
       // Check if user record exists in our users table
+      console.log('Checking if user exists in users table...')
       const { data: existingUser, error: selectError } = await supabase
         .from('users')
         .select('id')
         .eq('id', user.id)
         .single()
+
+      console.log('User check result:', { existingUser, selectError })
 
       if (selectError && selectError.code !== 'PGRST116') {
         console.error('Error checking user:', selectError)
@@ -84,21 +87,25 @@ export function AuthProvider({ children }: AuthProviderProps) {
 
       // If user doesn't exist, create them
       if (!existingUser) {
-        console.log('Creating new user record')
-        const { error } = await supabase
+        console.log('Creating new user record...')
+        const { data, error } = await supabase
           .from('users')
           .insert({
             id: user.id,
             email: user.email!,
           })
+          .select()
+          .single()
+
+        console.log('Insert result:', { data, error })
 
         if (error) {
           console.error('Error creating user:', error)
         } else {
-          console.log('User created successfully')
+          console.log('User created successfully:', data)
         }
       } else {
-        console.log('User already exists')
+        console.log('User already exists in users table')
       }
     } catch (error) {
       console.error('Bootstrap error:', error)
