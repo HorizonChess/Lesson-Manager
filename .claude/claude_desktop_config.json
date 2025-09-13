@@ -1,0 +1,12 @@
+{
+  "mcpServers": {
+    "playwright": {
+      "command": "C:\\nvm4w\\nodejs\\npx.cmd",
+      "args": ["-y", "@playwright/mcp"]
+    },
+    "context7": {
+      "command": "C:\\nvm4w\\nodejs\\npx.cmd",
+      "args": ["-y", "@upstash/context7-mcp@latest"]
+    }
+  }
+}
