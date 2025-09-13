@@ -381,6 +381,28 @@ Acceptance: Reports match hand-calculated checks on seed data.
 - ✅ **Navigation Integration**: Reports page accessible from main navigation menu
 - ✅ **UI Framework**: Ready for full report generation logic implementation
 
+M9.5 — Dashboard Housekeeping
+
+Transform the outdated Dashboard into a useful teacher's daily hub by removing debug elements and placeholder content, replacing them with relevant information and quick access to frequently used features.
+
+**Current Problem:**
+- Dashboard shows outdated milestone progress (M1-M2 complete vs actual M9 complete)
+- Contains irrelevant authentication testing debug info
+- Shows placeholder cards with "Coming in Phase X" for implemented features
+- Basic stats don't provide meaningful daily insights for teachers
+- UI patterns don't match current app design standards
+
+**Goal:** Create a functional daily hub that teachers actually want to use, showing today's lessons, quick stats, pending tasks, and providing fast access to common actions.
+
+**Key Requirements:**
+1. **Today's Overview**: Show actual scheduled lessons for today with quick actions
+2. **Meaningful Quick Stats**: Teaching hours this week, lessons completed, attendance insights
+3. **Quick Access Cards**: Functional navigation to School Overview, Recent Lessons, Active Tasks, Lesson Plans
+4. **Remove Debug Elements**: Authentication testing, milestone status, manual bootstrap functionality
+5. **Modern UI**: Match current app design patterns and responsive behavior
+
+Acceptance: Dashboard provides immediate value to teachers with relevant daily information and quick access to common workflows. No debug/development information visible to end users.
+
 M10 — Offline-first
 
 Cache: schools, subjects, groups, upcoming lessons, recent records.
