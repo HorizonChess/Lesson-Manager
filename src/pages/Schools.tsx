@@ -2,6 +2,8 @@ import { useState, useEffect } from 'react'
 import { useAuth } from '../contexts/AuthContext'
 import { supabase } from '../lib/supabase'
 import type { School, Subject, Group, RosterItem } from '../types/database'
+import { Modal } from '../components/Modal'
+import { GroupOverview } from '../components/GroupOverview'
 
 interface Timeslot {
   day: string
@@ -48,6 +50,12 @@ export function Schools() {
 
   // Filter states
   const [schoolFilter, setSchoolFilter] = useState<string>('')
+
+  // Group Overview Modal states
+  const [showGroupOverview, setShowGroupOverview] = useState(false)
+  const [selectedGroup, setSelectedGroup] = useState<Group | null>(null)
+  const [selectedGroupSchool, setSelectedGroupSchool] = useState<School | null>(null)
+  const [selectedGroupSubject, setSelectedGroupSubject] = useState<Subject | null>(null)
 
   useEffect(() => {
     if (user) {
@@ -222,6 +230,33 @@ export function Schools() {
 
   const removeEditTimeslot = (index: number) => {
     setEditGroupTimeslots(editGroupTimeslots.filter((_, i) => i !== index))
+  }
+
+  // Group Overview Modal helpers
+  const openGroupOverview = (group: Group, school: School, subject: Subject) => {
+    setSelectedGroup(group)
+    setSelectedGroupSchool(school)
+    setSelectedGroupSubject(subject)
+    setShowGroupOverview(true)
+  }
+
+  const closeGroupOverview = () => {
+    setShowGroupOverview(false)
+    setSelectedGroup(null)
+    setSelectedGroupSchool(null)
+    setSelectedGroupSubject(null)
+  }
+
+  const handleGroupUpdate = (updatedGroup: Group) => {
+    if (!selectedGroupSubject) return
+
+    setGroups({
+      ...groups,
+      [selectedGroupSubject.id]: (groups[selectedGroupSubject.id] || []).map(g =>
+        g.id === updatedGroup.id ? updatedGroup : g
+      )
+    })
+    setSelectedGroup(updatedGroup)
   }
 
   const addSchool = async (e: React.FormEvent) => {
@@ -1059,7 +1094,13 @@ export function Schools() {
                                           </div>
                                         ) : (
                                           <div className="flex-1">
-                                            <h5 className="font-medium text-sm">{group.name}</h5>
+                                            <h5
+                                              className="font-medium text-sm cursor-pointer hover:text-blue-600 dark:hover:text-blue-400 transition-colors"
+                                              onClick={() => openGroupOverview(group, school, subject)}
+                                              title="Click to open group overview"
+                                            >
+                                              {group.name}
+                                            </h5>
                                             <div className="text-xs text-gray-500 mt-1">
                                               {group.timeslots && group.timeslots.length > 0 ? (
                                                 <div className="space-y-1">
@@ -1236,6 +1277,24 @@ export function Schools() {
           ))
         )}
       </div>
+
+      {/* Group Overview Modal */}
+      {selectedGroup && selectedGroupSchool && selectedGroupSubject && (
+        <Modal
+          isOpen={showGroupOverview}
+          onClose={closeGroupOverview}
+          title={`${selectedGroup.name} - Group Overview`}
+          size="xl"
+        >
+          <GroupOverview
+            group={selectedGroup}
+            school={selectedGroupSchool}
+            subject={selectedGroupSubject}
+            onClose={closeGroupOverview}
+            onGroupUpdate={handleGroupUpdate}
+          />
+        </Modal>
+      )}
     </div>
   )
 }
