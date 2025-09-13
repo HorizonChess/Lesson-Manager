@@ -16,12 +16,29 @@ interface GroupOverviewProps {
   onGroupUpdate?: (updatedGroup: Group) => void
   onRosterUpdate?: (roster: RosterItem[]) => void
   onGroupDelete?: (groupId: string) => void
+  activeTab?: TabType
+  onTabChange?: (tab: TabType) => void
 }
 
 type TabType = 'students' | 'attendance' | 'lessons' | 'settings'
 
-export function GroupOverview({ group, school, subject, roster, onClose, onGroupUpdate, onRosterUpdate, onGroupDelete }: GroupOverviewProps) {
-  const [activeTab, setActiveTab] = useState<TabType>('students')
+export function GroupOverview({
+  group,
+  school,
+  subject,
+  roster,
+  onClose,
+  onGroupUpdate,
+  onRosterUpdate,
+  onGroupDelete,
+  activeTab = 'students',
+  onTabChange
+}: GroupOverviewProps) {
+  const [internalActiveTab, setInternalActiveTab] = useState<TabType>(activeTab)
+
+  // Use parent's activeTab if available, otherwise use internal state
+  const currentActiveTab = onTabChange ? activeTab : internalActiveTab
+  const handleTabChange = onTabChange || setInternalActiveTab
 
   // Student management states
   const [showAddStudent, setShowAddStudent] = useState(false)
@@ -45,6 +62,17 @@ export function GroupOverview({ group, school, subject, roster, onClose, onGroup
     end: new Date().toISOString().split('T')[0] // today
   })
 
+  // Lesson record modal states (reuse existing data from lessons tab)
+  const [openLessonRecord, setOpenLessonRecord] = useState<string | null>(null)
+  const [recordData, setRecordData] = useState({
+    covered: '',
+    planned: '',
+    homework: '',
+    notes: ''
+  })
+  const [editingAttendanceNote, setEditingAttendanceNote] = useState<string | null>(null)
+  const [attendanceNoteText, setAttendanceNoteText] = useState('')
+
   interface Timeslot {
     day: string
     startTime: string
@@ -53,12 +81,12 @@ export function GroupOverview({ group, school, subject, roster, onClose, onGroup
 
   // Fetch data when relevant tabs are active
   useEffect(() => {
-    if (activeTab === 'attendance') {
+    if (currentActiveTab === 'attendance') {
       fetchAttendanceData()
-    } else if (activeTab === 'lessons') {
+    } else if (currentActiveTab === 'lessons') {
       fetchLessonsData()
     }
-  }, [activeTab, dateFilter, group.id])
+  }, [currentActiveTab, dateFilter, group.id])
 
   const fetchAttendanceData = async () => {
     try {
@@ -292,6 +320,170 @@ export function GroupOverview({ group, school, subject, roster, onClose, onGroup
     setEditGroupTimeslots(editGroupTimeslots.filter((_, i) => i !== index))
   }
 
+  // Lesson record functions
+  const openLessonRecordForm = async (lessonId: string) => {
+    try {
+      setError(null)
+
+      // Check if lesson record exists, create if not
+      let record = lessonRecords[lessonId]
+
+      if (!record) {
+        const { data, error } = await supabase
+          .from('lesson_records')
+          .insert({
+            lesson_id: lessonId,
+            covered: '',
+            planned: '',
+            homework: '',
+            notes: ''
+          })
+          .select()
+          .single()
+
+        if (error) throw error
+
+        record = data
+        setLessonRecords({
+          ...lessonRecords,
+          [lessonId]: record
+        })
+      }
+
+      // Load existing data into form
+      setRecordData({
+        covered: record.covered || '',
+        planned: record.planned || '',
+        homework: record.homework || '',
+        notes: record.notes || ''
+      })
+
+      // Ensure attendance data is loaded for this lesson record
+      if (record.id && !attendanceData[record.id]) {
+        const { data: attendanceRecords, error: attendanceError } = await supabase
+          .from('attendance')
+          .select(`
+            *,
+            roster_item:roster_items(student_name)
+          `)
+          .eq('lesson_record_id', record.id)
+
+        if (attendanceError) throw attendanceError
+
+        // Add to shared attendance data state
+        const attendanceArray: AttendanceWithStudent[] = attendanceRecords?.map((attendance: any) => ({
+          ...attendance,
+          student_name: attendance.roster_item?.student_name
+        })) || []
+
+        setAttendanceData({
+          ...attendanceData,
+          [record.id]: attendanceArray
+        })
+      }
+
+      setOpenLessonRecord(lessonId)
+    } catch (err: any) {
+      setError(err.message)
+    }
+  }
+
+  const saveLessonRecord = async () => {
+    if (!openLessonRecord) return
+
+    try {
+      setError(null)
+      const { data, error } = await supabase
+        .from('lesson_records')
+        .update({
+          covered: recordData.covered,
+          planned: recordData.planned,
+          homework: recordData.homework,
+          notes: recordData.notes
+        })
+        .eq('lesson_id', openLessonRecord)
+        .select()
+        .single()
+
+      if (error) throw error
+
+      setLessonRecords({
+        ...lessonRecords,
+        [openLessonRecord]: data
+      })
+
+      setOpenLessonRecord(null)
+      setRecordData({ covered: '', planned: '', homework: '', notes: '' })
+    } catch (err: any) {
+      setError(err.message)
+    }
+  }
+
+  const updateStudentAttendance = async (
+    studentId: string,
+    status: 'present' | 'absent' | 'late',
+    note?: string
+  ) => {
+    if (!openLessonRecord) return
+
+    const currentRecord = lessonRecords[openLessonRecord]
+    if (!currentRecord) return
+
+    try {
+      setError(null)
+      const currentAttendanceArray = attendanceData[currentRecord.id] || []
+      const existingAttendance = currentAttendanceArray.find(a => a.roster_item_id === studentId)
+
+      if (existingAttendance) {
+        // Update existing attendance
+        const { data, error } = await supabase
+          .from('attendance')
+          .update({ status, note: note || null })
+          .eq('id', existingAttendance.id)
+          .select()
+          .single()
+
+        if (error) throw error
+
+        // Update the shared attendance data
+        const updatedAttendanceArray = currentAttendanceArray.map(a =>
+          a.roster_item_id === studentId
+            ? { ...data, student_name: existingAttendance.student_name }
+            : a
+        )
+        setAttendanceData({
+          ...attendanceData,
+          [currentRecord.id]: updatedAttendanceArray
+        })
+      } else {
+        // Create new attendance record
+        const { data, error } = await supabase
+          .from('attendance')
+          .insert({
+            lesson_record_id: currentRecord.id,
+            roster_item_id: studentId,
+            status,
+            note: note || null
+          })
+          .select()
+          .single()
+
+        if (error) throw error
+
+        const student = roster.find(s => s.id === studentId)
+        const newAttendanceRecord = { ...data, student_name: student?.student_name }
+
+        // Add to shared attendance data
+        setAttendanceData({
+          ...attendanceData,
+          [currentRecord.id]: [...currentAttendanceArray, newAttendanceRecord]
+        })
+      }
+    } catch (err: any) {
+      setError(err.message)
+    }
+  }
+
   // Lesson management functions
   const toggleLessonCancellation = async (lessonId: string, currentStatus: boolean) => {
     try {
@@ -343,7 +535,7 @@ export function GroupOverview({ group, school, subject, roster, onClose, onGroup
   ]
 
   const renderTabContent = () => {
-    switch (activeTab) {
+    switch (currentActiveTab) {
       case 'students':
         return (
           <div className="p-6">
@@ -677,6 +869,12 @@ export function GroupOverview({ group, school, subject, roster, onClose, onGroup
                                 </div>
                                 <div className="flex gap-1">
                                   <button
+                                    onClick={() => openLessonRecordForm(lesson.id)}
+                                    className="bg-blue-600 text-white px-2 py-1 rounded text-xs hover:bg-blue-700"
+                                  >
+                                    View
+                                  </button>
+                                  <button
                                     onClick={() => toggleLessonCancellation(lesson.id, lesson.is_cancelled)}
                                     className="bg-yellow-600 text-white px-2 py-1 rounded text-xs hover:bg-yellow-700"
                                   >
@@ -763,6 +961,12 @@ export function GroupOverview({ group, school, subject, roster, onClose, onGroup
                                 </div>
 
                                 <div className="flex gap-1 ml-4">
+                                  <button
+                                    onClick={() => openLessonRecordForm(lesson.id)}
+                                    className="bg-blue-600 text-white px-2 py-1 rounded text-xs hover:bg-blue-700"
+                                  >
+                                    View
+                                  </button>
                                   {!lesson.is_cancelled ? (
                                     <>
                                       <button
@@ -1034,13 +1238,13 @@ export function GroupOverview({ group, school, subject, roster, onClose, onGroup
           {tabs.map((tab) => (
             <button
               key={tab.id}
-              onClick={() => setActiveTab(tab.id)}
+              onClick={() => handleTabChange(tab.id)}
               className={`py-4 px-1 border-b-2 font-medium text-sm whitespace-nowrap focus:outline-none focus:ring-2 focus:ring-blue-500 ${
-                activeTab === tab.id
+                currentActiveTab === tab.id
                   ? 'border-blue-500 text-blue-600 dark:text-blue-400'
                   : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300 dark:text-gray-400 dark:hover:text-gray-300'
               }`}
-              aria-selected={activeTab === tab.id}
+              aria-selected={currentActiveTab === tab.id}
               role="tab"
             >
               <span className="mr-2">{tab.icon}</span>
@@ -1054,6 +1258,188 @@ export function GroupOverview({ group, school, subject, roster, onClose, onGroup
       <div className="flex-1 overflow-y-auto" role="tabpanel">
         {renderTabContent()}
       </div>
+
+      {/* Lesson Record Modal */}
+      {openLessonRecord && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white dark:bg-gray-800 rounded-lg w-full max-w-4xl max-h-[90vh] overflow-hidden flex flex-col">
+            {/* Header */}
+            <div className="flex justify-between items-center p-4 border-b">
+              <div className="flex-1">
+                <h2 className="text-xl font-bold">
+                  {(() => {
+                    const lesson = lessons.find(l => l.id === openLessonRecord)
+                    if (!lesson) return 'Lesson Record'
+                    const lessonDate = new Date(lesson.start_time)
+                    return `${group.name} - ${lessonDate.toLocaleDateString('en-GB')} Lesson Record`
+                  })()}
+                </h2>
+              </div>
+              <button
+                onClick={() => {
+                  setOpenLessonRecord(null)
+                  setRecordData({ covered: '', planned: '', homework: '', notes: '' })
+                  setAttendance({})
+                  setEditingAttendanceNote(null)
+                  setAttendanceNoteText('')
+                }}
+                className="text-gray-500 hover:text-gray-700 text-xl min-w-[44px] min-h-[44px] flex items-center justify-center"
+              >
+                ×
+              </button>
+            </div>
+
+            {/* Content */}
+            <div className="flex-1 overflow-y-auto p-4">
+              <div className="space-y-4">
+                <div>
+                  <label className="block text-sm font-medium mb-2">What was covered today?</label>
+                  <textarea
+                    value={recordData.covered}
+                    onChange={(e) => setRecordData({ ...recordData, covered: e.target.value })}
+                    placeholder="Topics covered, activities completed, progress made..."
+                    className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded focus:outline-none focus:border-blue-500 h-20 resize-none text-sm"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium mb-2">Planned for next lesson</label>
+                  <textarea
+                    value={recordData.planned}
+                    onChange={(e) => setRecordData({ ...recordData, planned: e.target.value })}
+                    placeholder="Topics to cover, activities to do, goals for next lesson..."
+                    className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded focus:outline-none focus:border-blue-500 h-20 resize-none text-sm"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium mb-2">Homework assigned</label>
+                  <textarea
+                    value={recordData.homework}
+                    onChange={(e) => setRecordData({ ...recordData, homework: e.target.value })}
+                    placeholder="Homework assignments, practice exercises, reading..."
+                    className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded focus:outline-none focus:border-blue-500 h-16 resize-none text-sm"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium mb-2">Notes</label>
+                  <textarea
+                    value={recordData.notes}
+                    onChange={(e) => setRecordData({ ...recordData, notes: e.target.value })}
+                    placeholder="Additional notes, student behavior, important observations..."
+                    className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded focus:outline-none focus:border-blue-500 h-16 resize-none text-sm"
+                  />
+                </div>
+
+                {/* Attendance Section */}
+                {roster.length > 0 && (
+                  <div className="border-t pt-4">
+                    <h3 className="text-lg font-semibold mb-4">Attendance</h3>
+                    <div className="space-y-2 max-h-48 overflow-y-auto">
+                      {roster.map((student) => {
+                        const currentRecord = lessonRecords[openLessonRecord]
+                        const currentAttendanceArray = currentRecord ? attendanceData[currentRecord.id] || [] : []
+                        const studentAttendance = currentAttendanceArray.find(a => a.roster_item_id === student.id)
+                        const attendanceStatus = studentAttendance?.status || 'present'
+
+                        return (
+                          <div key={student.id} className="p-2 bg-gray-50 dark:bg-gray-800 rounded">
+                            <div className="flex items-center gap-2 mb-2">
+                              <div className="flex-1 font-medium text-sm">
+                                {student.student_name}
+                              </div>
+                              <div className="flex gap-1">
+                                <button
+                                  onClick={() => updateStudentAttendance(student.id, 'present')}
+                                  className={`px-2 py-1 rounded text-xs min-w-[60px] ${
+                                    attendanceStatus === 'present'
+                                      ? 'bg-green-600 text-white'
+                                      : 'bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-green-100 dark:hover:bg-green-900'
+                                  }`}
+                                >
+                                  Present
+                                </button>
+                                <button
+                                  onClick={() => updateStudentAttendance(student.id, 'absent')}
+                                  className={`px-2 py-1 rounded text-xs min-w-[60px] ${
+                                    attendanceStatus === 'absent'
+                                      ? 'bg-red-600 text-white'
+                                      : 'bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-red-100 dark:hover:bg-red-900'
+                                  }`}
+                                >
+                                  Absent
+                                </button>
+                                <button
+                                  onClick={() => updateStudentAttendance(student.id, 'late')}
+                                  className={`px-2 py-1 rounded text-xs min-w-[60px] ${
+                                    attendanceStatus === 'late'
+                                      ? 'bg-yellow-600 text-white'
+                                      : 'bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-yellow-100 dark:hover:bg-yellow-900'
+                                  }`}
+                                >
+                                  Late
+                                </button>
+                              </div>
+                            </div>
+
+                            {studentAttendance?.note && (
+                              <div className="text-xs text-gray-500 italic bg-white dark:bg-gray-700 p-1 rounded border">
+                                {studentAttendance.note}
+                              </div>
+                            )}
+                          </div>
+                        )
+                      })}
+                    </div>
+
+                    {/* Attendance Summary */}
+                    {(() => {
+                      const currentRecord = lessonRecords[openLessonRecord]
+                      const currentAttendanceArray = currentRecord ? attendanceData[currentRecord.id] || [] : []
+                      return currentAttendanceArray.length > 0 && (
+                        <div className="mt-3 text-sm text-gray-600 dark:text-gray-400">
+                          Present: {currentAttendanceArray.filter(a => a.status === 'present').length} •
+                          Absent: {currentAttendanceArray.filter(a => a.status === 'absent').length} •
+                          Late: {currentAttendanceArray.filter(a => a.status === 'late').length}
+                          {roster.length > 0 && (
+                            <span className="ml-2 font-medium">
+                              ({Math.round((currentAttendanceArray.filter(a => a.status === 'present' || a.status === 'late').length / roster.length) * 100)}% attended)
+                            </span>
+                          )}
+                        </div>
+                      )
+                    })()}
+                  </div>
+                )}
+              </div>
+            </div>
+
+            {/* Footer */}
+            <div className="border-t p-4">
+              <div className="flex gap-3">
+                <button
+                  onClick={saveLessonRecord}
+                  className="bg-blue-600 text-white px-6 py-3 rounded hover:bg-blue-700 flex-1 font-medium min-h-[44px]"
+                >
+                  Save Record
+                </button>
+                <button
+                  onClick={() => {
+                    setOpenLessonRecord(null)
+                    setRecordData({ covered: '', planned: '', homework: '', notes: '' })
+                    setEditingAttendanceNote(null)
+                    setAttendanceNoteText('')
+                  }}
+                  className="bg-gray-300 dark:bg-gray-600 text-gray-700 dark:text-gray-300 px-6 py-3 rounded hover:bg-gray-400 dark:hover:bg-gray-500 min-h-[44px]"
+                >
+                  Cancel
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 }

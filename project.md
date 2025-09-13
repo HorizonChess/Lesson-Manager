@@ -90,7 +90,7 @@ RLS-secured per user; device lock optional
 - **M1**: Supabase Auth + User bootstrap - Authentication working correctly ✅
 - **M2**: Schools & Subjects CRUD - Full implementation with user testing ✅
 
-**🎯 CURRENT TARGET:** M8.9 — Lessons Tab Integration
+**🎯 CURRENT TARGET:** M9 — Reports
 
 **📊 Progress Summary:**
 - Phase 1 (M0-M1): Authentication & Infrastructure ✅ Complete
@@ -105,7 +105,7 @@ RLS-secured per user; device lock optional
 - Phase 8.6 (M8.6): Group Overview Modal Foundation ✅ Complete
 - Phase 8.7 (M8.7): Students & Settings Tabs ✅ Complete
 - Phase 8.8 (M8.8): Attendance Tab Integration ✅ Complete
-- Phase 8.9 (M8.9): Lessons Tab Integration - Next milestone
+- Phase 8.9 (M8.9): Lessons Tab Integration ✅ Complete
 - Phase 9 (M9): Reports - Pending
 
 Milestones (incremental, small steps)
@@ -337,7 +337,7 @@ Acceptance: Complete attendance overview with filtering and detailed history acc
 - ✅ **Loading States**: Proper loading indicators and empty states for various data scenarios
 - ✅ **Extended Type Support**: AttendanceWithStudent interface for joining student names from roster items
 
-M8.9 — Lessons Tab Integration
+M8.9 — Lessons Tab Integration ✅ COMPLETE
 
 Integrate lesson management and records within Group Overview modal.
 
@@ -350,6 +350,19 @@ Integrate lesson management and records within Group Overview modal.
 - Integration with lesson plans and materials
 
 Acceptance: Complete lesson lifecycle management accessible from group context with full integration to existing lesson functionality.
+
+**✅ VERIFIED COMPLETE:**
+- ✅ **Comprehensive Lessons Display**: Separate sections for upcoming (chronologically sorted) and past lessons (most recent first)
+- ✅ **Lesson Statistics**: Header showing total lessons and active lessons count with real-time updates
+- ✅ **Enhanced Date Formatting**: All dates display in DD/MM/YYYY format (e.g., 15/09/2024) instead of US format
+- ✅ **Lesson Record Integration**: Full lesson record content previews (covered, planned, homework) in past lessons section
+- ✅ **Action Buttons**: View, Cancel/Restore, Delete functionality for all lessons with proper state management
+- ✅ **Visual Status Indicators**: Color-coded sections (green for upcoming, blue for past, red for cancelled) with status icons
+- ✅ **Tab State Persistence**: Fixed Alt+Tab browser switching issue - tab state now preserved in parent component
+- ✅ **Lesson Record Modal**: Full lesson editing modal with shared data sources between tabs and modal
+- ✅ **Unified Data Management**: Modal and lessons tab use same `lessonRecords` and `attendanceData` states for consistency
+- ✅ **Attendance Integration**: Complete attendance management within lesson record modal using shared roster data
+- ✅ **Real-time Updates**: Changes in modal immediately reflected in lessons tab and vice versa
 
 M9 — Reports
 

@@ -56,6 +56,7 @@ export function Schools() {
   const [selectedGroup, setSelectedGroup] = useState<Group | null>(null)
   const [selectedGroupSchool, setSelectedGroupSchool] = useState<School | null>(null)
   const [selectedGroupSubject, setSelectedGroupSubject] = useState<Subject | null>(null)
+  const [activeGroupTab, setActiveGroupTab] = useState<'students' | 'attendance' | 'lessons' | 'settings'>('students')
 
   useEffect(() => {
     if (user) {
@@ -1319,6 +1320,8 @@ export function Schools() {
             onGroupUpdate={handleGroupUpdate}
             onRosterUpdate={handleRosterUpdate}
             onGroupDelete={handleGroupDelete}
+            activeTab={activeGroupTab}
+            onTabChange={setActiveGroupTab}
           />
         </Modal>
       )}
