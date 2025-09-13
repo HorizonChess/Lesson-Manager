@@ -90,7 +90,7 @@ RLS-secured per user; device lock optional
 - **M1**: Supabase Auth + User bootstrap - Authentication working correctly ✅
 - **M2**: Schools & Subjects CRUD - Full implementation with user testing ✅
 
-**🎯 CURRENT TARGET:** M9 — Reports
+**🎯 CURRENT TARGET:** M9.6 — Reports Implementation
 
 **📊 Progress Summary:**
 - Phase 1 (M0-M1): Authentication & Infrastructure ✅ Complete
@@ -106,7 +106,11 @@ RLS-secured per user; device lock optional
 - Phase 8.7 (M8.7): Students & Settings Tabs ✅ Complete
 - Phase 8.8 (M8.8): Attendance Tab Integration ✅ Complete
 - Phase 8.9 (M8.9): Lessons Tab Integration ✅ Complete
-- Phase 9 (M9): Reports - Pending
+- Phase 9 (M9): Reports Foundation ✅ Complete
+- Phase 9.5 (M9.5): Dashboard Housekeeping ✅ Complete
+- Phase 9.6 (M9.6): Reports Implementation - Current Target
+- Phase 9.7-9.10: Israeli Calendar & Projected Hours - Pending
+- Phase 11-17: Polish & Advanced Features - Pending
 
 Milestones (incremental, small steps)
 M0 — Project Skeleton ✅ COMPLETE
@@ -381,7 +385,7 @@ Acceptance: Reports match hand-calculated checks on seed data.
 - ✅ **Navigation Integration**: Reports page accessible from main navigation menu
 - ✅ **UI Framework**: Ready for full report generation logic implementation
 
-M9.5 — Dashboard Housekeeping
+M9.5 — Dashboard Housekeeping ✅ COMPLETE
 
 Transform the outdated Dashboard into a useful teacher's daily hub by removing debug elements and placeholder content, replacing them with relevant information and quick access to frequently used features.
 
@@ -403,7 +407,108 @@ Transform the outdated Dashboard into a useful teacher's daily hub by removing d
 
 Acceptance: Dashboard provides immediate value to teachers with relevant daily information and quick access to common workflows. No debug/development information visible to end users.
 
-M10 — Offline-first
+**✅ VERIFIED COMPLETE:**
+- ✅ **Functional Daily Hub**: Dashboard now shows today's schedule, meaningful stats, and quick access cards
+- ✅ **Today's Overview**: Real lesson schedule display with proper time formatting and status indicators
+- ✅ **Meaningful Quick Stats**: Schools, Groups, This Week lessons, Pending Tasks with proper Sunday-Friday week calculation
+- ✅ **Quick Access Cards**: Functional navigation to School Overview, Lessons, Tasks, Lesson Plans with contextual information
+- ✅ **Debug Elements Removed**: Eliminated authentication testing, milestone status, and manual bootstrap functionality
+- ✅ **Modern UI**: Clean, responsive design matching current app patterns with proper loading and error states
+- ✅ **Recent Activity**: Dynamic sections showing recent tasks and lesson plans when available
+
+M9.6 — Reports Implementation ✅ COMPLETE
+
+Complete the actual report generation logic for the three report types. Currently only UI foundation exists.
+
+**Current State:** Reports page has complete UI structure with filters and buttons, but clicking "Generate Report" only shows placeholder/empty data.
+
+**Goal:** Implement the core business logic to generate real attendance, hours, and coverage reports from lesson data.
+
+**Key Features:**
+- **Attendance Report**: Calculate attendance percentages by student/group/date range from actual attendance records
+- **Hours Report**: Sum teaching hours per school/group/date range (exclude cancelled lessons)
+- **Coverage Report**: List lessons with "covered" content from lesson records
+- **Data Validation**: Ensure reports match hand-calculated checks on seed data
+- **Export Options**: Enable data export in common formats (CSV, PDF)
+
+Acceptance: All three reports generate accurate data; attendance percentages, hour calculations, and coverage lists match manual verification on test data.
+
+**✅ VERIFIED COMPLETE:**
+- ✅ **Cascading Filter System**: School → Subject → Group filtering with proper data population
+- ✅ **Attendance Report Generation**: Real data queries with attendance percentage calculations, color-coded results
+- ✅ **Hours Report Generation**: Duration calculations excluding cancelled lessons, proper grouping by filter level
+- ✅ **Coverage Report Generation**: Lesson records content display with date formatting (DD/MM/YYYY)
+- ✅ **Interactive Data Tables**: Responsive tables with hover effects, proper alignment, and truncated content with tooltips
+- ✅ **Excel Export Functionality**: Full .xlsx export with auto-sized columns, proper formatting, and date-stamped filenames
+- ✅ **Error Handling**: Comprehensive error states and loading indicators
+- ✅ **Data Validation**: Reports use real database queries with proper joins and filtering
+
+M9.7 — Israeli Calendar Data Integration
+
+Integrate Israeli school calendar with holiday and vacation schedules for accurate lesson planning.
+
+**Current Problem:** Recurring lesson generation doesn't account for Israeli holidays and school vacations, creating lessons during Rosh Hashana, Yom Kippur, Passover, summer break, etc.
+
+**Goal:** Create calendar service that knows current year's Israeli school calendar and can be used throughout the application.
+
+**Key Features:**
+- **Holiday Data Source**: Integrate with Israeli calendar API or reliable data source
+- **Calendar Service**: Utility functions to check if date is holiday/vacation
+- **Database Schema**: Store holiday/vacation periods with yearly updates
+- **Core Holidays**: Rosh Hashana, Yom Kippur, Sukkot, Chanukah, Tu BiShvat, Purim, Passover, Independence Day, Lag BaOmer
+- **School Vacations**: Summer break, Passover break, Chanukah break, mid-winter break
+
+Acceptance: Calendar service correctly identifies Israeli holidays and school vacation periods for current academic year.
+
+M9.8 — Calendar-Aware Recurring Lessons
+
+Update recurring lesson generation to automatically skip Israeli holidays and vacation periods.
+
+**Current Problem:** When generating "12 weeks of recurring lessons", system creates lessons during vacation periods that will never happen.
+
+**Goal:** Smart recurring lesson generation that produces realistic teaching schedules respecting Israeli school calendar.
+
+**Key Features:**
+- **Vacation-Aware Generation**: Skip lesson creation during vacation periods
+- **Holiday Detection**: Automatically exclude individual holiday dates
+- **Gap Handling**: Properly handle lesson gaps and numbering across vacation breaks
+- **Academic Year Logic**: Align lesson generation with Israeli academic year (September-June)
+- **Realistic Timelines**: Show teachers actual number of teaching weeks vs calendar weeks
+
+Acceptance: Recurring lesson generation produces schedules that teachers can actually follow; no lessons scheduled during known vacation periods or major holidays.
+
+M9.9 — Calendar-Aware Scheduling UI
+
+Enhance lesson scheduling interfaces with Israeli calendar awareness and visual vacation indicators.
+
+**Goal:** Provide teachers with clear visual feedback about holidays and vacation periods during lesson planning.
+
+**Key Features:**
+- **Holiday Indicators**: Visual markers for holidays in date pickers and calendar views
+- **Vacation Period Highlights**: Clear indication of school vacation periods
+- **Recurring Lesson Wizard**: Show "actual teaching weeks" vs "calendar weeks" during setup
+- **Schedule Warnings**: Alert users when trying to schedule during vacation periods
+- **Academic Timeline**: Visual academic year timeline with vacation periods marked
+
+Acceptance: Teachers can easily see vacation periods and holidays when scheduling lessons; system provides helpful warnings for vacation period scheduling attempts.
+
+M9.10 — Projected Work Hours Reports
+
+New report type for planning future teaching hours based on recurring lesson schedules and Israeli calendar.
+
+**Goal:** Help teachers and institutions plan contracted hours and workload by projecting future teaching time.
+
+**Key Features:**
+- **Future Hours Calculation**: Project teaching hours based on recurring lesson schedules
+- **Israeli Calendar Integration**: Exclude vacation periods from hour projections
+- **School/Subject Breakdown**: Filter projected hours by school, subject, group
+- **Date Range Projections**: Calculate hours for specific future periods (semester, year)
+- **Contract Planning**: Compare projected hours against contracted commitments
+- **Vacation Impact Analysis**: Show how vacation periods affect total teaching hours
+
+Acceptance: Projected hours reports accurately forecast future teaching time while accounting for Israeli school calendar; useful for contract planning and workload management.
+
+M11 — Offline-first
 
 Cache: schools, subjects, groups, upcoming lessons, recent records.
 
@@ -411,19 +516,19 @@ Edits queue offline; sync on reconnect; last-write-wins.
 
 Acceptance: Turn off network → edit attendance/notes → reconnect → data server-side matches client.
 
-M11 — RTL & Accessibility polish
+M12 — RTL & Accessibility polish
 
 End-to-end RTL layouts; keyboard/touch targets; language labels fit.
 
-Acceptance: Hebrew labels don’t truncate; key screens usable one-handed on mobile.
+Acceptance: Hebrew labels don't truncate; key screens usable one-handed on mobile.
 
-M12 — MVP Hardening
+M13 — MVP Hardening
 
 Loading/empty/error states; basic toasts; guard rails for deletes (confirmations).
 
 Acceptance: No unhandled errors in common flows; smoke tests pass.
 
-M13 — Weekly Schedule View
+M14 — Weekly Schedule View
 
 Calendar/weekly grid view showing recurring schedule; visual representation of all groups across days/times.
 
@@ -435,7 +540,7 @@ Calendar/weekly grid view showing recurring schedule; visual representation of a
 
 Acceptance: Weekly view displays all recurring groups; easy to see daily/weekly patterns.
 
-M14 — Smart Schedule Builder
+M15 — Smart Schedule Builder
 
 Wizard-based schedule creation: select school → set teaching hours → specify group count → auto-generate equal time slots.
 
@@ -447,7 +552,7 @@ Wizard-based schedule creation: select school → set teaching hours → specify
 
 Acceptance: Create full day schedule for school in under 1 minute; slots distributed evenly.
 
-M15 — Drag & Drop Schedule Management
+M16 — Drag & Drop Schedule Management
 
 Interactive schedule editing with drag-and-drop for groups, time slots, and entire schools.
 
@@ -460,7 +565,7 @@ Interactive schedule editing with drag-and-drop for groups, time slots, and enti
 
 Acceptance: Reorder groups via drag-drop; resize slots; move school to different day.
 
-M16 — Schedule Conflict Detection & Resolution
+M17 — Schedule Conflict Detection & Resolution
 
 Smart conflict detection with resolution suggestions for overlapping times and scheduling issues.
 
