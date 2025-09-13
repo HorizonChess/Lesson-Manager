@@ -2,7 +2,6 @@ import { Routes, Route } from 'react-router-dom'
 import { Layout } from './components/Layout'
 import { Dashboard } from './pages/Dashboard'
 import { Schools } from './pages/Schools'
-import { Setup } from './pages/Setup'
 import { Groups } from './pages/Groups'
 import { Lessons } from './pages/Lessons'
 import { Materials } from './pages/Materials'
@@ -17,7 +16,6 @@ function App() {
         <Route path="/" element={<ProtectedRoute><Layout /></ProtectedRoute>}>
           <Route index element={<Dashboard />} />
           <Route path="schools" element={<Schools />} />
-          <Route path="setup" element={<Setup />} />
           <Route path="groups" element={<Groups />} />
           <Route path="lessons" element={<Lessons />} />
           <Route path="lesson-plans" element={<Materials />} />

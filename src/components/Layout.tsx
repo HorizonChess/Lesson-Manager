@@ -63,7 +63,7 @@ export function Layout() {
               Dashboard
             </NavLink>
             <NavLink
-              to="/setup"
+              to="/schools"
               className={({ isActive }) =>
                 `py-4 px-2 border-b-2 transition-colors whitespace-nowrap ${
                   isActive
@@ -72,7 +72,7 @@ export function Layout() {
                 }`
               }
             >
-              Setup
+              School Overview
             </NavLink>
             <NavLink
               to="/groups"
