@@ -240,7 +240,17 @@ Unified School/Subject/Group Management UX: Consolidate the fragmented workflow 
 
 **Goal:** Create a unified management interface where the entire teaching structure (School → Subjects → Groups) can be managed in one cohesive location.
 
-Acceptance: Teachers can set up complete teaching structure (school, subjects, groups with rosters) without navigating between multiple pages.
+**Key Requirements:**
+1. **Tab naming**: Name this tab "School overview"
+2. **Improved collapsing element**:
+   - Clicking on the entire box (not just folder icon) should trigger collapse/expand
+   - Smart auto-expansion logic:
+     - If ≤5-6 entries total in school: automatically open all groups
+     - If >6 entries: check subject distribution
+       - If divided between subjects: let user manually collapse/expand
+       - If not divided between subjects: automatically collapse by default
+
+Acceptance: Teachers can set up complete teaching structure (school, subjects, groups with rosters) without navigating between multiple pages. Collapsing behavior is intuitive and automatically adapts to content size.
 
 M9 — Reports
 
