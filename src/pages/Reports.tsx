@@ -49,9 +49,20 @@ export function Reports() {
   const [selectedSchool, setSelectedSchool] = useState<string>('')
   const [selectedSubject, setSelectedSubject] = useState<string>('')
   const [selectedGroup, setSelectedGroup] = useState<string>('')
-  const [dateRange, setDateRange] = useState({
-    start: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
-    end: new Date().toISOString().split('T')[0]
+  const [dateRange, setDateRange] = useState(() => {
+    const today = new Date()
+    const currentMonth = today.getMonth()
+    const currentYear = today.getFullYear()
+
+    // Start: 24th of previous month
+    const startDate = new Date(currentYear, currentMonth - 1, 24)
+    // End: 24th of current month
+    const endDate = new Date(currentYear, currentMonth, 24)
+
+    return {
+      start: startDate.toISOString().split('T')[0],
+      end: endDate.toISOString().split('T')[0]
+    }
   })
 
   // Report data
@@ -132,6 +143,7 @@ export function Reports() {
   }
 
   const generateAttendanceReport = async () => {
+    console.log('Generating attendance report...')
     setLoading(true)
     setError(null)
 
@@ -179,9 +191,14 @@ export function Reports() {
         query = query.eq('group_id', selectedGroup)
       }
 
+      console.log('Attendance query built, executing...')
       const { data: lessons, error } = await query
+      console.log('Attendance lessons data:', lessons, 'error:', error)
 
-      if (error) throw error
+      if (error) {
+        console.error('Attendance query error:', error)
+        throw error
+      }
 
       // Process attendance data
       const attendanceMap = new Map<string, {
@@ -255,8 +272,10 @@ export function Reports() {
           : 0
       }))
 
+      console.log('Final attendance report data:', reportData)
       setAttendanceReport(reportData)
     } catch (err: any) {
+      console.error('Attendance report error:', err)
       setError(`Failed to generate attendance report: ${err.message}`)
       setAttendanceReport([])
     } finally {
@@ -348,6 +367,7 @@ export function Reports() {
   }
 
   const generateHoursReport = async () => {
+    console.log('Generating hours report...')
     setLoading(true)
     setError(null)
 
@@ -373,20 +393,24 @@ export function Reports() {
         .lte('start_time', dateRange.end + 'T23:59:59')
         .order('start_time')
 
-      // Apply filters
-      if (selectedSchool) {
-        query = query.eq('groups.school_id', selectedSchool)
-      }
-      if (selectedSubject) {
-        query = query.eq('groups.subject_id', selectedSubject)
-      }
+      // Apply filters - only apply if specific selections are made
       if (selectedGroup) {
         query = query.eq('group_id', selectedGroup)
+      } else if (selectedSubject) {
+        query = query.eq('groups.subject_id', selectedSubject)
+      } else if (selectedSchool) {
+        query = query.eq('groups.school_id', selectedSchool)
       }
+      // If nothing selected, load all lessons
 
+      console.log('Hours query with date range:', dateRange, 'filters:', {selectedSchool, selectedSubject, selectedGroup})
       const { data: lessons, error } = await query
+      console.log('Hours query result:', lessons, 'error:', error)
 
-      if (error) throw error
+      if (error) {
+        console.error('Hours query error:', error)
+        throw error
+      }
 
       const now = new Date()
 
@@ -490,8 +514,10 @@ export function Reports() {
       reportData.sort((a, b) => b.totalHours - a.totalHours)
 
       // If no data found, show a message in the UI
+      console.log('Final hours report data:', reportData)
       setHoursReport(reportData)
     } catch (err: any) {
+      console.error('Hours report error:', err)
       setError(`Failed to generate hours report: ${err.message}`)
       setHoursReport([])
     } finally {
