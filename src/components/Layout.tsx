@@ -99,7 +99,7 @@ export function Layout() {
               Lessons
             </NavLink>
             <NavLink
-              to="/materials"
+              to="/lesson-plans"
               className={({ isActive }) =>
                 `py-4 px-2 border-b-2 transition-colors whitespace-nowrap ${
                   isActive
@@ -108,7 +108,7 @@ export function Layout() {
                 }`
               }
             >
-              Materials
+              Lesson Plans
             </NavLink>
             <NavLink
               to="/tasks"

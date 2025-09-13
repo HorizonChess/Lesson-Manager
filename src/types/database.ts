@@ -91,6 +91,7 @@ export interface Tag {
   id: string
   user_id: string
   name: string
+  subject_id: string | null  // null for "General" tags
   created_at: string
   updated_at: string
 }

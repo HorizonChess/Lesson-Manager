@@ -17,7 +17,7 @@ function App() {
           <Route path="schools" element={<Schools />} />
           <Route path="groups" element={<Groups />} />
           <Route path="lessons" element={<Lessons />} />
-          <Route path="materials" element={<Materials />} />
+          <Route path="lesson-plans" element={<Materials />} />
           <Route path="tasks" element={<div>Tasks (Coming Soon)</div>} />
           <Route path="reports" element={<div>Reports (Coming Soon)</div>} />
         </Route>

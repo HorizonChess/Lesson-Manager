@@ -1,16 +1,21 @@
 import { useState, useEffect } from 'react'
 import { useAuth } from '../contexts/AuthContext'
 import { supabase } from '../lib/supabase'
-import type { Material, Tag, MaterialTag } from '../types/database'
+import type { Material, Tag, MaterialTag, Subject } from '../types/database'
 
 interface MaterialWithTags extends Material {
   tags: Tag[]
 }
 
+interface TagWithSubject extends Tag {
+  subject?: Subject
+}
+
 export function Materials() {
   const { user } = useAuth()
   const [materials, setMaterials] = useState<MaterialWithTags[]>([])
-  const [tags, setTags] = useState<Tag[]>([])
+  const [tags, setTags] = useState<TagWithSubject[]>([])
+  const [subjects, setSubjects] = useState<Subject[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
 
@@ -24,6 +29,8 @@ export function Materials() {
   const [selectedTags, setSelectedTags] = useState<string[]>([])
   const [showAddTag, setShowAddTag] = useState(false)
   const [newTagName, setNewTagName] = useState('')
+  const [newTagSubject, setNewTagSubject] = useState('')
+  const [collapsedSubjects, setCollapsedSubjects] = useState<Set<string>>(new Set())
 
   const [editingMaterial, setEditingMaterial] = useState<string | null>(null)
   const [editMaterial, setEditMaterial] = useState({
@@ -40,6 +47,7 @@ export function Materials() {
     if (user) {
       fetchMaterials()
       fetchTags()
+      fetchSubjects()
     }
   }, [user])
 
@@ -104,6 +112,23 @@ export function Materials() {
 
       if (error) throw error
       setTags(data || [])
+    } catch (err: any) {
+      setError(err.message)
+    }
+  }
+
+  const fetchSubjects = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('subjects')
+        .select(`
+          *,
+          school:schools(name)
+        `)
+        .order('name')
+
+      if (error) throw error
+      setSubjects(data || [])
     } catch (err: any) {
       setError(err.message)
     }
@@ -196,7 +221,7 @@ export function Materials() {
   }
 
   const deleteMaterial = async (materialId: string) => {
-    if (!confirm('Are you sure you want to delete this material? This will also remove it from all lesson records.')) return
+    if (!confirm('Are you sure you want to delete this lesson plan? This will also remove it from all lesson records.')) return
 
     try {
       const { error } = await supabase
@@ -222,6 +247,7 @@ export function Materials() {
         .insert({
           user_id: user.id,
           name: newTagName.trim(),
+          subject_id: newTagSubject || null,
         })
         .select()
         .single()
@@ -230,6 +256,7 @@ export function Materials() {
 
       setTags([...tags, data])
       setNewTagName('')
+      setNewTagSubject('')
       setShowAddTag(false)
     } catch (err: any) {
       if (err.message.includes('duplicate')) {
@@ -241,7 +268,7 @@ export function Materials() {
   }
 
   const deleteTag = async (tagId: string) => {
-    if (!confirm('Are you sure you want to delete this tag? This will remove it from all materials.')) return
+    if (!confirm('Are you sure you want to delete this tag? This will remove it from all lesson plans.')) return
 
     try {
       const { error } = await supabase
@@ -267,6 +294,17 @@ export function Materials() {
   }
 
   // Filter materials
+
+  const toggleSubjectCollapse = (subjectId: string) => {
+    const newCollapsed = new Set(collapsedSubjects)
+    if (newCollapsed.has(subjectId)) {
+      newCollapsed.delete(subjectId)
+    } else {
+      newCollapsed.add(subjectId)
+    }
+    setCollapsedSubjects(newCollapsed)
+  }
+
   const filteredMaterials = materials.filter(material => {
     const matchesSearch = searchFilter === '' ||
       material.title.toLowerCase().includes(searchFilter.toLowerCase()) ||
@@ -281,7 +319,7 @@ export function Materials() {
   return (
     <div className="space-y-6">
       <div className="flex justify-between items-center">
-        <h2 className="text-2xl font-bold">Materials Library</h2>
+        <h2 className="text-2xl font-bold">Lesson Plans Library</h2>
         <div className="flex gap-2">
           <button
             onClick={() => setShowAddTag(true)}
@@ -293,7 +331,7 @@ export function Materials() {
             onClick={() => setShowAddMaterial(true)}
             className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700"
           >
-            Add Material
+            Add Lesson Plan
           </button>
         </div>
       </div>
@@ -306,7 +344,7 @@ export function Materials() {
             type="text"
             value={searchFilter}
             onChange={(e) => setSearchFilter(e.target.value)}
-            placeholder="Search materials..."
+            placeholder="Search lesson plans..."
             className="px-3 py-2 border border-gray-300 rounded focus:outline-none focus:border-blue-500"
           />
         </div>
@@ -333,59 +371,152 @@ export function Materials() {
       {/* Tags Management */}
       <div className="bg-gray-50 dark:bg-gray-800 p-4 rounded-lg">
         <div className="flex justify-between items-center mb-3">
-          <h3 className="font-medium">Tags ({tags.length})</h3>
-        </div>
-
-        {showAddTag && (
-          <form onSubmit={addTag} className="mb-4">
-            <div className="flex gap-2">
-              <input
-                type="text"
-                value={newTagName}
-                onChange={(e) => setNewTagName(e.target.value)}
-                placeholder="Tag name"
-                className="flex-1 px-3 py-2 border border-gray-300 rounded focus:outline-none focus:border-blue-500"
-                required
-              />
-              <button
-                type="submit"
-                className="bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700"
-              >
-                Add
-              </button>
-              <button
-                type="button"
-                onClick={() => {
-                  setShowAddTag(false)
-                  setNewTagName('')
-                }}
-                className="bg-gray-300 text-gray-700 px-4 py-2 rounded hover:bg-gray-400"
-              >
-                Cancel
-              </button>
-            </div>
-          </form>
-        )}
-
-        <div className="flex flex-wrap gap-2">
-          {tags.map(tag => (
-            <span
-              key={tag.id}
-              className="inline-flex items-center gap-1 bg-blue-100 dark:bg-blue-900 text-blue-800 dark:text-blue-200 px-2 py-1 rounded-full text-sm"
-            >
-              {tag.name}
-              <button
-                onClick={() => deleteTag(tag.id)}
-                className="text-red-600 hover:text-red-800 ml-1"
-              >
-                ×
-              </button>
+          <button
+            onClick={() => toggleSubjectCollapse('tags')}
+            className="flex items-center gap-2 font-medium hover:text-blue-600"
+          >
+            <span className="text-lg">
+              {collapsedSubjects.has('tags') ? '▶' : '▼'}
             </span>
-          ))}
-          {tags.length === 0 && (
-            <span className="text-gray-500 italic">No tags created yet</span>
-          )}
+            Tags ({tags.length})
+          </button>
         </div>
+
+        {!collapsedSubjects.has('tags') && (
+          <>
+            {showAddTag && (
+              <form onSubmit={addTag} className="mb-4">
+                <div className="space-y-3">
+                  <div className="flex gap-2">
+                    <input
+                      type="text"
+                      value={newTagName}
+                      onChange={(e) => setNewTagName(e.target.value)}
+                      placeholder="Tag name (e.g., Grammar, Reading Comprehension, Math Basics)"
+                      className="flex-1 px-3 py-2 border border-gray-300 rounded focus:outline-none focus:border-blue-500"
+                      required
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium mb-1">Subject</label>
+                    <select
+                      value={newTagSubject}
+                      onChange={(e) => setNewTagSubject(e.target.value)}
+                      className="w-full px-3 py-2 border border-gray-300 rounded focus:outline-none focus:border-blue-500"
+                    >
+                      <option value="">General (not subject-specific)</option>
+                      {subjects.map(subject => (
+                        <option key={subject.id} value={subject.id}>
+                          {subject.name} ({(subject as any).school?.name})
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                  <div className="flex gap-2">
+                    <button
+                      type="submit"
+                      className="bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700"
+                    >
+                      Add Tag
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setShowAddTag(false)
+                        setNewTagName('')
+                        setNewTagSubject('')
+                      }}
+                      className="bg-gray-300 text-gray-700 px-4 py-2 rounded hover:bg-gray-400"
+                    >
+                      Cancel
+                    </button>
+                  </div>
+                </div>
+              </form>
+            )}
+
+            {/* Organize tags by subjects */}
+            {tags.length > 0 ? (
+              <div className="space-y-4">
+                {/* General Tags (no subject) */}
+                {tags.filter(tag => !tag.subject_id).length > 0 && (
+                  <div>
+                    <button
+                      onClick={() => toggleSubjectCollapse('tags-general')}
+                      className="flex items-center gap-2 text-sm font-medium text-gray-600 dark:text-gray-400 mb-2 hover:text-blue-600"
+                    >
+                      <span className="text-xs">
+                        {collapsedSubjects.has('tags-general') ? '▶' : '▼'}
+                      </span>
+                      General ({tags.filter(tag => !tag.subject_id).length})
+                    </button>
+                    {!collapsedSubjects.has('tags-general') && (
+                      <div className="flex flex-wrap gap-2 ml-4">
+                        {tags.filter(tag => !tag.subject_id).map(tag => (
+                          <span
+                            key={tag.id}
+                            className="inline-flex items-center gap-1 bg-gray-100 dark:bg-gray-700 text-gray-800 dark:text-gray-200 px-2 py-1 rounded-full text-sm"
+                          >
+                            {tag.name}
+                            <button
+                              onClick={() => deleteTag(tag.id)}
+                              className="text-red-600 hover:text-red-800 ml-1"
+                            >
+                              ×
+                            </button>
+                          </span>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                )}
+
+                {/* Subject-specific Tags */}
+                {subjects.map(subject => {
+                  const subjectTags = tags.filter(tag => tag.subject_id === subject.id)
+                  if (subjectTags.length === 0) return null
+
+                  return (
+                    <div key={subject.id}>
+                      <button
+                        onClick={() => toggleSubjectCollapse(`tags-${subject.id}`)}
+                        className="flex items-center gap-2 text-sm font-medium text-gray-600 dark:text-gray-400 mb-2 hover:text-blue-600"
+                      >
+                        <span className="text-xs">
+                          {collapsedSubjects.has(`tags-${subject.id}`) ? '▶' : '▼'}
+                        </span>
+                        {subject.name} ({subjectTags.length})
+                        <span className="text-xs text-gray-500">
+                          • {(subject as any).school?.name}
+                        </span>
+                      </button>
+                      {!collapsedSubjects.has(`tags-${subject.id}`) && (
+                        <div className="flex flex-wrap gap-2 ml-4">
+                          {subjectTags.map(tag => (
+                            <span
+                              key={tag.id}
+                              className="inline-flex items-center gap-1 bg-blue-100 dark:bg-blue-900 text-blue-800 dark:text-blue-200 px-2 py-1 rounded-full text-sm"
+                            >
+                              {tag.name}
+                              <button
+                                onClick={() => deleteTag(tag.id)}
+                                className="text-red-600 hover:text-red-800 ml-1"
+                              >
+                                ×
+                              </button>
+                            </span>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  )
+                })}
+              </div>
+            ) : (
+              <span className="text-gray-500 italic">No tags created yet</span>
+            )}
+          </>
+        )}
       </div>
 
       {error && (
@@ -404,7 +535,7 @@ export function Materials() {
                 type="text"
                 value={newMaterial.title}
                 onChange={(e) => setNewMaterial({ ...newMaterial, title: e.target.value })}
-                placeholder="Material title"
+                placeholder="Lesson plan title"
                 className="w-full px-3 py-2 border border-gray-300 rounded focus:outline-none focus:border-blue-500"
                 required
               />
@@ -414,7 +545,7 @@ export function Materials() {
               <textarea
                 value={newMaterial.description}
                 onChange={(e) => setNewMaterial({ ...newMaterial, description: e.target.value })}
-                placeholder="Material description"
+                placeholder="Lesson plan description"
                 rows={3}
                 className="w-full px-3 py-2 border border-gray-300 rounded focus:outline-none focus:border-blue-500"
               />
@@ -460,7 +591,7 @@ export function Materials() {
                 type="submit"
                 className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700"
               >
-                Add Material
+                Add Lesson Plan
               </button>
               <button
                 type="button"
@@ -483,8 +614,8 @@ export function Materials() {
         {filteredMaterials.length === 0 ? (
           <div className="col-span-full text-center py-8 text-gray-500">
             {materials.length === 0
-              ? 'No materials yet. Add your first material to get started!'
-              : 'No materials match the current filters.'
+              ? 'No lesson plans yet. Add your first lesson plan to get started!'
+              : 'No lesson plans match the current filters.'
             }
           </div>
         ) : (

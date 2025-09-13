@@ -1039,12 +1039,12 @@ export function Lessons() {
                     {/* Materials Section */}
                     <div className="border-t pt-4">
                       <div className="flex justify-between items-center mb-3">
-                        <h3 className="text-lg font-semibold">Materials ({lessonMaterials[lessonRecords[openLessonRecord]?.id]?.length || 0})</h3>
+                        <h3 className="text-lg font-semibold">Lesson Plans ({lessonMaterials[lessonRecords[openLessonRecord]?.id]?.length || 0})</h3>
                         <button
                           onClick={() => openMaterialSelector(lessonRecords[openLessonRecord]?.id)}
                           className="bg-blue-600 text-white px-3 py-1 rounded text-sm hover:bg-blue-700"
                         >
-                          Attach Materials
+                          Attach Plans
                         </button>
                       </div>
 
@@ -1074,7 +1074,7 @@ export function Lessons() {
                               <button
                                 onClick={() => removeMaterial(lessonRecords[openLessonRecord].id, material.id)}
                                 className="text-red-600 hover:text-red-800 text-sm ml-2 flex-shrink-0"
-                                title="Remove material"
+                                title="Remove lesson plan"
                               >
                                 ×
                               </button>
@@ -1083,7 +1083,7 @@ export function Lessons() {
                         </div>
                       ) : (
                         <div className="text-gray-500 italic text-sm bg-gray-50 dark:bg-gray-700 p-3 rounded">
-                          No materials attached. Click "Attach Materials" to add resources to this lesson.
+                          No lesson plans attached. Click "Attach Plans" to add resources to this lesson.
                         </div>
                       )}
                     </div>
@@ -1259,7 +1259,7 @@ export function Lessons() {
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
           <div className="bg-white dark:bg-gray-800 rounded-lg w-full max-w-2xl max-h-[70vh] overflow-hidden flex flex-col">
             <div className="flex justify-between items-center p-4 border-b">
-              <h3 className="text-lg font-bold">Select Materials to Attach</h3>
+              <h3 className="text-lg font-bold">Select Lesson Plans to Attach</h3>
               <button
                 onClick={() => {
                   setShowMaterialSelector(false)
@@ -1274,8 +1274,8 @@ export function Lessons() {
             <div className="flex-1 overflow-y-auto p-4">
               {materials.length === 0 ? (
                 <div className="text-center py-8 text-gray-500">
-                  <p>No materials found in your library.</p>
-                  <p className="text-sm mt-2">Visit the Materials page to create materials first.</p>
+                  <p>No lesson plans found in your library.</p>
+                  <p className="text-sm mt-2">Visit the Lesson Plans page to create lesson plans first.</p>
                 </div>
               ) : (
                 <div className="space-y-2">
@@ -1326,7 +1326,7 @@ export function Lessons() {
                 className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700"
                 disabled={materials.length === 0}
               >
-                Attach {selectedMaterials.length} Material{selectedMaterials.length !== 1 ? 's' : ''}
+                Attach {selectedMaterials.length} Plan{selectedMaterials.length !== 1 ? 's' : ''}
               </button>
             </div>
           </div>
