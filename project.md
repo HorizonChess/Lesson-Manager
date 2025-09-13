@@ -90,7 +90,7 @@ RLS-secured per user; device lock optional
 - **M1**: Supabase Auth + User bootstrap - Authentication working correctly ✅
 - **M2**: Schools & Subjects CRUD - Full implementation with user testing ✅
 
-**🎯 CURRENT TARGET:** M8.6 — Group Overview Modal Foundation
+**🎯 CURRENT TARGET:** M8.7 — Students & Settings Tabs
 
 **📊 Progress Summary:**
 - Phase 1 (M0-M1): Authentication & Infrastructure ✅ Complete
@@ -102,7 +102,8 @@ RLS-secured per user; device lock optional
 - Phase 7 (M7): Lesson Plans & Tags ✅ Complete
 - Phase 8 (M8): Tasks ✅ Complete
 - Phase 8.5 (M8.5): Housekeeping ✅ Complete
-- Phase 8.6 (M8.6): Group Overview Modal Foundation - Next milestone
+- Phase 8.6 (M8.6): Group Overview Modal Foundation ✅ Complete
+- Phase 8.7 (M8.7): Students & Settings Tabs - Next milestone
 - Phase 9 (M9): Reports - Pending
 
 Milestones (incremental, small steps)
@@ -276,6 +277,15 @@ Create comprehensive group management interface accessible by clicking groups in
 - Responsive design with mobile-friendly interactions
 
 Acceptance: Clicking any group opens modal with basic structure and navigation between tabs.
+
+**✅ VERIFIED COMPLETE:**
+- ✅ Reusable Modal component with full accessibility (ARIA, focus management, keyboard navigation)
+- ✅ GroupOverview component with four-tab structure (Students, Attendance, Lessons, Settings)
+- ✅ Modal state management and helper functions in Schools page
+- ✅ Clickable group names with hover effects and tooltips
+- ✅ Responsive XL modal size for comprehensive group management
+- ✅ ESC key and backdrop click to close functionality
+- ✅ Tab structure ready for content implementation in subsequent milestones
 
 M8.7 — Students & Settings Tabs
 
