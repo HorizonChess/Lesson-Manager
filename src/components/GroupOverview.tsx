@@ -51,10 +51,12 @@ export function GroupOverview({ group, school, subject, roster, onClose, onGroup
     endTime: string
   }
 
-  // Fetch attendance data when attendance tab is active
+  // Fetch data when relevant tabs are active
   useEffect(() => {
     if (activeTab === 'attendance') {
       fetchAttendanceData()
+    } else if (activeTab === 'lessons') {
+      fetchLessonsData()
     }
   }, [activeTab, dateFilter, group.id])
 
@@ -117,6 +119,44 @@ export function GroupOverview({ group, school, subject, roster, onClose, onGroup
 
           setAttendanceData(attendanceByRecord)
         }
+      }
+    } catch (err: any) {
+      setError(err.message)
+    } finally {
+      setAttendanceLoading(false)
+    }
+  }
+
+  const fetchLessonsData = async () => {
+    try {
+      setAttendanceLoading(true) // Reuse the loading state for lessons
+
+      // Fetch lessons for this group
+      const { data: lessonsData, error: lessonsError } = await supabase
+        .from('lessons')
+        .select('*')
+        .eq('group_id', group.id)
+        .order('start_time', { ascending: false })
+
+      if (lessonsError) throw lessonsError
+
+      setLessons(lessonsData || [])
+
+      // Fetch lesson records for these lessons
+      if (lessonsData && lessonsData.length > 0) {
+        const { data: recordsData, error: recordsError } = await supabase
+          .from('lesson_records')
+          .select('*')
+          .in('lesson_id', lessonsData.map(l => l.id))
+
+        if (recordsError) throw recordsError
+
+        const recordsByLesson = (recordsData || []).reduce((acc, record) => {
+          acc[record.lesson_id] = record
+          return acc
+        }, {} as Record<string, LessonRecord>)
+
+        setLessonRecords(recordsByLesson)
       }
     } catch (err: any) {
       setError(err.message)
@@ -250,6 +290,49 @@ export function GroupOverview({ group, school, subject, roster, onClose, onGroup
 
   const removeTimeslot = (index: number) => {
     setEditGroupTimeslots(editGroupTimeslots.filter((_, i) => i !== index))
+  }
+
+  // Lesson management functions
+  const toggleLessonCancellation = async (lessonId: string, currentStatus: boolean) => {
+    try {
+      setError(null)
+      const { data, error } = await supabase
+        .from('lessons')
+        .update({ is_cancelled: !currentStatus })
+        .eq('id', lessonId)
+        .select()
+        .single()
+
+      if (error) throw error
+
+      setLessons(lessons.map(lesson =>
+        lesson.id === lessonId ? data : lesson
+      ))
+    } catch (err: any) {
+      setError(err.message)
+    }
+  }
+
+  const deleteLesson = async (lessonId: string) => {
+    if (!confirm('Are you sure you want to delete this lesson?')) return
+
+    try {
+      setError(null)
+      const { error } = await supabase
+        .from('lessons')
+        .delete()
+        .eq('id', lessonId)
+
+      if (error) throw error
+
+      setLessons(lessons.filter(lesson => lesson.id !== lessonId))
+      // Remove lesson record if it exists
+      const newRecords = { ...lessonRecords }
+      delete newRecords[lessonId]
+      setLessonRecords(newRecords)
+    } catch (err: any) {
+      setError(err.message)
+    }
   }
 
   const tabs: { id: TabType; label: string; icon: string }[] = [
@@ -482,7 +565,7 @@ export function GroupOverview({ group, school, subject, roster, onClose, onGroup
                           <div className="flex justify-between items-center mb-3">
                             <div>
                               <h4 className="font-medium">
-                                {lessonDate.toLocaleDateString()} - {lessonDate.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                                {lessonDate.toLocaleDateString('en-GB')} - {lessonDate.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                               </h4>
                               <div className="text-sm text-gray-500">
                                 {presentStudents.length}/{attendance.length} present ({attendancePercentage}%)
@@ -538,10 +621,209 @@ export function GroupOverview({ group, school, subject, roster, onClose, onGroup
       case 'lessons':
         return (
           <div className="p-6">
-            <h3 className="text-lg font-medium mb-4">Lessons</h3>
-            <div className="text-gray-500 text-center py-8">
-              Lesson management will be implemented in M8.9
+            <div className="flex justify-between items-center mb-6">
+              <h3 className="text-lg font-medium">Lessons for {group.name}</h3>
+              <div className="flex items-center gap-2">
+                <span className="text-sm text-gray-500">
+                  Total: {lessons.length} | Active: {lessons.filter(l => !l.is_cancelled).length}
+                </span>
+              </div>
             </div>
+
+            {error && (
+              <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded mb-4">
+                {error}
+              </div>
+            )}
+
+            {attendanceLoading ? (
+              <div className="flex items-center justify-center py-12">
+                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+              </div>
+            ) : lessons.length === 0 ? (
+              <div className="text-center py-12 text-gray-500">
+                <p className="text-lg">No lessons scheduled for this group</p>
+                <p className="text-sm mt-2">Go to the Lessons page to create lessons or generate recurring lessons for this group</p>
+              </div>
+            ) : (
+              <div className="space-y-6">
+                {/* Upcoming Lessons Section */}
+                {(() => {
+                  const now = new Date()
+                  const upcomingLessons = lessons
+                    .filter(lesson => new Date(lesson.start_time) >= now && !lesson.is_cancelled)
+                    .sort((a, b) => new Date(a.start_time).getTime() - new Date(b.start_time).getTime()) // Sort chronologically (earliest first)
+                    .slice(0, 5) // Show next 5 upcoming lessons
+
+                  return upcomingLessons.length > 0 && (
+                    <div>
+                      <h4 className="text-md font-medium mb-3 text-green-600">Upcoming Lessons</h4>
+                      <div className="space-y-2">
+                        {upcomingLessons.map(lesson => {
+                          const lessonDate = new Date(lesson.start_time)
+                          const endDate = new Date(lesson.end_time)
+                          const hasRecord = lessonRecords[lesson.id]
+
+                          return (
+                            <div key={lesson.id} className="bg-green-50 dark:bg-green-900/20 border border-green-200 p-3 rounded-lg">
+                              <div className="flex justify-between items-center">
+                                <div>
+                                  <div className="font-medium">
+                                    {lessonDate.toLocaleDateString('en-GB')} - {lessonDate.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })} to {endDate.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                                  </div>
+                                  <div className="text-sm text-gray-600">
+                                    {hasRecord ? '✅ Has lesson record' : '⚠️ No lesson record yet'}
+                                  </div>
+                                </div>
+                                <div className="flex gap-1">
+                                  <button
+                                    onClick={() => toggleLessonCancellation(lesson.id, lesson.is_cancelled)}
+                                    className="bg-yellow-600 text-white px-2 py-1 rounded text-xs hover:bg-yellow-700"
+                                  >
+                                    Cancel
+                                  </button>
+                                  <button
+                                    onClick={() => deleteLesson(lesson.id)}
+                                    className="bg-red-600 text-white px-2 py-1 rounded text-xs hover:bg-red-700"
+                                  >
+                                    Delete
+                                  </button>
+                                </div>
+                              </div>
+                            </div>
+                          )
+                        })}
+                      </div>
+                    </div>
+                  )
+                })()}
+
+                {/* Past Lessons Section */}
+                {(() => {
+                  const now = new Date()
+                  const pastLessons = lessons
+                    .filter(lesson => new Date(lesson.start_time) < now)
+                    .sort((a, b) => new Date(b.start_time).getTime() - new Date(a.start_time).getTime()) // Sort by most recent first
+                    .slice(0, 10) // Show last 10 past lessons
+
+                  return pastLessons.length > 0 && (
+                    <div>
+                      <h4 className="text-md font-medium mb-3 text-blue-600">Recent Lessons</h4>
+                      <div className="space-y-2">
+                        {pastLessons.map(lesson => {
+                          const lessonDate = new Date(lesson.start_time)
+                          const endDate = new Date(lesson.end_time)
+                          const hasRecord = lessonRecords[lesson.id]
+                          const record = lessonRecords[lesson.id]
+
+                          return (
+                            <div
+                              key={lesson.id}
+                              className={`border p-3 rounded-lg ${
+                                lesson.is_cancelled
+                                  ? 'bg-red-50 dark:bg-red-900/20 border-red-200 opacity-75'
+                                  : 'bg-blue-50 dark:bg-blue-900/20 border-blue-200'
+                              }`}
+                            >
+                              <div className="flex justify-between items-start">
+                                <div className="flex-1">
+                                  <div className={`font-medium ${lesson.is_cancelled ? 'line-through' : ''}`}>
+                                    {lessonDate.toLocaleDateString('en-GB')} - {lessonDate.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })} to {endDate.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                                    {lesson.is_cancelled && <span className="ml-2 text-red-600 text-sm">(Cancelled)</span>}
+                                  </div>
+
+                                  {hasRecord && record && (
+                                    <div className="mt-2 space-y-1 text-sm">
+                                      {record.covered && (
+                                        <div>
+                                          <span className="font-medium text-gray-600">Covered:</span>
+                                          <span className="ml-2 text-gray-700">{record.covered.substring(0, 100)}{record.covered.length > 100 ? '...' : ''}</span>
+                                        </div>
+                                      )}
+                                      {record.planned && (
+                                        <div>
+                                          <span className="font-medium text-gray-600">Planned Next:</span>
+                                          <span className="ml-2 text-gray-700">{record.planned.substring(0, 100)}{record.planned.length > 100 ? '...' : ''}</span>
+                                        </div>
+                                      )}
+                                      {record.homework && (
+                                        <div>
+                                          <span className="font-medium text-gray-600">Homework:</span>
+                                          <span className="ml-2 text-gray-700">{record.homework.substring(0, 100)}{record.homework.length > 100 ? '...' : ''}</span>
+                                        </div>
+                                      )}
+                                    </div>
+                                  )}
+
+                                  {!hasRecord && !lesson.is_cancelled && (
+                                    <div className="mt-1 text-sm text-gray-500 italic">
+                                      No lesson record - Go to Lessons page to add record and attendance
+                                    </div>
+                                  )}
+                                </div>
+
+                                <div className="flex gap-1 ml-4">
+                                  {!lesson.is_cancelled ? (
+                                    <>
+                                      <button
+                                        onClick={() => toggleLessonCancellation(lesson.id, lesson.is_cancelled)}
+                                        className="bg-yellow-600 text-white px-2 py-1 rounded text-xs hover:bg-yellow-700"
+                                      >
+                                        Cancel
+                                      </button>
+                                      <button
+                                        onClick={() => deleteLesson(lesson.id)}
+                                        className="bg-red-600 text-white px-2 py-1 rounded text-xs hover:bg-red-700"
+                                      >
+                                        Delete
+                                      </button>
+                                    </>
+                                  ) : (
+                                    <>
+                                      <button
+                                        onClick={() => toggleLessonCancellation(lesson.id, lesson.is_cancelled)}
+                                        className="bg-green-600 text-white px-2 py-1 rounded text-xs hover:bg-green-700"
+                                      >
+                                        Restore
+                                      </button>
+                                      <button
+                                        onClick={() => deleteLesson(lesson.id)}
+                                        className="bg-red-600 text-white px-2 py-1 rounded text-xs hover:bg-red-700"
+                                      >
+                                        Delete
+                                      </button>
+                                    </>
+                                  )}
+                                </div>
+                              </div>
+                            </div>
+                          )
+                        })}
+                      </div>
+                    </div>
+                  )
+                })()}
+
+                {/* Quick Actions */}
+                <div className="border-t pt-4">
+                  <h4 className="text-md font-medium mb-3">Quick Actions</h4>
+                  <div className="flex flex-wrap gap-2">
+                    <button
+                      onClick={() => {
+                        // Link to lessons page - could be enhanced to navigate programmatically
+                        window.location.href = '/lessons'
+                      }}
+                      className="bg-blue-600 text-white px-4 py-2 rounded text-sm hover:bg-blue-700"
+                    >
+                      📚 Go to Lessons Page
+                    </button>
+                    <div className="text-sm text-gray-500 px-4 py-2">
+                      Create new lessons, lesson records, and manage attendance from the Lessons page
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )}
           </div>
         )
 
