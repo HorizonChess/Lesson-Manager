@@ -186,9 +186,9 @@ export function Reports() {
 
       {/* Report Buttons */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        <div className="bg-white dark:bg-gray-800 border rounded-lg p-6">
+        <div className="bg-white dark:bg-gray-800 border rounded-lg p-6 flex flex-col">
           <h3 className="text-lg font-semibold mb-2">Attendance Report</h3>
-          <p className="text-sm text-gray-600 mb-4">Attendance % computed for a date range; persisted per lesson</p>
+          <p className="text-sm text-gray-600 mb-4 flex-1">Attendance % computed for a date range; persisted per lesson</p>
           <button
             onClick={generateAttendanceReport}
             disabled={loading}
@@ -198,9 +198,9 @@ export function Reports() {
           </button>
         </div>
 
-        <div className="bg-white dark:bg-gray-800 border rounded-lg p-6">
+        <div className="bg-white dark:bg-gray-800 border rounded-lg p-6 flex flex-col">
           <h3 className="text-lg font-semibold mb-2">Hours Report</h3>
-          <p className="text-sm text-gray-600 mb-4">Hours taught per school/group/date range (sum non-canceled durations)</p>
+          <p className="text-sm text-gray-600 mb-4 flex-1">Hours taught per school/group/date range (sum non-canceled durations)</p>
           <button
             onClick={generateHoursReport}
             disabled={loading}
@@ -210,9 +210,9 @@ export function Reports() {
           </button>
         </div>
 
-        <div className="bg-white dark:bg-gray-800 border rounded-lg p-6">
+        <div className="bg-white dark:bg-gray-800 border rounded-lg p-6 flex flex-col">
           <h3 className="text-lg font-semibold mb-2">Coverage Report</h3>
-          <p className="text-sm text-gray-600 mb-4">Coverage list: lessons + "covered" text</p>
+          <p className="text-sm text-gray-600 mb-4 flex-1">Coverage list: lessons + "covered" text</p>
           <button
             onClick={generateCoverageReport}
             disabled={loading}
