@@ -259,6 +259,30 @@ export function Schools() {
     setSelectedGroup(updatedGroup)
   }
 
+  const handleRosterUpdate = (updatedRoster: RosterItem[]) => {
+    if (!selectedGroup) return
+
+    setRosters({
+      ...rosters,
+      [selectedGroup.id]: updatedRoster
+    })
+  }
+
+  const handleGroupDelete = (groupId: string) => {
+    if (!selectedGroupSubject) return
+
+    // Remove group from groups state
+    setGroups({
+      ...groups,
+      [selectedGroupSubject.id]: (groups[selectedGroupSubject.id] || []).filter(g => g.id !== groupId)
+    })
+
+    // Remove roster for this group
+    const newRosters = { ...rosters }
+    delete newRosters[groupId]
+    setRosters(newRosters)
+  }
+
   const addSchool = async (e: React.FormEvent) => {
     e.preventDefault()
     if (!newSchoolName.trim() || !user) return
@@ -1290,8 +1314,11 @@ export function Schools() {
             group={selectedGroup}
             school={selectedGroupSchool}
             subject={selectedGroupSubject}
+            roster={rosters[selectedGroup.id] || []}
             onClose={closeGroupOverview}
             onGroupUpdate={handleGroupUpdate}
+            onRosterUpdate={handleRosterUpdate}
+            onGroupDelete={handleGroupDelete}
           />
         </Modal>
       )}

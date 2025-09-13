@@ -90,7 +90,7 @@ RLS-secured per user; device lock optional
 - **M1**: Supabase Auth + User bootstrap - Authentication working correctly ✅
 - **M2**: Schools & Subjects CRUD - Full implementation with user testing ✅
 
-**🎯 CURRENT TARGET:** M8.7 — Students & Settings Tabs
+**🎯 CURRENT TARGET:** M8.9 — Lessons Tab Integration
 
 **📊 Progress Summary:**
 - Phase 1 (M0-M1): Authentication & Infrastructure ✅ Complete
@@ -103,7 +103,9 @@ RLS-secured per user; device lock optional
 - Phase 8 (M8): Tasks ✅ Complete
 - Phase 8.5 (M8.5): Housekeeping ✅ Complete
 - Phase 8.6 (M8.6): Group Overview Modal Foundation ✅ Complete
-- Phase 8.7 (M8.7): Students & Settings Tabs - Next milestone
+- Phase 8.7 (M8.7): Students & Settings Tabs ✅ Complete
+- Phase 8.8 (M8.8): Attendance Tab Integration ✅ Complete
+- Phase 8.9 (M8.9): Lessons Tab Integration - Next milestone
 - Phase 9 (M9): Reports - Pending
 
 Milestones (incremental, small steps)
@@ -301,7 +303,18 @@ Implement core group information and roster management within Group Overview mod
 
 Acceptance: Students and Settings tabs fully functional with all CRUD operations working seamlessly.
 
-M8.8 — Attendance Tab Integration
+**✅ VERIFIED COMPLETE:**
+- ✅ **Students Tab**: Full roster management with add/edit/delete student functionality
+- ✅ **Settings Tab**: Complete group settings editing (name, schedule, statistics)
+- ✅ **Real-time State Management**: All changes reflected immediately in School Overview
+- ✅ **Student CRUD**: Add students via modal form, inline editing with Enter/Escape keys, delete with confirmation
+- ✅ **Group Settings CRUD**: Edit group name, modify timeslots with add/remove functionality, delete group with confirmation
+- ✅ **Statistics Display**: Shows student count and weekly hours calculation
+- ✅ **Error Handling**: Proper error display and user feedback for all operations
+- ✅ **Data Integration**: Seamless integration with existing Schools page state management
+- ✅ **UX Consistency**: Maintains design patterns and interactions consistent with rest of application
+
+M8.8 — Attendance Tab Integration ✅ COMPLETE
 
 Integrate attendance history and management within Group Overview modal.
 
@@ -314,6 +327,15 @@ Integrate attendance history and management within Group Overview modal.
 - Export attendance data functionality
 
 Acceptance: Complete attendance overview with filtering and detailed history accessible per group.
+
+**✅ VERIFIED COMPLETE:**
+- ✅ **Date Range Filtering**: Implemented From/To date inputs with 30-day default range and real-time data refetch
+- ✅ **Attendance Statistics Dashboard**: Three statistics cards showing Total Lessons, Lessons With Attendance, and Average Attendance percentage
+- ✅ **Lesson-by-Lesson Display**: Individual lesson cards with date/time, attendance percentage, and color-coded performance badges
+- ✅ **Student Attendance Grid**: Per-student attendance status display with present/absent/late indicators
+- ✅ **Data Integration**: Fetches lessons, lesson records, and attendance data specific to the group with proper error handling
+- ✅ **Loading States**: Proper loading indicators and empty states for various data scenarios
+- ✅ **Extended Type Support**: AttendanceWithStudent interface for joining student names from roster items
 
 M8.9 — Lessons Tab Integration
 
