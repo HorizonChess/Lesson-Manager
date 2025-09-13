@@ -90,7 +90,7 @@ RLS-secured per user; device lock optional
 - **M1**: Supabase Auth + User bootstrap - Authentication working correctly ✅
 - **M2**: Schools & Subjects CRUD - Full implementation with user testing ✅
 
-**🎯 CURRENT TARGET:** M6 — Attendance
+**🎯 CURRENT TARGET:** M7 — Materials & Tags
 
 **📊 Progress Summary:**
 - Phase 1 (M0-M1): Authentication & Infrastructure ✅ Complete
@@ -98,7 +98,8 @@ RLS-secured per user; device lock optional
 - Phase 3 (M3): Groups & Roster ✅ Complete
 - Phase 4 (M4): Lessons & Recurring Scheduling ✅ Complete
 - Phase 5 (M5): Lesson Record ✅ Complete
-- Phase 6 (M6): Attendance - Next milestone
+- Phase 6 (M6): Attendance ✅ Complete
+- Phase 7 (M7): Materials & Tags - Next milestone
 
 Milestones (incremental, small steps)
 M0 — Project Skeleton ✅ COMPLETE
@@ -171,11 +172,19 @@ Acceptance: Edits persist; reload shows data unchanged.
 - ✅ Data persistence across sessions
 - ✅ **BONUS: Enhanced UX** - Single "View Lesson" button, mobile-responsive modal, Simple/Advanced toggle, Previous lesson context
 
-M6 — Attendance
+M6 — Attendance ✅ COMPLETE
 
 Bulk mark all present; per-student override; status: present/absent/late; note.
 
 Acceptance: Attendance % computed for a date range; persisted per lesson.
+
+**✅ VERIFIED COMPLETE:**
+- ✅ Bulk attendance marking with "Mark All Present/Absent/Late" functionality
+- ✅ Per-student attendance controls with Present/Absent/Late buttons
+- ✅ Individual attendance notes with inline editing
+- ✅ Real-time attendance percentage calculation and display
+- ✅ Mobile-friendly touch controls (44px minimum button size)
+- ✅ Data persistence and proper state management
 
 M7 — Materials & Tags
 

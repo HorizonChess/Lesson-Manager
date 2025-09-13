@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react'
 import { useAuth } from '../contexts/AuthContext'
 import { supabase } from '../lib/supabase'
-import type { Lesson, Group, LessonRecord, RosterItem, Attendance } from '../types/database'
+import type { Lesson, Group, LessonRecord, RosterItem, Attendance, Material, LessonMaterial } from '../types/database'
 
 interface LessonWithGroup extends Lesson {
   group: {
@@ -46,6 +46,12 @@ export function Lessons() {
   const [bulkAttendanceStatus, setBulkAttendanceStatus] = useState<'present' | 'absent' | 'late'>('present')
   const [editingAttendanceNote, setEditingAttendanceNote] = useState<string | null>(null)
   const [attendanceNoteText, setAttendanceNoteText] = useState('')
+
+  // Materials states
+  const [materials, setMaterials] = useState<Material[]>([])
+  const [lessonMaterials, setLessonMaterials] = useState<Record<string, Material[]>>({})
+  const [showMaterialSelector, setShowMaterialSelector] = useState(false)
+  const [selectedMaterials, setSelectedMaterials] = useState<string[]>([])
 
   useEffect(() => {
     if (user) {
@@ -97,9 +103,40 @@ export function Lessons() {
         return acc
       }, {} as Record<string, LessonRecord>)
 
+      // Fetch materials
+      const { data: materialsData, error: materialsError } = await supabase
+        .from('materials')
+        .select('*')
+        .order('title')
+
+      if (materialsError) throw materialsError
+
+      // Fetch lesson materials
+      const { data: lessonMaterialsData, error: lessonMaterialsError } = await supabase
+        .from('lesson_materials')
+        .select(`
+          lesson_record_id,
+          material:materials(*)
+        `)
+
+      if (lessonMaterialsError) throw lessonMaterialsError
+
+      // Group materials by lesson record id
+      const materialsByLessonRecord: Record<string, Material[]> = {}
+      lessonMaterialsData?.forEach((lm: any) => {
+        if (!materialsByLessonRecord[lm.lesson_record_id]) {
+          materialsByLessonRecord[lm.lesson_record_id] = []
+        }
+        if (lm.material) {
+          materialsByLessonRecord[lm.lesson_record_id].push(lm.material)
+        }
+      })
+
       setGroups(groupsData || [])
       setLessons(lessonsData || [])
       setLessonRecords(recordsByLesson)
+      setMaterials(materialsData || [])
+      setLessonMaterials(materialsByLessonRecord)
     } catch (err: any) {
       setError(err.message)
     } finally {
@@ -542,6 +579,75 @@ export function Lessons() {
     }
   }
 
+  // Materials functions
+  const openMaterialSelector = (lessonRecordId: string) => {
+    const currentMaterials = lessonMaterials[lessonRecordId] || []
+    setSelectedMaterials(currentMaterials.map(m => m.id))
+    setShowMaterialSelector(true)
+  }
+
+  const attachMaterials = async () => {
+    if (!openLessonRecord) return
+
+    const currentRecord = lessonRecords[openLessonRecord]
+    if (!currentRecord) return
+
+    try {
+      // Remove existing materials
+      await supabase
+        .from('lesson_materials')
+        .delete()
+        .eq('lesson_record_id', currentRecord.id)
+
+      // Add new materials
+      if (selectedMaterials.length > 0) {
+        const materialInserts = selectedMaterials.map(materialId => ({
+          lesson_record_id: currentRecord.id,
+          material_id: materialId
+        }))
+
+        const { error } = await supabase
+          .from('lesson_materials')
+          .insert(materialInserts)
+
+        if (error) throw error
+      }
+
+      // Update local state
+      const attachedMaterials = materials.filter(m => selectedMaterials.includes(m.id))
+      setLessonMaterials({
+        ...lessonMaterials,
+        [currentRecord.id]: attachedMaterials
+      })
+
+      setShowMaterialSelector(false)
+      setSelectedMaterials([])
+    } catch (err: any) {
+      setError(err.message)
+    }
+  }
+
+  const removeMaterial = async (lessonRecordId: string, materialId: string) => {
+    try {
+      const { error } = await supabase
+        .from('lesson_materials')
+        .delete()
+        .eq('lesson_record_id', lessonRecordId)
+        .eq('material_id', materialId)
+
+      if (error) throw error
+
+      // Update local state
+      const currentMaterials = lessonMaterials[lessonRecordId] || []
+      setLessonMaterials({
+        ...lessonMaterials,
+        [lessonRecordId]: currentMaterials.filter(m => m.id !== materialId)
+      })
+    } catch (err: any) {
+      setError(err.message)
+    }
+  }
+
   const filteredLessons = lessonFilter === 'upcoming'
     ? lessons.filter(lesson => new Date(lesson.start_time) >= new Date())
     : lessons
@@ -829,6 +935,8 @@ export function Lessons() {
                     setAttendance({})
                     setEditingAttendanceNote(null)
                     setAttendanceNoteText('')
+                    setShowMaterialSelector(false)
+                    setSelectedMaterials([])
                   }}
                   className="text-gray-500 hover:text-gray-700 text-xl min-w-[44px] min-h-[44px] flex items-center justify-center"
                 >
@@ -926,6 +1034,58 @@ export function Lessons() {
                         placeholder="Additional notes, student behavior, important observations..."
                         className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded focus:outline-none focus:border-blue-500 h-16 md:h-20 resize-none text-sm"
                       />
+                    </div>
+
+                    {/* Materials Section */}
+                    <div className="border-t pt-4">
+                      <div className="flex justify-between items-center mb-3">
+                        <h3 className="text-lg font-semibold">Materials ({lessonMaterials[lessonRecords[openLessonRecord]?.id]?.length || 0})</h3>
+                        <button
+                          onClick={() => openMaterialSelector(lessonRecords[openLessonRecord]?.id)}
+                          className="bg-blue-600 text-white px-3 py-1 rounded text-sm hover:bg-blue-700"
+                        >
+                          Attach Materials
+                        </button>
+                      </div>
+
+                      {lessonRecords[openLessonRecord] && lessonMaterials[lessonRecords[openLessonRecord].id]?.length > 0 ? (
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
+                          {lessonMaterials[lessonRecords[openLessonRecord].id].map((material) => (
+                            <div
+                              key={material.id}
+                              className="bg-gray-50 dark:bg-gray-700 p-3 rounded border flex justify-between items-start"
+                            >
+                              <div className="flex-1 min-w-0">
+                                <div className="font-medium text-sm">{material.title}</div>
+                                {material.description && (
+                                  <div className="text-xs text-gray-500 mt-1">{material.description}</div>
+                                )}
+                                {material.file_url && (
+                                  <a
+                                    href={material.file_url}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    className="text-xs text-blue-600 hover:text-blue-800 mt-1 inline-block break-all"
+                                  >
+                                    View File →
+                                  </a>
+                                )}
+                              </div>
+                              <button
+                                onClick={() => removeMaterial(lessonRecords[openLessonRecord].id, material.id)}
+                                className="text-red-600 hover:text-red-800 text-sm ml-2 flex-shrink-0"
+                                title="Remove material"
+                              >
+                                ×
+                              </button>
+                            </div>
+                          ))}
+                        </div>
+                      ) : (
+                        <div className="text-gray-500 italic text-sm bg-gray-50 dark:bg-gray-700 p-3 rounded">
+                          No materials attached. Click "Attach Materials" to add resources to this lesson.
+                        </div>
+                      )}
                     </div>
 
                     {/* Attendance Section */}
@@ -1081,12 +1241,93 @@ export function Lessons() {
                     setAttendance({})
                     setEditingAttendanceNote(null)
                     setAttendanceNoteText('')
+                    setShowMaterialSelector(false)
+                    setSelectedMaterials([])
                   }}
                   className="bg-gray-300 dark:bg-gray-600 text-gray-700 dark:text-gray-300 px-6 py-3 rounded hover:bg-gray-400 dark:hover:bg-gray-500 min-h-[44px]"
                 >
                   Cancel
                 </button>
               </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Material Selector Modal */}
+      {showMaterialSelector && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white dark:bg-gray-800 rounded-lg w-full max-w-2xl max-h-[70vh] overflow-hidden flex flex-col">
+            <div className="flex justify-between items-center p-4 border-b">
+              <h3 className="text-lg font-bold">Select Materials to Attach</h3>
+              <button
+                onClick={() => {
+                  setShowMaterialSelector(false)
+                  setSelectedMaterials([])
+                }}
+                className="text-gray-500 hover:text-gray-700 text-xl"
+              >
+                ×
+              </button>
+            </div>
+
+            <div className="flex-1 overflow-y-auto p-4">
+              {materials.length === 0 ? (
+                <div className="text-center py-8 text-gray-500">
+                  <p>No materials found in your library.</p>
+                  <p className="text-sm mt-2">Visit the Materials page to create materials first.</p>
+                </div>
+              ) : (
+                <div className="space-y-2">
+                  {materials.map((material) => (
+                    <label
+                      key={material.id}
+                      className="flex items-start gap-3 p-3 border border-gray-200 dark:border-gray-600 rounded hover:bg-gray-50 dark:hover:bg-gray-700 cursor-pointer"
+                    >
+                      <input
+                        type="checkbox"
+                        checked={selectedMaterials.includes(material.id)}
+                        onChange={(e) => {
+                          if (e.target.checked) {
+                            setSelectedMaterials([...selectedMaterials, material.id])
+                          } else {
+                            setSelectedMaterials(selectedMaterials.filter(id => id !== material.id))
+                          }
+                        }}
+                        className="mt-1 h-4 w-4"
+                      />
+                      <div className="flex-1 min-w-0">
+                        <div className="font-medium">{material.title}</div>
+                        {material.description && (
+                          <div className="text-sm text-gray-500 mt-1">{material.description}</div>
+                        )}
+                        {material.file_url && (
+                          <div className="text-xs text-blue-600 mt-1">Has attached file</div>
+                        )}
+                      </div>
+                    </label>
+                  ))}
+                </div>
+              )}
+            </div>
+
+            <div className="flex justify-end gap-2 p-4 border-t">
+              <button
+                onClick={() => {
+                  setShowMaterialSelector(false)
+                  setSelectedMaterials([])
+                }}
+                className="bg-gray-300 dark:bg-gray-600 text-gray-700 dark:text-gray-300 px-4 py-2 rounded hover:bg-gray-400 dark:hover:bg-gray-500"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={attachMaterials}
+                className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700"
+                disabled={materials.length === 0}
+              >
+                Attach {selectedMaterials.length} Material{selectedMaterials.length !== 1 ? 's' : ''}
+              </button>
             </div>
           </div>
         </div>

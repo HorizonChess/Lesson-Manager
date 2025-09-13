@@ -4,6 +4,7 @@ import { Dashboard } from './pages/Dashboard'
 import { Schools } from './pages/Schools'
 import { Groups } from './pages/Groups'
 import { Lessons } from './pages/Lessons'
+import { Materials } from './pages/Materials'
 import { AuthProvider } from './contexts/AuthContext'
 import { ProtectedRoute } from './components/auth/ProtectedRoute'
 
@@ -16,7 +17,7 @@ function App() {
           <Route path="schools" element={<Schools />} />
           <Route path="groups" element={<Groups />} />
           <Route path="lessons" element={<Lessons />} />
-          <Route path="materials" element={<div>Materials (Coming Soon)</div>} />
+          <Route path="materials" element={<Materials />} />
           <Route path="tasks" element={<div>Tasks (Coming Soon)</div>} />
           <Route path="reports" element={<div>Reports (Coming Soon)</div>} />
         </Route>
