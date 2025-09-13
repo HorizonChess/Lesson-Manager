@@ -1,69 +1,109 @@
-# React + TypeScript + Vite
+# Teacher Scheduler — React + Supabase MVP
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+A single-teacher application for managing multiple schools, subjects, groups, lessons, materials, attendance, and tasks. Built with React + TypeScript, Supabase, and designed mobile-first with RTL support.
 
-Currently, two official plugins are available:
+## 🎯 Project Vision
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Babel](https://babeljs.io/) for Fast Refresh
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
+Single-teacher app to manage multiple schools, multiple subjects per school, groups, lessons, lesson records, materials, attendance, tasks, and basic reports. Mobile-first, offline-friendly, RTL-ready.
 
-## Expanding the ESLint configuration
+## ✅ Current Status
 
-If you are developing a production application, we recommend updating the configuration to enable type-aware lint rules:
+**Phase 2 Complete** — Schools & Subjects management fully implemented
 
-```js
-export default tseslint.config([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
+- **M0 ✅**: Project skeleton with React + TypeScript + Vite + Tailwind + RTL toggle
+- **M1 ✅**: Supabase Auth + User bootstrap - Authentication verified working
+- **M2 ✅**: Schools & Subjects CRUD - Full implementation with user testing
 
-      // Remove tseslint.configs.recommended and replace with this
-      ...tseslint.configs.recommendedTypeChecked,
-      // Alternatively, use this for stricter rules
-      ...tseslint.configs.strictTypeChecked,
-      // Optionally, add this for stylistic rules
-      ...tseslint.configs.stylisticTypeChecked,
+**🎯 Next: M3** — Groups & Roster implementation
 
-      // Other configs...
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
+## 🚀 Quick Start
+
+1. **Clone and install dependencies:**
+   ```bash
+   npm install
+   ```
+
+2. **Set up Supabase:**
+   - Create a new Supabase project
+   - Copy your project URL and anon key
+   - Create `.env.local` file with your Supabase credentials:
+     ```
+     VITE_SUPABASE_URL=your_supabase_url
+     VITE_SUPABASE_ANON_KEY=your_anon_key
+     ```
+
+3. **Run development server:**
+   ```bash
+   npm run dev
+   ```
+
+## 🏗️ Tech Stack
+
+- **Frontend**: React 18 + TypeScript + Vite
+- **Styling**: Tailwind CSS with RTL support
+- **Backend**: Supabase (Auth, Database, Storage)
+- **State Management**: TanStack Query + Context
+- **Database**: PostgreSQL with Row Level Security (RLS)
+
+## 📊 Database Schema
+
+Current entities implemented:
+- **Users**: Authentication and user management
+- **Schools**: Multiple schools per user
+- **Subjects**: Multiple subjects per school
+
+Planned entities:
+- Groups, Lessons, LessonRecords, Attendance, Materials, Tasks, Tags
+
+## 🔐 Authentication
+
+Authentication system verified working:
+- Email/password sign-in
+- User bootstrapping on first login
+- Row Level Security (RLS) enabled
+- User-specific data isolation confirmed
+
+## 📱 Features Implemented
+
+- ✅ Responsive mobile-first design
+- ✅ Dark mode toggle
+- ✅ RTL language support toggle
+- ✅ User authentication & session management
+- ✅ Schools management (Create, Read, Update, Delete)
+- ✅ Subjects management per school
+- ✅ Real-time UI updates with optimistic updates
+
+## 🎯 Next Milestone: Groups & Roster
+
+Implementing group creation with:
+- School + Subject selection
+- Timeslots metadata
+- Student roster CRUD functionality
+
+## 📋 Development Workflow
+
+```bash
+# Development
+npm run dev
+
+# Build
+npm run build
+
+# Preview production build
+npm run preview
+
+# Lint
+npm run lint
 ```
 
-You can also install [eslint-plugin-react-x](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-x) and [eslint-plugin-react-dom](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-dom) for React-specific lint rules:
+## 🗂️ Project Structure
 
-```js
-// eslint.config.js
-import reactX from 'eslint-plugin-react-x'
-import reactDom from 'eslint-plugin-react-dom'
-
-export default tseslint.config([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-      // Enable lint rules for React
-      reactX.configs['recommended-typescript'],
-      // Enable lint rules for React DOM
-      reactDom.configs.recommended,
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
+```
+src/
+├── components/       # Reusable UI components
+├── contexts/        # React contexts (Auth, Theme)
+├── lib/            # Supabase client and utilities
+├── pages/          # Page components (Dashboard, Schools)
+├── types/          # TypeScript type definitions
+└── utils/          # Helper functions and test utilities
 ```

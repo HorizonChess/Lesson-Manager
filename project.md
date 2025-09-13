@@ -83,36 +83,70 @@ RTL support (Hebrew); accessible tap targets
 
 RLS-secured per user; device lock optional
 
+## Current Progress
+
+**✅ COMPLETED MILESTONES:**
+- **M0**: Project skeleton with React + TypeScript + Vite + Tailwind + RTL toggle ✅
+- **M1**: Supabase Auth + User bootstrap - Authentication working correctly ✅
+- **M2**: Schools & Subjects CRUD - Full implementation with user testing ✅
+
+**🎯 CURRENT TARGET:** M4 — Lessons & Recurring Scheduling
+
+**📊 Progress Summary:**
+- Phase 1 (M0-M1): Authentication & Infrastructure ✅ Complete
+- Phase 2 (M2): Schools & Subjects Management ✅ Complete
+- Phase 3 (M3): Groups & Roster ✅ Complete
+- Phase 4 (M4): Lessons & Recurring Scheduling - Next milestone
+
 Milestones (incremental, small steps)
-M0 — Project Skeleton
+M0 — Project Skeleton ✅ COMPLETE
 
 Create React app structure; install core libs; basic routing; Tailwind; RTL toggle scaffold.
 
 Acceptance: App boots; routes render; dark/RTL toggles visually reflect.
 
-M1 — Supabase Auth + User bootstrap
+M1 — Supabase Auth + User bootstrap ✅ COMPLETE
 
 Email/OAuth sign-in; ensure per-user row exists; RLS enabled on all tables.
 
 Acceptance: Sign in/out works; test query returns only own data.
 
-M2 — Schools & Subjects (multi-subject)
+M2 — Schools & Subjects (multi-subject) ✅ COMPLETE
 
 CRUD for School; CRUD for Subject under School.
 
 Acceptance: Create 2 schools with 2 subjects each; list/filter by school.
 
-M3 — Groups & Roster
+**✅ VERIFIED COMPLETE:**
+- ✅ Full CRUD operations: Create, Read, Update, Delete for schools and subjects
+- ✅ School filtering functionality implemented
+- ✅ Inline editing with Enter/Escape keyboard shortcuts
+- ✅ Real-time UI updates and error handling
+
+M3 — Groups & Roster ✅ COMPLETE
 
 Create Group (select School + Subject); add timeslots metadata; roster CRUD.
 
 Acceptance: Group details view shows timeslots; add 5 students to roster.
 
-M4 — Lessons (schedule list view only)
+**✅ VERIFIED COMPLETE:**
+- ✅ Group creation with School + Subject selection
+- ✅ Timeslots metadata (day of week + start/end times)
+- ✅ Full roster CRUD: Add, edit, delete students
+- ✅ Inline editing with Enter/Escape keyboard shortcuts
+- ✅ Dynamic timeslot management (add/remove multiple slots)
 
-Create lessons (from timeslots or ad-hoc); agenda/week list UI (no conflict logic).
+M4 — Lessons & Recurring Scheduling
 
-Acceptance: Upcoming 7–14 days show lessons; canceled flag hides from hours report.
+Create individual lessons (ad-hoc) and recurring lessons (from group timeslots); agenda/week list UI (no conflict logic).
+
+**Key Features:**
+- Manual lesson creation (one-off lessons)
+- **Recurring lesson generation** from group timeslots (e.g., "every Tuesday 3pm for 12 weeks")
+- Calendar/agenda view showing upcoming lessons
+- Cancel individual lessons without affecting recurrence pattern
+
+Acceptance: Create recurring lessons from group timeslots; upcoming 7–14 days show lessons; canceled flag hides from hours report.
 
 M5 — Lesson Record
 
