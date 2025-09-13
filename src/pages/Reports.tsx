@@ -180,16 +180,15 @@ export function Reports() {
         .lte('start_time', dateRange.end + 'T23:59:59')
         .order('start_time')
 
-      // Apply filters
-      if (selectedSchool) {
-        query = query.eq('groups.school_id', selectedSchool)
-      }
-      if (selectedSubject) {
-        query = query.eq('groups.subject_id', selectedSubject)
-      }
+      // Apply filters - only apply if specific selections are made
       if (selectedGroup) {
         query = query.eq('group_id', selectedGroup)
+      } else if (selectedSubject) {
+        query = query.eq('groups.subject_id', selectedSubject)
+      } else if (selectedSchool) {
+        query = query.eq('groups.school_id', selectedSchool)
       }
+      // If nothing selected, load all lessons
 
       console.log('Attendance query built, executing...')
       const { data: lessons, error } = await query
@@ -314,16 +313,15 @@ export function Reports() {
         .lte('start_time', dateRange.end + 'T23:59:59')
         .order('start_time')
 
-      // Apply filters
-      if (selectedSchool) {
-        query = query.eq('groups.school_id', selectedSchool)
-      }
-      if (selectedSubject) {
-        query = query.eq('groups.subject_id', selectedSubject)
-      }
+      // Apply filters - only apply if specific selections are made
       if (selectedGroup) {
         query = query.eq('group_id', selectedGroup)
+      } else if (selectedSubject) {
+        query = query.eq('groups.subject_id', selectedSubject)
+      } else if (selectedSchool) {
+        query = query.eq('groups.school_id', selectedSchool)
       }
+      // If nothing selected, load all lessons
 
       const { data: lessons, error } = await query
 
@@ -560,7 +558,12 @@ export function Reports() {
     worksheet['!cols'] = cols
 
     const fileName = `Attendance_Report_${new Date().toISOString().split('T')[0]}.xlsx`
-    XLSX.writeFile(workbook, fileName)
+
+    // Write file with proper options for Excel format
+    XLSX.writeFile(workbook, fileName, {
+      bookType: 'xlsx',
+      type: 'binary'
+    })
   }
 
   const exportHoursToExcel = () => {
@@ -596,7 +599,12 @@ export function Reports() {
     worksheet['!cols'] = cols
 
     const fileName = `Hours_Report_${new Date().toISOString().split('T')[0]}.xlsx`
-    XLSX.writeFile(workbook, fileName)
+
+    // Write file with proper options for Excel format
+    XLSX.writeFile(workbook, fileName, {
+      bookType: 'xlsx',
+      type: 'binary'
+    })
   }
 
   const exportCoverageToExcel = () => {
@@ -630,7 +638,12 @@ export function Reports() {
     worksheet['!cols'] = cols
 
     const fileName = `Coverage_Report_${new Date().toISOString().split('T')[0]}.xlsx`
-    XLSX.writeFile(workbook, fileName)
+
+    // Write file with proper options for Excel format
+    XLSX.writeFile(workbook, fileName, {
+      bookType: 'xlsx',
+      type: 'binary'
+    })
   }
 
   return (
