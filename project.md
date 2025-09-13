@@ -90,7 +90,7 @@ RLS-secured per user; device lock optional
 - **M1**: Supabase Auth + User bootstrap - Authentication working correctly ✅
 - **M2**: Schools & Subjects CRUD - Full implementation with user testing ✅
 
-**🎯 CURRENT TARGET:** M8 — Tasks
+**🎯 CURRENT TARGET:** M9 — Reports
 
 **📊 Progress Summary:**
 - Phase 1 (M0-M1): Authentication & Infrastructure ✅ Complete
@@ -100,7 +100,8 @@ RLS-secured per user; device lock optional
 - Phase 5 (M5): Lesson Record ✅ Complete
 - Phase 6 (M6): Attendance ✅ Complete
 - Phase 7 (M7): Lesson Plans & Tags ✅ Complete
-- Phase 8 (M8): Tasks - Next milestone
+- Phase 8 (M8): Tasks ✅ Complete
+- Phase 9 (M9): Reports - Next milestone
 
 Milestones (incremental, small steps)
 M0 — Project Skeleton ✅ COMPLETE
@@ -208,11 +209,22 @@ Acceptance: One lesson plan attached to two different lessons; no duplication.
 - ✅ Search and filtering functionality for large libraries
 - ✅ **Database migration**: Added subject_id to tags table with proper RLS policies
 
-M8 — Tasks
+M8 — Tasks ✅ COMPLETE
 
 Create tasks; link optionally to Group or Lesson; open/done; filter by status.
 
 Acceptance: Task list filters correctly; linked entities navigable.
+
+**✅ VERIFIED COMPLETE:**
+- ✅ Full CRUD operations for tasks (Create, Read, Update, Delete)
+- ✅ Task properties: title (required), description (optional), completion status
+- ✅ **Optional linking system**: Tasks can link to Groups OR Lessons (mutually exclusive) or remain unlinked
+- ✅ **Dual filtering system**: Filter by status (All/Open/Completed) and link type (All/Group/Lesson/Unlinked)
+- ✅ **Navigation functionality**: Linked entities are clickable and navigate to related pages
+- ✅ Visual task completion with checkbox interface and strike-through styling
+- ✅ Real-time task counters (open vs completed)
+- ✅ Mobile-responsive interface with inline editing
+- ✅ Proper database relations and real-time updates
 
 M9 — Reports
 
