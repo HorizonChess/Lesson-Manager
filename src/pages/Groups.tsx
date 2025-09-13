@@ -31,6 +31,13 @@ export function Groups() {
   const [editingStudent, setEditingStudent] = useState<string | null>(null)
   const [editStudentName, setEditStudentName] = useState('')
 
+  // Edit group states
+  const [editingGroup, setEditingGroup] = useState<string | null>(null)
+  const [editGroupName, setEditGroupName] = useState('')
+  const [editGroupSchool, setEditGroupSchool] = useState('')
+  const [editGroupSubject, setEditGroupSubject] = useState('')
+  const [editGroupTimeslots, setEditGroupTimeslots] = useState<Timeslot[]>([])
+
   // Filter subjects based on selected school
   const filteredSubjects = subjects.filter(subject =>
     selectedSchool ? subject.school_id === selectedSchool : false
@@ -122,6 +129,22 @@ export function Groups() {
     setTimeslots(timeslots.filter((_, i) => i !== index))
   }
 
+  // Edit timeslot helpers
+  const addEditTimeslot = () => {
+    setEditGroupTimeslots([...editGroupTimeslots, { day: '', startTime: '', endTime: '' }])
+  }
+
+  const updateEditTimeslot = (index: number, field: keyof Timeslot, value: string) => {
+    const updated = editGroupTimeslots.map((slot, i) =>
+      i === index ? { ...slot, [field]: value } : slot
+    )
+    setEditGroupTimeslots(updated)
+  }
+
+  const removeEditTimeslot = (index: number) => {
+    setEditGroupTimeslots(editGroupTimeslots.filter((_, i) => i !== index))
+  }
+
   const addGroup = async (e: React.FormEvent) => {
     e.preventDefault()
     if (!newGroupName.trim() || !selectedSchool || !selectedSubject) return
@@ -150,6 +173,39 @@ export function Groups() {
       setSelectedSubject('')
       setTimeslots([])
       setShowAddGroup(false)
+    } catch (err: any) {
+      setError(err.message)
+    }
+  }
+
+  const updateGroup = async (groupId: string) => {
+    if (!editGroupName.trim() || !editGroupSchool || !editGroupSubject) return
+
+    try {
+      const { data, error } = await supabase
+        .from('groups')
+        .update({
+          name: editGroupName.trim(),
+          school_id: editGroupSchool,
+          subject_id: editGroupSubject,
+          timeslots: editGroupTimeslots.filter(slot => slot.day && slot.startTime && slot.endTime)
+        })
+        .eq('id', groupId)
+        .select(`
+          *,
+          school:schools(name),
+          subject:subjects(name)
+        `)
+        .single()
+
+      if (error) throw error
+
+      setGroups(groups.map(g => g.id === groupId ? data : g))
+      setEditingGroup(null)
+      setEditGroupName('')
+      setEditGroupSchool('')
+      setEditGroupSubject('')
+      setEditGroupTimeslots([])
     } catch (err: any) {
       setError(err.message)
     }
@@ -411,6 +467,138 @@ export function Groups() {
         </div>
       )}
 
+      {editingGroup && (
+        <div className="bg-gray-50 dark:bg-gray-800 p-6 rounded-lg">
+          <h3 className="text-lg font-semibold mb-4">Edit Group</h3>
+          <form onSubmit={(e) => { e.preventDefault(); updateGroup(editingGroup); }} className="space-y-4">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <div>
+                <label className="block text-sm font-medium mb-2">Group Name</label>
+                <input
+                  type="text"
+                  value={editGroupName}
+                  onChange={(e) => setEditGroupName(e.target.value)}
+                  placeholder="Enter group name"
+                  className="w-full px-3 py-2 border border-gray-300 rounded focus:outline-none focus:border-blue-500"
+                  required
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium mb-2">School</label>
+                <select
+                  value={editGroupSchool}
+                  onChange={(e) => setEditGroupSchool(e.target.value)}
+                  className="w-full px-3 py-2 border border-gray-300 rounded focus:outline-none focus:border-blue-500"
+                  required
+                >
+                  <option value="">Select School</option>
+                  {schools.map(school => (
+                    <option key={school.id} value={school.id}>
+                      {school.name}
+                    </option>
+                  ))}
+                </select>
+              </div>
+              <div>
+                <label className="block text-sm font-medium mb-2">Subject</label>
+                <select
+                  value={editGroupSubject}
+                  onChange={(e) => setEditGroupSubject(e.target.value)}
+                  className="w-full px-3 py-2 border border-gray-300 rounded focus:outline-none focus:border-blue-500"
+                  required
+                  disabled={!editGroupSchool}
+                >
+                  <option value="">Select Subject</option>
+                  {subjects.filter(s => s.school_id === editGroupSchool).map(subject => (
+                    <option key={subject.id} value={subject.id}>
+                      {subject.name}
+                    </option>
+                  ))}
+                </select>
+              </div>
+            </div>
+
+            <div>
+              <div className="flex justify-between items-center mb-2">
+                <label className="block text-sm font-medium">Timeslots</label>
+                <button
+                  type="button"
+                  onClick={addEditTimeslot}
+                  className="bg-green-600 text-white px-3 py-1 rounded text-sm hover:bg-green-700"
+                >
+                  Add Timeslot
+                </button>
+              </div>
+              {editGroupTimeslots.length === 0 ? (
+                <p className="text-gray-500 text-sm italic">No timeslots added yet</p>
+              ) : (
+                <div className="space-y-2">
+                  {editGroupTimeslots.map((slot, index) => (
+                    <div key={index} className="grid grid-cols-4 gap-2 items-center">
+                      <select
+                        value={slot.day}
+                        onChange={(e) => updateEditTimeslot(index, 'day', e.target.value)}
+                        className="px-3 py-2 border border-gray-300 rounded focus:outline-none focus:border-blue-500"
+                      >
+                        <option value="">Day</option>
+                        <option value="Monday">Monday</option>
+                        <option value="Tuesday">Tuesday</option>
+                        <option value="Wednesday">Wednesday</option>
+                        <option value="Thursday">Thursday</option>
+                        <option value="Friday">Friday</option>
+                        <option value="Saturday">Saturday</option>
+                        <option value="Sunday">Sunday</option>
+                      </select>
+                      <input
+                        type="time"
+                        value={slot.startTime}
+                        onChange={(e) => updateEditTimeslot(index, 'startTime', e.target.value)}
+                        className="px-3 py-2 border border-gray-300 rounded focus:outline-none focus:border-blue-500"
+                      />
+                      <input
+                        type="time"
+                        value={slot.endTime}
+                        onChange={(e) => updateEditTimeslot(index, 'endTime', e.target.value)}
+                        className="px-3 py-2 border border-gray-300 rounded focus:outline-none focus:border-blue-500"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => removeEditTimeslot(index)}
+                        className="text-red-600 hover:text-red-800 text-sm"
+                      >
+                        Remove
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+
+            <div className="flex gap-2">
+              <button
+                type="submit"
+                className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700"
+              >
+                Update Group
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  setEditingGroup(null)
+                  setEditGroupName('')
+                  setEditGroupSchool('')
+                  setEditGroupSubject('')
+                  setEditGroupTimeslots([])
+                }}
+                className="bg-gray-300 text-gray-700 px-4 py-2 rounded hover:bg-gray-400"
+              >
+                Cancel
+              </button>
+            </div>
+          </form>
+        </div>
+      )}
+
       <div className="grid gap-6">
         {groups.length === 0 ? (
           <div className="text-center py-8 text-gray-500">
@@ -426,12 +614,26 @@ export function Groups() {
                     {(group as any).school?.name} • {(group as any).subject?.name}
                   </p>
                 </div>
-                <button
-                  onClick={() => deleteGroup(group.id)}
-                  className="bg-red-600 text-white px-3 py-1 rounded text-sm hover:bg-red-700"
-                >
-                  Delete
-                </button>
+                <div className="flex gap-2">
+                  <button
+                    onClick={() => {
+                      setEditingGroup(group.id)
+                      setEditGroupName(group.name)
+                      setEditGroupSchool(group.school_id)
+                      setEditGroupSubject(group.subject_id)
+                      setEditGroupTimeslots(group.timeslots || [])
+                    }}
+                    className="bg-blue-600 text-white px-3 py-1 rounded text-sm hover:bg-blue-700"
+                  >
+                    Edit
+                  </button>
+                  <button
+                    onClick={() => deleteGroup(group.id)}
+                    className="bg-red-600 text-white px-3 py-1 rounded text-sm hover:bg-red-700"
+                  >
+                    Delete
+                  </button>
+                </div>
               </div>
 
               <div className="space-y-4">

@@ -202,6 +202,56 @@ Loading/empty/error states; basic toasts; guard rails for deletes (confirmations
 
 Acceptance: No unhandled errors in common flows; smoke tests pass.
 
+M13 — Weekly Schedule View
+
+Calendar/weekly grid view showing recurring schedule; visual representation of all groups across days/times.
+
+**Key Features:**
+- Weekly calendar grid layout
+- "General Schedule" tab vs "Individual Lessons" tab
+- Visual time blocks showing group assignments
+- Color coding by school/subject
+
+Acceptance: Weekly view displays all recurring groups; easy to see daily/weekly patterns.
+
+M14 — Smart Schedule Builder
+
+Wizard-based schedule creation: select school → set teaching hours → specify group count → auto-generate equal time slots.
+
+**Key Features:**
+- "Set day's schedule" wizard workflow
+- Automatic slot distribution with proper spacing
+- Time calculation and equal division
+- Preview before confirming schedule
+
+Acceptance: Create full day schedule for school in under 1 minute; slots distributed evenly.
+
+M15 — Drag & Drop Schedule Management
+
+Interactive schedule editing with drag-and-drop for groups, time slots, and entire schools.
+
+**Key Features:**
+- Drag groups to reorder within a day
+- Resize time slots (expand/contract duration)
+- Drag entire schools to different days (migrates all groups/times)
+- Visual feedback during drag operations
+- Snap-to-grid for clean time alignment
+
+Acceptance: Reorder groups via drag-drop; resize slots; move school to different day.
+
+M16 — Schedule Conflict Detection & Resolution
+
+Smart conflict detection with resolution suggestions for overlapping times and scheduling issues.
+
+**Key Features:**
+- Real-time conflict detection during editing
+- Visual highlighting of problematic slots
+- Smart suggestions for resolving conflicts
+- Validation before saving changes
+- Automatic adjustment proposals
+
+Acceptance: Conflicts detected and highlighted; resolution suggestions provided; no invalid schedules saved.
+
 Acceptance checklist (MVP “Done”)
 
 Multi-school, multi-subject per school; groups bound to both
