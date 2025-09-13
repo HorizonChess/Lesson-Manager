@@ -90,7 +90,7 @@ RLS-secured per user; device lock optional
 - **M1**: Supabase Auth + User bootstrap - Authentication working correctly ✅
 - **M2**: Schools & Subjects CRUD - Full implementation with user testing ✅
 
-**🎯 CURRENT TARGET:** M8.5 — Housekeeping
+**🎯 CURRENT TARGET:** M8.6 — Group Overview Modal Foundation
 
 **📊 Progress Summary:**
 - Phase 1 (M0-M1): Authentication & Infrastructure ✅ Complete
@@ -101,7 +101,8 @@ RLS-secured per user; device lock optional
 - Phase 6 (M6): Attendance ✅ Complete
 - Phase 7 (M7): Lesson Plans & Tags ✅ Complete
 - Phase 8 (M8): Tasks ✅ Complete
-- Phase 8.5 (M8.5): Housekeeping - Next milestone
+- Phase 8.5 (M8.5): Housekeeping ✅ Complete
+- Phase 8.6 (M8.6): Group Overview Modal Foundation - Next milestone
 - Phase 9 (M9): Reports - Pending
 
 Milestones (incremental, small steps)
@@ -251,6 +252,72 @@ Unified School/Subject/Group Management UX: Consolidate the fragmented workflow 
        - If not divided between subjects: automatically collapse by default
 
 Acceptance: Teachers can set up complete teaching structure (school, subjects, groups with rosters) without navigating between multiple pages. Collapsing behavior is intuitive and automatically adapts to content size.
+
+**✅ VERIFIED COMPLETE:**
+- ✅ Unified School Overview interface combining Schools, Subjects, Groups, and Roster management
+- ✅ Smart collapsing logic: auto-collapse when >6 groups across multiple subjects
+- ✅ Click-anywhere collapsing for schools and subjects with folder/document icons
+- ✅ Student lists collapsed by default with toggle functionality
+- ✅ Removed redundant Groups navigation tab
+- ✅ Complete CRUD operations for all levels (School → Subject → Group → Student)
+- ✅ Hierarchical timeslot management integrated at group level
+
+M8.6 — Group Overview Modal Foundation
+
+Create comprehensive group management interface accessible by clicking groups in School Overview.
+
+**Goal:** Modal dialog with tabbed interface for deep group functionality without losing navigation context.
+
+**Key Features:**
+- Reusable modal component with proper accessibility (ARIA labels, keyboard navigation, focus management)
+- Click handler for groups in School Overview
+- Modal with group name, close button, and tab structure
+- Four main tabs: Students, Attendance, Lessons, Settings
+- Responsive design with mobile-friendly interactions
+
+Acceptance: Clicking any group opens modal with basic structure and navigation between tabs.
+
+M8.7 — Students & Settings Tabs
+
+Implement core group information and roster management within Group Overview modal.
+
+**Key Features:**
+- **Students Tab**: Reuse existing roster display/edit functionality from Groups page
+- **Settings Tab**: Group details (name, timeslots, school/subject info) with inline editing
+- Add/edit/delete student functionality
+- Group settings modification (name, schedule, reassign school/subject)
+- Delete group functionality with proper confirmation
+- Real-time updates reflected in School Overview
+
+Acceptance: Students and Settings tabs fully functional with all CRUD operations working seamlessly.
+
+M8.8 — Attendance Tab Integration
+
+Integrate attendance history and management within Group Overview modal.
+
+**Key Features:**
+- Reuse existing attendance components from Lessons page
+- Attendance history in tabular format with date/student matrix
+- Date range filtering for attendance records
+- Quick stats display (overall attendance percentage, individual student stats)
+- Link to individual lesson attendance details
+- Export attendance data functionality
+
+Acceptance: Complete attendance overview with filtering and detailed history accessible per group.
+
+M8.9 — Lessons Tab Integration
+
+Integrate lesson management and records within Group Overview modal.
+
+**Key Features:**
+- **Past Lessons Section**: List with lesson records, attendance summaries, covered topics
+- **Future Lessons Section**: Upcoming scheduled lessons with cancel/modify options
+- **Quick Actions**: "Start New Lesson" button, "View/Edit Lesson Record" links
+- Reuse existing lesson record modal from Lessons page
+- Lesson creation and recurring schedule management
+- Integration with lesson plans and materials
+
+Acceptance: Complete lesson lifecycle management accessible from group context with full integration to existing lesson functionality.
 
 M9 — Reports
 
