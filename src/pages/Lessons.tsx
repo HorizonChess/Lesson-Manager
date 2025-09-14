@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react'
 import { useAuth } from '../contexts/AuthContext'
 import { supabase } from '../lib/supabase'
+import { israeliCalendar } from '../services/israeliCalendar'
 import type { Lesson, Group, LessonRecord, RosterItem, Attendance, Material, LessonMaterial } from '../types/database'
 
 interface LessonWithGroup extends Lesson {
@@ -90,6 +91,32 @@ export function Lessons() {
 
       if (lessonsError) throw lessonsError
 
+      // Clean up lessons scheduled on vacation days
+      const lessonsToDelete: string[] = []
+      lessonsData?.forEach((lesson: any) => {
+        const lessonDate = new Date(lesson.start_time)
+        if (israeliCalendar.isVacationDay(lessonDate)) {
+          lessonsToDelete.push(lesson.id)
+          console.log(`Found lesson on vacation day: ${lessonDate.toLocaleDateString()} - ${lesson.group?.name}`)
+        }
+      })
+
+      // Delete lessons on vacation days
+      if (lessonsToDelete.length > 0) {
+        console.log(`Deleting ${lessonsToDelete.length} lessons scheduled on vacation days`)
+        const { error: deleteError } = await supabase
+          .from('lessons')
+          .delete()
+          .in('id', lessonsToDelete)
+
+        if (deleteError) {
+          console.error('Error deleting vacation lessons:', deleteError)
+        } else {
+          // Filter out deleted lessons from the data
+          lessonsData = lessonsData?.filter((lesson: any) => !lessonsToDelete.includes(lesson.id)) || []
+        }
+      }
+
       // Fetch lesson records
       const { data: recordsData, error: recordsError } = await supabase
         .from('lesson_records')
@@ -151,6 +178,20 @@ export function Lessons() {
     const startDateTime = new Date(`${lessonDate}T${startTime}`)
     const endDateTime = new Date(`${lessonDate}T${endTime}`)
 
+    // Check if the lesson is on a vacation day
+    if (israeliCalendar.isVacationDay(startDateTime)) {
+      const vacationPeriod = israeliCalendar.getVacationPeriod(startDateTime)
+      const vacationName = vacationPeriod ? vacationPeriod.name : 'a vacation period'
+
+      const confirmCreate = window.confirm(
+        `⚠️ This lesson is scheduled during ${vacationName} (${startDateTime.toLocaleDateString()}).\n\nAre you sure you want to create this lesson?`
+      )
+
+      if (!confirmCreate) {
+        return // User cancelled, don't create the lesson
+      }
+    }
+
     try {
       const { data, error } = await supabase
         .from('lessons')
@@ -189,11 +230,26 @@ export function Lessons() {
 
     const lessonsToCreate = []
     const today = new Date()
+    let skippedVacationDays = 0
 
     for (let week = 0; week < weeks; week++) {
       for (const timeslot of group.timeslots) {
         const lessonDate = getNextDateForDay(timeslot.day, week)
         if (lessonDate < today && week === 0) continue // Skip past dates in first week
+
+        // Check if the lesson date falls on a vacation day
+        if (israeliCalendar.isVacationDay(lessonDate)) {
+          skippedVacationDays++
+          console.log(`Skipping lesson on ${lessonDate.toLocaleDateString()} - vacation day: ${israeliCalendar.getVacationPeriod(lessonDate)?.name}`)
+          continue // Skip this lesson - it's during vacation
+        }
+
+        // Check if it's during summer break or outside school year
+        if (!israeliCalendar.isSchoolDay(lessonDate)) {
+          skippedVacationDays++
+          console.log(`Skipping lesson on ${lessonDate.toLocaleDateString()} - not a school day`)
+          continue
+        }
 
         const startDateTime = new Date(`${lessonDate.toISOString().split('T')[0]}T${timeslot.startTime}`)
         const endDateTime = new Date(`${lessonDate.toISOString().split('T')[0]}T${timeslot.endTime}`)
@@ -205,6 +261,11 @@ export function Lessons() {
           is_cancelled: false,
         })
       }
+    }
+
+    // Show user how many vacation days were automatically skipped
+    if (skippedVacationDays > 0) {
+      console.log(`Automatically skipped ${skippedVacationDays} lessons during vacation periods`)
     }
 
     try {

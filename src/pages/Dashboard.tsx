@@ -2,6 +2,7 @@ import { useAuth } from '../contexts/AuthContext'
 import { useEffect, useState } from 'react'
 import { supabase } from '../lib/supabase'
 import { Link } from 'react-router-dom'
+import { israeliCalendar } from '../services/israeliCalendar'
 import type { School, Subject, Group, Lesson, Task, Material } from '../types/database'
 
 interface DashboardStats {
@@ -43,11 +44,26 @@ export function Dashboard() {
   const [recentTasks, setRecentTasks] = useState<Task[]>([])
   const [recentMaterials, setRecentMaterials] = useState<Material[]>([])
 
+  // Calendar update prompt state
+  const [calendarUpdateNeeded, setCalendarUpdateNeeded] = useState<{needsUpdate: boolean, missingYear: string}>({needsUpdate: false, missingYear: ''})
+  const [showCalendarPrompt, setShowCalendarPrompt] = useState(false)
+
   useEffect(() => {
     if (user) {
       fetchDashboardData()
     }
   }, [user])
+
+  // Check for calendar update needs
+  useEffect(() => {
+    const updateCheck = israeliCalendar.checkForUpdateNeeded()
+    setCalendarUpdateNeeded(updateCheck)
+
+    // Auto-show prompt if update is needed and not already dismissed
+    if (updateCheck.needsUpdate && !localStorage.getItem(`calendar-prompt-dismissed-${updateCheck.missingYear}`)) {
+      setShowCalendarPrompt(true)
+    }
+  }, [])
 
   const fetchDashboardData = async () => {
     try {
@@ -189,6 +205,31 @@ export function Dashboard() {
     return date.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' })
   }
 
+  const dismissCalendarPrompt = () => {
+    setShowCalendarPrompt(false)
+    // Remember dismissal for this year so we don't show again
+    localStorage.setItem(`calendar-prompt-dismissed-${calendarUpdateNeeded.missingYear}`, 'true')
+  }
+
+  const showCalendarUpdateInstructions = () => {
+    const template = israeliCalendar.generateYearTemplate(calendarUpdateNeeded.missingYear)
+    const templateJson = JSON.stringify(template, null, 2)
+
+    alert(`Calendar Update Needed for ${calendarUpdateNeeded.missingYear}
+
+Please follow these steps:
+
+1. Visit the official vacation calendar: https://www.gov.il/he/pages/vacations25-26
+2. Open the file: src/data/israeliVacations.json
+3. Add the following template and replace DD/MM/YYYY with real dates:
+
+${templateJson}
+
+4. Save the file and the app will automatically use the new calendar data!`)
+
+    dismissCalendarPrompt()
+  }
+
   return (
     <div className="space-y-6">
       {/* Header */}
@@ -198,6 +239,41 @@ export function Dashboard() {
           Welcome back, {user?.email?.split('@')[0]}
         </p>
       </div>
+
+      {/* Calendar Update Prompt */}
+      {showCalendarPrompt && calendarUpdateNeeded.needsUpdate && (
+        <div className="bg-orange-50 border border-orange-200 rounded-lg p-4">
+          <div className="flex items-start space-x-3">
+            <div className="flex-shrink-0">
+              <svg className="h-5 w-5 text-orange-600" viewBox="0 0 20 20" fill="currentColor">
+                <path fillRule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
+              </svg>
+            </div>
+            <div className="flex-1">
+              <h3 className="text-sm font-medium text-orange-800">
+                Calendar Update Required
+              </h3>
+              <p className="mt-1 text-sm text-orange-700">
+                School year {calendarUpdateNeeded.missingYear} vacation calendar is missing. Please update the calendar data to ensure accurate lesson scheduling.
+              </p>
+              <div className="mt-3 flex space-x-3">
+                <button
+                  onClick={showCalendarUpdateInstructions}
+                  className="bg-orange-600 text-white px-3 py-1 rounded text-sm hover:bg-orange-700"
+                >
+                  Show Update Instructions
+                </button>
+                <button
+                  onClick={dismissCalendarPrompt}
+                  className="bg-gray-200 text-gray-800 px-3 py-1 rounded text-sm hover:bg-gray-300"
+                >
+                  Dismiss for Now
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Today's Overview */}
       <div className="bg-white dark:bg-gray-800 border rounded-lg p-6">

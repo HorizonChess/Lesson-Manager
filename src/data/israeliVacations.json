@@ -1,0 +1,65 @@
+{
+  "2025-2026": {
+    "schoolYearStart": "01/09/2025",
+    "schoolYearEnd": "30/06/2026",
+    "vacationPeriods": [
+      {
+        "name": "Rosh Hashana",
+        "start": "22/09/2025",
+        "end": "24/09/2025"
+      },
+      {
+        "name": "Yom Kippur",
+        "start": "01/10/2025",
+        "end": "02/10/2025"
+      },
+      {
+        "name": "Days Between Yom Kippur and Sukkot",
+        "start": "03/10/2025",
+        "end": "05/10/2025"
+      },
+      {
+        "name": "Sukkot",
+        "start": "06/10/2025",
+        "end": "14/10/2025"
+      },
+      {
+        "name": "Chanukah",
+        "start": "16/12/2025",
+        "end": "22/12/2025"
+      },
+      {
+        "name": "Tu BiShvat",
+        "start": "02/02/2026",
+        "end": "02/02/2026",
+        "note": "Regular school day - included for reference"
+      },
+      {
+        "name": "Purim",
+        "start": "03/03/2026",
+        "end": "04/03/2026"
+      },
+      {
+        "name": "Passover",
+        "start": "24/03/2026",
+        "end": "08/04/2026"
+      },
+      {
+        "name": "Independence Day",
+        "start": "22/04/2026",
+        "end": "22/04/2026"
+      },
+      {
+        "name": "Lag BaOmer",
+        "start": "05/05/2026",
+        "end": "05/05/2026",
+        "note": "School day for elementary, vacation for high schools"
+      },
+      {
+        "name": "Shavuot",
+        "start": "21/05/2026",
+        "end": "22/05/2026"
+      }
+    ]
+  }
+}
