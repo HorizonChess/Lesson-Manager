@@ -524,21 +524,23 @@ Acceptance: Lessons can be dragged between time slots; duration adjustable via e
 - ✅ **Database Integration**: Real-time lesson updates with proper error handling and state synchronization
 - ✅ **Mobile-Responsive**: Touch-friendly resize handles and drag interactions optimized for mobile devices
 
-M9.10 — Projected Work Hours Reports
+M9.10 — Advanced Recurring Lesson Management
 
-New report type for planning future teaching hours based on recurring lesson schedules and Israeli calendar.
+Enhance recurring lesson management with editing capabilities and recurring pattern modifications.
 
-**Goal:** Help teachers and institutions plan contracted hours and workload by projecting future teaching time.
+**Current Problem:** Users can generate recurring lessons but cannot modify existing patterns, change timeslots, or manage complex recurring schedules.
+
+**Goal:** Provide comprehensive recurring lesson management including editing existing patterns, modifying timeslots, and managing recurring lesson lifecycles.
 
 **Key Features:**
-- **Future Hours Calculation**: Project teaching hours based on recurring lesson schedules
-- **Israeli Calendar Integration**: Exclude vacation periods from hour projections
-- **School/Subject Breakdown**: Filter projected hours by school, subject, group
-- **Date Range Projections**: Calculate hours for specific future periods (semester, year)
-- **Contract Planning**: Compare projected hours against contracted commitments
-- **Vacation Impact Analysis**: Show how vacation periods affect total teaching hours
+- **Edit Existing Recurring Patterns**: Modify timeslots of already-generated recurring lessons
+- **Bulk Schedule Changes**: Change entire recurring patterns (move all Tuesday lessons to Wednesday)
+- **Recurring Pattern Deletion**: Remove entire recurring sequences with confirmation
+- **Pattern Conflict Detection**: Visual warnings when patterns overlap or conflict
+- **Advanced Templates**: Monthly patterns, custom intervals, seasonal schedules
+- **Pattern Overview**: Visual display of all active recurring patterns per group
 
-Acceptance: Projected hours reports accurately forecast future teaching time while accounting for Israeli school calendar; useful for contract planning and workload management.
+Acceptance: Users can modify existing recurring lesson timeslots; bulk edit entire recurring patterns; manage complex recurring schedules with visual feedback and conflict detection.
 
 M11 — Offline-first
 

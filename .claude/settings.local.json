@@ -6,7 +6,8 @@
       "Bash(npm install:*)",
       "Bash(npm info:*)",
       "WebSearch",
-      "mcp__playwright__browser_console_messages"
+      "mcp__playwright__browser_console_messages",
+      "mcp__playwright__browser_click"
     ],
     "deny": [],
     "ask": []
