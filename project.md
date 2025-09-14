@@ -442,6 +442,10 @@ Acceptance: All three reports generate accurate data; attendance percentages, ho
 - ✅ **Excel Export Functionality**: Full .xlsx export with auto-sized columns, proper formatting, and date-stamped filenames
 - ✅ **Error Handling**: Comprehensive error states and loading indicators
 - ✅ **Data Validation**: Reports use real database queries with proper joins and filtering
+- ✅ **Fixed Date Range Logic**: Default range now 24th of previous month to 24th of current month for proper monthly reporting
+- ✅ **Fixed Filter Logic**: Reports load all lessons when no specific filters selected instead of empty results
+- ✅ **Enhanced Hours Report**: Shows past/future lesson breakdown with color-coded statistics and cancelled lesson tracking
+- ✅ **Working Excel Export**: Confirmed downloading proper .xlsx files with correct MIME types and formatting
 
 M9.7 — Israeli Calendar Data Integration
 
