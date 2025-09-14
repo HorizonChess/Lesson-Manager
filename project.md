@@ -451,7 +451,7 @@ Acceptance: All three reports generate accurate data; attendance percentages, ho
 - ✅ **ENHANCED: Simplified Excel Export**: Clean 3-column format (School, Lesson Date, Hours) with date-by-date breakdown and totals
 - ✅ **ENHANCED: Working Excel Downloads**: Fixed all Excel export issues - now generates proper .xlsx files that open correctly in Excel
 
-M9.7 — Israeli Calendar Data Integration
+M9.7 — Israeli Calendar Data Integration ✅ COMPLETE
 
 Integrate Israeli school calendar with holiday and vacation schedules for accurate lesson planning.
 
@@ -468,37 +468,50 @@ Integrate Israeli school calendar with holiday and vacation schedules for accura
 
 Acceptance: Calendar service correctly identifies Israeli holidays and school vacation periods for current academic year.
 
-M9.8 — Calendar-Aware Recurring Lessons
+**✅ VERIFIED COMPLETE:**
+- ✅ **Israeli Vacation Data**: Complete 2025-2026 school year data in DD/MM/YYYY format with all major holidays
+- ✅ **Calendar Service**: Full IsraeliCalendarService with vacation day detection, school day validation, and update prompting
+- ✅ **Update Management**: July 10th trigger system with template generation for new school years
+- ✅ **Recurring Lesson Integration**: Vacation-aware lesson generation that automatically skips vacation periods
+- ✅ **Existing Lesson Cleanup**: Automatic deletion of lessons scheduled on vacation days during app load
+- ✅ **User Confirmation**: Warning system when manually creating lessons on vacation days with vacation period name display
+- ✅ **Data Structure**: JSON-based vacation periods with school year organization and proper date parsing
+- ✅ **Test Verification**: Complete test suite confirming vacation day detection accuracy
 
-Update recurring lesson generation to automatically skip Israeli holidays and vacation periods.
+M9.8 — Calendar Interface Foundation
 
-**Current Problem:** When generating "12 weeks of recurring lessons", system creates lessons during vacation periods that will never happen.
+Transform lesson management from list-based to interactive calendar grid layout with drag-and-drop functionality.
 
-**Goal:** Smart recurring lesson generation that produces realistic teaching schedules respecting Israeli school calendar.
+**Current Problem:** List-based lesson view is difficult to visualize schedule patterns and conflicts; scattered "Generate 12 Weeks" buttons create fragmented recurring lesson management.
 
-**Key Features:**
-- **Vacation-Aware Generation**: Skip lesson creation during vacation periods
-- **Holiday Detection**: Automatically exclude individual holiday dates
-- **Gap Handling**: Properly handle lesson gaps and numbering across vacation breaks
-- **Academic Year Logic**: Align lesson generation with Israeli academic year (September-June)
-- **Realistic Timelines**: Show teachers actual number of teaching weeks vs calendar weeks
-
-Acceptance: Recurring lesson generation produces schedules that teachers can actually follow; no lessons scheduled during known vacation periods or major holidays.
-
-M9.9 — Calendar-Aware Scheduling UI
-
-Enhance lesson scheduling interfaces with Israeli calendar awareness and visual vacation indicators.
-
-**Goal:** Provide teachers with clear visual feedback about holidays and vacation periods during lesson planning.
+**Goal:** Create intuitive calendar-based lesson management with visual time slots, drag-drop editing, and unified recurring lesson management.
 
 **Key Features:**
-- **Holiday Indicators**: Visual markers for holidays in date pickers and calendar views
-- **Vacation Period Highlights**: Clear indication of school vacation periods
-- **Recurring Lesson Wizard**: Show "actual teaching weeks" vs "calendar weeks" during setup
-- **Schedule Warnings**: Alert users when trying to schedule during vacation periods
-- **Academic Timeline**: Visual academic year timeline with vacation periods marked
+- **Weekly Calendar Grid**: Default weekly view with time slots (7 AM - 10 PM in 30-minute increments)
+- **Visual Lesson Blocks**: Color-coded lesson blocks showing group, school, subject information
+- **Israeli Calendar Integration**: Vacation days visually highlighted with prevention of scheduling
+- **Week Navigation**: Back/forward arrows to navigate between weeks
+- **Mobile-Responsive**: Touch-friendly interface with appropriate gestures
 
-Acceptance: Teachers can easily see vacation periods and holidays when scheduling lessons; system provides helpful warnings for vacation period scheduling attempts.
+Acceptance: Lessons display in calendar grid format; vacation days clearly marked; week navigation functional on desktop and mobile.
+
+M9.9 — Drag-Drop Lesson Editing & Recurring Management
+
+Enable intuitive lesson manipulation with drag-drop, resize, and centralized recurring lesson management.
+
+**Current Problem:** No visual way to reschedule lessons; recurring lesson generation scattered across individual groups.
+
+**Goal:** Interactive lesson editing with drag-drop, resize capabilities, and unified recurring lesson management interface.
+
+**Key Features:**
+- **Drag-and-Drop**: Move lessons between days/times with mobile long-press support
+- **Resize Functionality**: Drag lesson edges to adjust duration with 15-minute visual granularity
+- **Conflict Warnings**: Visual overlap warnings without preventing scheduling
+- **Smart Slot Behavior**: Other lessons adjust position when new lesson dropped (like mobile app rearrangement)
+- **Unified Recurring Management**: Single "Manage Recurring Lessons" modal replacing individual group buttons
+- **Recurring Lesson Templates**: Quick setup for 12 weeks, semester, school year patterns
+
+Acceptance: Lessons can be dragged between time slots; duration adjustable via edge dragging; all recurring lesson management centralized in single interface; mobile touch interactions work similarly to app rearrangement.
 
 M9.10 — Projected Work Hours Reports
 

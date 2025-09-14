@@ -4,7 +4,9 @@
       "Bash(npm uninstall:*)",
       "Bash(npm ls:*)",
       "Bash(npm install:*)",
-      "Bash(npm info:*)"
+      "Bash(npm info:*)",
+      "WebSearch",
+      "mcp__playwright__browser_console_messages"
     ],
     "deny": [],
     "ask": []

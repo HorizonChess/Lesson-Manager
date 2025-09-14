@@ -1,8 +1,13 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useMemo } from 'react'
+import { Calendar, momentLocalizer } from 'react-big-calendar'
+import moment from 'moment'
 import { useAuth } from '../contexts/AuthContext'
 import { supabase } from '../lib/supabase'
 import { israeliCalendar } from '../services/israeliCalendar'
-import type { Lesson, Group, LessonRecord, RosterItem, Attendance, Material, LessonMaterial } from '../types/database'
+import type { Lesson, Group, LessonRecord, RosterItem, Attendance, Material } from '../types/database'
+import 'react-big-calendar/lib/css/react-big-calendar.css'
+
+const localizer = momentLocalizer(moment)
 
 interface LessonWithGroup extends Lesson {
   group: {
@@ -10,6 +15,19 @@ interface LessonWithGroup extends Lesson {
     school: { name: string }
     subject: { name: string }
   }
+}
+
+interface CalendarEvent {
+  title: string
+  start: Date
+  end: Date
+  resource?: any
+}
+
+interface LessonEvent extends CalendarEvent {
+  id: string
+  lesson: LessonWithGroup
+  isVacationDay: boolean
 }
 
 export function Lessons() {
@@ -29,6 +47,8 @@ export function Lessons() {
 
   // View states
   const [lessonFilter, setLessonFilter] = useState<'upcoming' | 'all'>('upcoming')
+  const [currentDate, setCurrentDate] = useState(new Date())
+  const [calendarView, setCalendarView] = useState<'calendar' | 'list'>('calendar')
 
   // Lesson record states
   const [openLessonRecord, setOpenLessonRecord] = useState<string | null>(null)
@@ -77,7 +97,7 @@ export function Lessons() {
       if (groupsError) throw groupsError
 
       // Fetch lessons with group info
-      const { data: lessonsData, error: lessonsError } = await supabase
+      let { data: lessonsData, error: lessonsError } = await supabase
         .from('lessons')
         .select(`
           *,
@@ -728,6 +748,100 @@ export function Lessons() {
     return acc
   }, {} as Record<string, LessonWithGroup[]>)
 
+  // Convert lessons to calendar events
+  const calendarEvents: LessonEvent[] = useMemo(() => {
+    return lessons.map(lesson => {
+      const startDate = new Date(lesson.start_time)
+      const endDate = new Date(lesson.end_time)
+      const isVacationDay = israeliCalendar.isVacationDay(startDate)
+
+      return {
+        id: lesson.id,
+        title: lesson.group.name,
+        start: startDate,
+        end: endDate,
+        lesson,
+        isVacationDay,
+        resource: {
+          school: lesson.group.school.name,
+          subject: lesson.group.subject.name,
+          cancelled: lesson.is_cancelled
+        }
+      }
+    })
+  }, [lessons])
+
+  // Calendar event handlers
+  const handleSelectEvent = (event: LessonEvent) => {
+    openLessonRecordForm(event.lesson.id)
+  }
+
+  const handleSelectSlot = ({ start, end }: { start: Date, end: Date }) => {
+    // Don't allow selection on vacation days
+    if (israeliCalendar.isVacationDay(start)) {
+      const vacationPeriod = israeliCalendar.getVacationPeriod(start)
+      alert(`Cannot schedule lessons during ${vacationPeriod?.name || 'vacation period'}`)
+      return
+    }
+
+    // Set up form for new lesson creation
+    setLessonDate(start.toISOString().split('T')[0])
+    setStartTime(moment(start).format('HH:mm'))
+    setEndTime(moment(end).format('HH:mm'))
+    setShowAddLesson(true)
+  }
+
+  // Calendar style getters
+  const eventStyleGetter = (event: LessonEvent) => {
+    let backgroundColor = '#3174ad'
+    let borderColor = '#265985'
+
+    // Color code by school
+    const schoolHash = event.lesson.group.school.name.split('').reduce((a, b) => {
+      a = ((a << 5) - a) + b.charCodeAt(0)
+      return a & a
+    }, 0)
+
+    const hue = Math.abs(schoolHash) % 360
+    backgroundColor = `hsl(${hue}, 60%, 50%)`
+    borderColor = `hsl(${hue}, 60%, 35%)`
+
+    if (event.lesson.is_cancelled) {
+      backgroundColor = '#dc2626'
+      borderColor = '#b91c1c'
+    }
+
+    if (event.isVacationDay) {
+      backgroundColor = '#6b7280'
+      borderColor = '#4b5563'
+    }
+
+    return {
+      style: {
+        backgroundColor,
+        borderColor,
+        color: 'white',
+        border: `2px solid ${borderColor}`,
+        borderRadius: '4px',
+        opacity: event.lesson.is_cancelled ? 0.7 : 1,
+        fontSize: '12px',
+        fontWeight: '500'
+      }
+    }
+  }
+
+  const dayStyleGetter = (date: Date) => {
+    if (israeliCalendar.isVacationDay(date)) {
+      return {
+        style: {
+          backgroundColor: '#fef3c7',
+          backgroundImage: 'repeating-linear-gradient(45deg, transparent, transparent 10px, rgba(0,0,0,.1) 10px, rgba(0,0,0,.1) 20px)'
+        }
+      }
+    }
+    return {}
+  }
+
   if (loading) {
     return (
       <div className="flex items-center justify-center h-64">
@@ -741,12 +855,36 @@ export function Lessons() {
       <div className="flex justify-between items-center">
         <h2 className="text-2xl font-bold">Lessons</h2>
         <div className="flex gap-2">
-          <button
-            onClick={() => setLessonFilter(lessonFilter === 'upcoming' ? 'all' : 'upcoming')}
-            className="bg-gray-600 text-white px-3 py-2 rounded hover:bg-gray-700 text-sm"
-          >
-            {lessonFilter === 'upcoming' ? 'Show All' : 'Show Upcoming'}
-          </button>
+          <div className="flex bg-gray-100 dark:bg-gray-700 rounded-lg p-1">
+            <button
+              onClick={() => setCalendarView('calendar')}
+              className={`px-3 py-1 rounded text-sm transition-colors ${
+                calendarView === 'calendar'
+                  ? 'bg-blue-600 text-white'
+                  : 'text-gray-600 dark:text-gray-300 hover:text-gray-800 dark:hover:text-gray-100'
+              }`}
+            >
+              Calendar
+            </button>
+            <button
+              onClick={() => setCalendarView('list')}
+              className={`px-3 py-1 rounded text-sm transition-colors ${
+                calendarView === 'list'
+                  ? 'bg-blue-600 text-white'
+                  : 'text-gray-600 dark:text-gray-300 hover:text-gray-800 dark:hover:text-gray-100'
+              }`}
+            >
+              List
+            </button>
+          </div>
+          {calendarView === 'list' && (
+            <button
+              onClick={() => setLessonFilter(lessonFilter === 'upcoming' ? 'all' : 'upcoming')}
+              className="bg-gray-600 text-white px-3 py-2 rounded hover:bg-gray-700 text-sm"
+            >
+              {lessonFilter === 'upcoming' ? 'Show All' : 'Show Upcoming'}
+            </button>
+          )}
           <button
             onClick={() => setShowAddLesson(true)}
             className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700"
@@ -881,73 +1019,199 @@ export function Lessons() {
         </div>
       )}
 
-      {/* Lessons List */}
-      <div className="space-y-4">
-        {Object.keys(groupedLessons).length === 0 ? (
-          <div className="text-center py-8 text-gray-500">
-            No lessons yet. Add individual lessons or generate recurring lessons from your groups!
-          </div>
-        ) : (
-          Object.entries(groupedLessons).map(([date, dayLessons]) => (
-            <div key={date} className="bg-white dark:bg-gray-800 border rounded-lg p-4">
-              <h3 className="font-semibold text-lg mb-3 border-b pb-2">{date}</h3>
-              <div className="space-y-2">
-                {dayLessons.map((lesson) => {
-                  const { time: startTime } = formatDateTime(lesson.start_time)
-                  const { time: endTime } = formatDateTime(lesson.end_time)
+      {/* Calendar and List Views */}
+      {calendarView === 'calendar' ? (
+        <div className="bg-white dark:bg-gray-800 rounded-lg border overflow-hidden">
+          {/* Calendar Toolbar */}
+          <div className="flex justify-between items-center p-3 bg-gray-50 dark:bg-gray-700 border-b">
+            <div className="flex items-center gap-2">
+              <button
+                onClick={() => setCurrentDate(moment(currentDate).subtract(1, 'week').toDate())}
+                className="p-2 hover:bg-gray-100 dark:hover:bg-gray-600 rounded transition-colors"
+                title="Previous week"
+              >
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+                </svg>
+              </button>
 
-                  return (
-                    <div
-                      key={lesson.id}
-                      className={`flex justify-between items-center p-3 rounded ${
-                        lesson.is_cancelled
-                          ? 'bg-red-50 dark:bg-red-900/20 border border-red-200'
-                          : 'bg-gray-50 dark:bg-gray-700'
-                      }`}
-                    >
-                      <div className={lesson.is_cancelled ? 'opacity-60 line-through' : ''}>
-                        <div className="font-medium">
-                          {lesson.group.name}
-                        </div>
-                        <div className="text-sm text-gray-500">
-                          {lesson.group.school.name} • {lesson.group.subject.name}
-                        </div>
-                        <div className="text-sm text-gray-600">
-                          {startTime} - {endTime}
-                        </div>
-                      </div>
-                      <div className="flex gap-1">
-                        <button
-                          onClick={() => openLessonRecordForm(lesson.id)}
-                          className="bg-blue-600 text-white px-2 py-1 rounded text-xs hover:bg-blue-700"
-                        >
-                          View Lesson
-                        </button>
-                        <button
-                          onClick={() => toggleLessonCancellation(lesson.id, lesson.is_cancelled)}
-                          className={`px-2 py-1 rounded text-xs ${
-                            lesson.is_cancelled
-                              ? 'bg-green-600 text-white hover:bg-green-700'
-                              : 'bg-yellow-600 text-white hover:bg-yellow-700'
-                          }`}
-                        >
-                          {lesson.is_cancelled ? 'Restore' : 'Cancel'}
-                        </button>
-                        <button
-                          onClick={() => deleteLesson(lesson.id)}
-                          className="bg-red-600 text-white px-2 py-1 rounded text-xs hover:bg-red-700"
-                        >
-                          Delete
-                        </button>
-                      </div>
-                    </div>
-                  )
-                })}
+              <button
+                onClick={() => setCurrentDate(new Date())}
+                className="px-3 py-1 bg-blue-600 text-white rounded text-sm hover:bg-blue-700 transition-colors"
+              >
+                Today
+              </button>
+
+              <button
+                onClick={() => setCurrentDate(moment(currentDate).add(1, 'week').toDate())}
+                className="p-2 hover:bg-gray-100 dark:hover:bg-gray-600 rounded transition-colors"
+                title="Next week"
+              >
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                </svg>
+              </button>
+            </div>
+
+            <h3 className="text-lg font-semibold">
+              {moment(currentDate).startOf('week').format('MMM D')} - {moment(currentDate).endOf('week').format('MMM D, YYYY')}
+            </h3>
+
+            <div className="flex items-center gap-2 text-xs text-gray-600 dark:text-gray-400">
+              <div className="flex items-center gap-1">
+                <div className="w-3 h-3 rounded" style={{ backgroundColor: '#fef3c7', backgroundImage: 'repeating-linear-gradient(45deg, transparent, transparent 4px, rgba(0,0,0,.1) 4px, rgba(0,0,0,.1) 8px)' }}></div>
+                <span>Vacation</span>
               </div>
             </div>
-          ))
-        )}
-      </div>
+          </div>
+
+          {/* Calendar Component */}
+          <div className="h-[600px]">
+            <style dangerouslySetInnerHTML={{
+              __html: `
+                .rbc-calendar {
+                  font-family: inherit;
+                }
+                .rbc-toolbar {
+                  display: none; /* Hide default toolbar, we use custom one */
+                }
+                .rbc-time-view {
+                  min-height: 600px;
+                }
+                .rbc-time-slot {
+                  border-top: 1px solid #e5e7eb;
+                }
+                .rbc-time-slot:nth-child(even) {
+                  border-top: 1px dashed #e5e7eb;
+                }
+                .rbc-timeslot-group {
+                  min-height: 40px;
+                }
+                .rbc-event {
+                  border-radius: 4px;
+                  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.12);
+                }
+                .rbc-event:hover {
+                  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+                }
+                .rbc-header {
+                  font-weight: 600;
+                  padding: 12px 8px;
+                  background: #f9fafb;
+                  border-bottom: 2px solid #e5e7eb;
+                }
+                .dark .rbc-header {
+                  background: #374151;
+                  color: #f3f4f6;
+                }
+                .rbc-time-header-gutter,
+                .rbc-time-gutter {
+                  background: #f9fafb;
+                  border-right: 2px solid #e5e7eb;
+                }
+                .dark .rbc-time-header-gutter,
+                .dark .rbc-time-gutter {
+                  background: #374151;
+                  color: #f3f4f6;
+                }
+              `
+            }} />
+
+            <Calendar
+              localizer={localizer}
+              events={calendarEvents}
+              startAccessor="start"
+              endAccessor="end"
+              date={currentDate}
+              onNavigate={setCurrentDate}
+              view="week"
+              views={['week']}
+              step={15} // 15-minute increments for visual granularity
+              timeslots={2} // 2 slots per 30-minute period (gives us 15-min visual blocks)
+              min={new Date(0, 0, 0, 7, 0)} // 7:00 AM
+              max={new Date(0, 0, 0, 22, 0)} // 10:00 PM
+              onSelectEvent={handleSelectEvent}
+              onSelectSlot={handleSelectSlot}
+              selectable
+              eventPropGetter={eventStyleGetter}
+              dayPropGetter={dayStyleGetter}
+              formats={{
+                timeGutterFormat: 'HH:mm',
+                eventTimeRangeFormat: ({ start, end }: { start: Date, end: Date }) =>
+                  `${moment(start).format('HH:mm')} - ${moment(end).format('HH:mm')}`
+              }}
+            />
+          </div>
+        </div>
+      ) : (
+        /* List View */
+        <div className="space-y-4">
+          {Object.keys(groupedLessons).length === 0 ? (
+            <div className="text-center py-8 text-gray-500">
+              No lessons yet. Add individual lessons or generate recurring lessons from your groups!
+            </div>
+          ) : (
+            Object.entries(groupedLessons).map(([date, dayLessons]) => (
+              <div key={date} className="bg-white dark:bg-gray-800 border rounded-lg p-4">
+                <h3 className="font-semibold text-lg mb-3 border-b pb-2">{date}</h3>
+                <div className="space-y-2">
+                  {dayLessons.map((lesson) => {
+                    const { time: startTime } = formatDateTime(lesson.start_time)
+                    const { time: endTime } = formatDateTime(lesson.end_time)
+
+                    return (
+                      <div
+                        key={lesson.id}
+                        className={`flex justify-between items-center p-3 rounded ${
+                          lesson.is_cancelled
+                            ? 'bg-red-50 dark:bg-red-900/20 border border-red-200'
+                            : 'bg-gray-50 dark:bg-gray-700'
+                        }`}
+                      >
+                        <div className={lesson.is_cancelled ? 'opacity-60 line-through' : ''}>
+                          <div className="font-medium">
+                            {lesson.group.name}
+                          </div>
+                          <div className="text-sm text-gray-500">
+                            {lesson.group.school.name} • {lesson.group.subject.name}
+                          </div>
+                          <div className="text-sm text-gray-600">
+                            {startTime} - {endTime}
+                          </div>
+                        </div>
+                        <div className="flex gap-1">
+                          <button
+                            onClick={() => openLessonRecordForm(lesson.id)}
+                            className="bg-blue-600 text-white px-2 py-1 rounded text-xs hover:bg-blue-700"
+                          >
+                            View Lesson
+                          </button>
+                          <button
+                            onClick={() => toggleLessonCancellation(lesson.id, lesson.is_cancelled)}
+                            className={`px-2 py-1 rounded text-xs ${
+                              lesson.is_cancelled
+                                ? 'bg-green-600 text-white hover:bg-green-700'
+                                : 'bg-yellow-600 text-white hover:bg-yellow-700'
+                            }`}
+                          >
+                            {lesson.is_cancelled ? 'Restore' : 'Cancel'}
+                          </button>
+                          <button
+                            onClick={() => deleteLesson(lesson.id)}
+                            className="bg-red-600 text-white px-2 py-1 rounded text-xs hover:bg-red-700"
+                          >
+                            Delete
+                          </button>
+                        </div>
+                      </div>
+                    )
+                  })}
+                </div>
+              </div>
+            ))
+          )}
+        </div>
+      )}
 
       {/* Enhanced Lesson Record Modal */}
       {openLessonRecord && (
