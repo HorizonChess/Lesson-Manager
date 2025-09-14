@@ -35,6 +35,31 @@ interface HoursReportData {
   pastLessons?: number
   futureLessons?: number
   cancelledLessons?: number
+  dates: Array<{date: string, hours: number}>
+  totalDates: number
+}
+
+// Calculate academic hours based on lesson duration
+const calculateAcademicHours = (startTime: string, endTime: string): number => {
+  const start = new Date(startTime)
+  const end = new Date(endTime)
+  const durationMinutes = (end.getTime() - start.getTime()) / (1000 * 60)
+
+  // Academic hour calculation:
+  // 30-60 minutes = 1 hour
+  // 61-110 minutes = 2 hours
+  // 111-180 minutes = 3 hours
+  // Pattern: every 50 minutes beyond first 60 = +1 hour
+  if (durationMinutes <= 60) {
+    return 1
+  } else if (durationMinutes <= 110) {
+    return 2
+  } else if (durationMinutes <= 180) {
+    return 3
+  } else {
+    // For longer lessons, continue the pattern
+    return Math.ceil((durationMinutes - 60) / 50) + 1
+  }
 }
 
 export function Reports() {
@@ -69,6 +94,19 @@ export function Reports() {
   const [attendanceReport, setAttendanceReport] = useState<AttendanceReportData[]>([])
   const [coverageReport, setCoverageReport] = useState<CoverageReportData[]>([])
   const [hoursReport, setHoursReport] = useState<HoursReportData[]>([])
+
+  // UI state for expandable rows
+  const [expandedRows, setExpandedRows] = useState<Set<number>>(new Set())
+
+  const toggleRowExpansion = (index: number) => {
+    const newExpandedRows = new Set(expandedRows)
+    if (newExpandedRows.has(index)) {
+      newExpandedRows.delete(index)
+    } else {
+      newExpandedRows.add(index)
+    }
+    setExpandedRows(newExpandedRows)
+  }
 
   useEffect(() => {
     if (user) {
@@ -214,13 +252,13 @@ export function Reports() {
       lessons?.forEach(lesson => {
         if (lesson.is_cancelled || !lesson.groups || !lesson.lesson_records?.[0]) return
 
-        const group = lesson.groups
+        const group = lesson.groups as any
         const schoolName = group.schools?.name || 'Unknown School'
         const subjectName = group.subjects?.name || 'Unknown Subject'
         const groupName = group.name || 'Unknown Group'
 
         // Process each student in the roster
-        group.roster_items?.forEach(student => {
+        group.roster_items?.forEach((student: any) => {
           const key = `${group.id}-${student.id}`
 
           if (!attendanceMap.has(key)) {
@@ -333,7 +371,7 @@ export function Reports() {
       lessons?.forEach(lesson => {
         if (lesson.is_cancelled || !lesson.groups || !lesson.lesson_records?.[0]) return
 
-        const group = lesson.groups
+        const group = lesson.groups as any
         const lessonRecord = lesson.lesson_records[0]
 
         // Only include if there's actually covered content or planned content or homework
@@ -422,21 +460,21 @@ export function Reports() {
         pastLessons: number
         futureLessons: number
         cancelledLessons: number
+        dates: Map<string, number> // date -> academic hours for that date
       }>()
 
       lessons?.forEach(lesson => {
         if (!lesson.groups) return
 
-        const group = lesson.groups
+        const group = lesson.groups as any
         const schoolName = group.schools?.name || 'Unknown School'
         const subjectName = group.subjects?.name || 'Unknown Subject'
         const groupName = group.name || 'Unknown Group'
         const lessonDate = new Date(lesson.start_time)
+        const lessonDateString = lessonDate.toLocaleDateString('en-GB') // DD/MM/YYYY format
 
-        // Calculate lesson duration in hours
-        const startTime = new Date(lesson.start_time)
-        const endTime = new Date(lesson.end_time)
-        const durationHours = (endTime.getTime() - startTime.getTime()) / (1000 * 60 * 60)
+        // Calculate academic hours based on lesson duration
+        const academicHours = calculateAcademicHours(lesson.start_time, lesson.end_time)
 
         // Group by school, subject, and group if specific filters are applied
         let key: string
@@ -480,7 +518,8 @@ export function Reports() {
             activeLessons: 0,
             pastLessons: 0,
             futureLessons: 0,
-            cancelledLessons: 0
+            cancelledLessons: 0,
+            dates: new Map<string, number>()
           })
         }
 
@@ -488,10 +527,14 @@ export function Reports() {
 
         if (lesson.is_cancelled) {
           stats.cancelledLessons++
-          // Don't count cancelled lessons in total hours
+          // Don't count cancelled lessons in total hours or dates
         } else {
-          stats.totalHours += durationHours
+          stats.totalHours += academicHours
           stats.activeLessons++
+
+          // Track date-wise academic hours
+          const currentDateHours = stats.dates.get(lessonDateString) || 0
+          stats.dates.set(lessonDateString, currentDateHours + academicHours)
 
           // Track past vs future lessons
           if (lessonDate < now) {
@@ -503,10 +546,25 @@ export function Reports() {
       })
 
       // Convert to report format with proper rounding
-      const reportData: HoursReportData[] = Array.from(hoursMap.values()).map(stats => ({
-        ...stats,
-        totalHours: Math.round(stats.totalHours * 100) / 100 // Round to 2 decimal places
-      }))
+      const reportData: HoursReportData[] = Array.from(hoursMap.values()).map(stats => {
+        // Convert dates Map to Array and sort by date
+        const datesArray = Array.from(stats.dates.entries())
+          .map(([date, hours]) => ({ date, hours }))
+          .sort((a, b) => new Date(a.date.split('/').reverse().join('-')).getTime() - new Date(b.date.split('/').reverse().join('-')).getTime())
+
+        return {
+          school: stats.school,
+          subject: stats.subject,
+          group: stats.group,
+          totalHours: stats.totalHours, // Academic hours are already integers, no rounding needed
+          activeLessons: stats.activeLessons,
+          pastLessons: stats.pastLessons,
+          futureLessons: stats.futureLessons,
+          cancelledLessons: stats.cancelledLessons,
+          dates: datesArray,
+          totalDates: datesArray.length
+        }
+      })
 
       // Sort by total hours descending
       reportData.sort((a, b) => b.totalHours - a.totalHours)
@@ -837,25 +895,55 @@ export function Reports() {
                   <th className="text-left py-2 px-3">School</th>
                   {hoursReport.some(r => r.subject) && <th className="text-left py-2 px-3">Subject</th>}
                   {hoursReport.some(r => r.group) && <th className="text-left py-2 px-3">Group</th>}
+                  <th className="text-right py-2 px-3">Total Dates</th>
                   <th className="text-right py-2 px-3">Active Lessons</th>
                   <th className="text-right py-2 px-3">Past</th>
                   <th className="text-right py-2 px-3">Future</th>
                   <th className="text-right py-2 px-3">Cancelled</th>
-                  <th className="text-right py-2 px-3">Total Hours</th>
+                  <th className="text-right py-2 px-3">Total Hours (Academic)</th>
+                  <th className="text-center py-2 px-3">Details</th>
                 </tr>
               </thead>
               <tbody>
                 {hoursReport.map((row, index) => (
-                  <tr key={index} className="border-b hover:bg-gray-50 dark:hover:bg-gray-700">
-                    <td className="py-2 px-3">{row.school}</td>
-                    {hoursReport.some(r => r.subject) && <td className="py-2 px-3">{row.subject || '-'}</td>}
-                    {hoursReport.some(r => r.group) && <td className="py-2 px-3">{row.group || '-'}</td>}
-                    <td className="py-2 px-3 text-right">{row.activeLessons}</td>
-                    <td className="py-2 px-3 text-right text-blue-600">{row.pastLessons || 0}</td>
-                    <td className="py-2 px-3 text-right text-green-600">{row.futureLessons || 0}</td>
-                    <td className="py-2 px-3 text-right text-red-600">{row.cancelledLessons || 0}</td>
-                    <td className="py-2 px-3 text-right font-semibold">{row.totalHours}h</td>
-                  </tr>
+                  <>
+                    <tr key={index} className="border-b hover:bg-gray-50 dark:hover:bg-gray-700">
+                      <td className="py-2 px-3">{row.school}</td>
+                      {hoursReport.some(r => r.subject) && <td className="py-2 px-3">{row.subject || '-'}</td>}
+                      {hoursReport.some(r => r.group) && <td className="py-2 px-3">{row.group || '-'}</td>}
+                      <td className="py-2 px-3 text-right font-medium text-purple-600">{row.totalDates}</td>
+                      <td className="py-2 px-3 text-right">{row.activeLessons}</td>
+                      <td className="py-2 px-3 text-right text-blue-600">{row.pastLessons || 0}</td>
+                      <td className="py-2 px-3 text-right text-green-600">{row.futureLessons || 0}</td>
+                      <td className="py-2 px-3 text-right text-red-600">{row.cancelledLessons || 0}</td>
+                      <td className="py-2 px-3 text-right font-semibold">{row.totalHours}h</td>
+                      <td className="py-2 px-3 text-center">
+                        <button
+                          onClick={() => toggleRowExpansion(index)}
+                          className="text-blue-600 hover:text-blue-800 font-medium text-sm"
+                        >
+                          {expandedRows.has(index) ? '▼ Hide' : '▶ Show'}
+                        </button>
+                      </td>
+                    </tr>
+                    {expandedRows.has(index) && (
+                      <tr key={`${index}-expanded`} className="bg-gray-50 dark:bg-gray-700">
+                        <td colSpan={hoursReport.some(r => r.subject) && hoursReport.some(r => r.group) ? 10 : hoursReport.some(r => r.subject) || hoursReport.some(r => r.group) ? 9 : 8} className="py-3 px-3">
+                          <div className="bg-white dark:bg-gray-600 rounded p-3">
+                            <h4 className="font-medium mb-2 text-sm">Hours by Date:</h4>
+                            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-2">
+                              {row.dates.map((dateEntry, dateIndex) => (
+                                <div key={dateIndex} className="flex justify-between bg-gray-100 dark:bg-gray-500 rounded px-2 py-1 text-sm">
+                                  <span>{dateEntry.date}</span>
+                                  <span className="font-medium">{dateEntry.hours}h</span>
+                                </div>
+                              ))}
+                            </div>
+                          </div>
+                        </td>
+                      </tr>
+                    )}
+                  </>
                 ))}
               </tbody>
             </table>
