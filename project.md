@@ -90,7 +90,7 @@ RLS-secured per user; device lock optional
 - **M1**: Supabase Auth + User bootstrap - Authentication working correctly ✅
 - **M2**: Schools & Subjects CRUD - Full implementation with user testing ✅
 
-**🎯 CURRENT TARGET:** M9.6 — Reports Implementation
+**🎯 CURRENT TARGET:** M9.7 — Israeli Calendar Data Integration
 
 **📊 Progress Summary:**
 - Phase 1 (M0-M1): Authentication & Infrastructure ✅ Complete
@@ -108,8 +108,8 @@ RLS-secured per user; device lock optional
 - Phase 8.9 (M8.9): Lessons Tab Integration ✅ Complete
 - Phase 9 (M9): Reports Foundation ✅ Complete
 - Phase 9.5 (M9.5): Dashboard Housekeeping ✅ Complete
-- Phase 9.6 (M9.6): Reports Implementation - Current Target
-- Phase 9.7-9.10: Israeli Calendar & Projected Hours - Pending
+- Phase 9.6 (M9.6): Enhanced Reports Implementation ✅ Complete
+- Phase 9.7-9.10: Israeli Calendar & Projected Hours - Next Targets
 - Phase 11-17: Polish & Advanced Features - Pending
 
 Milestones (incremental, small steps)
@@ -446,6 +446,10 @@ Acceptance: All three reports generate accurate data; attendance percentages, ho
 - ✅ **Fixed Filter Logic**: Reports load all lessons when no specific filters selected instead of empty results
 - ✅ **Enhanced Hours Report**: Shows past/future lesson breakdown with color-coded statistics and cancelled lesson tracking
 - ✅ **Working Excel Export**: Confirmed downloading proper .xlsx files with correct MIME types and formatting
+- ✅ **ENHANCED: Academic Hour Counting**: Implemented 30-60min=1h, 61-110min=2h, 111-180min=3h calculation system
+- ✅ **ENHANCED: Date-wise Hour Breakdown**: Interactive expandable rows showing hours by individual dates
+- ✅ **ENHANCED: Simplified Excel Export**: Clean 3-column format (School, Lesson Date, Hours) with date-by-date breakdown and totals
+- ✅ **ENHANCED: Working Excel Downloads**: Fixed all Excel export issues - now generates proper .xlsx files that open correctly in Excel
 
 M9.7 — Israeli Calendar Data Integration
 
