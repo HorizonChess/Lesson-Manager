@@ -495,7 +495,7 @@ Transform lesson management from list-based to interactive calendar grid layout 
 
 Acceptance: Lessons display in calendar grid format; vacation days clearly marked; week navigation functional on desktop and mobile.
 
-M9.9 — Drag-Drop Lesson Editing & Recurring Management
+M9.9 — Drag-Drop Lesson Editing & Recurring Management ✅ COMPLETE
 
 Enable intuitive lesson manipulation with drag-drop, resize, and centralized recurring lesson management.
 
@@ -512,6 +512,17 @@ Enable intuitive lesson manipulation with drag-drop, resize, and centralized rec
 - **Recurring Lesson Templates**: Quick setup for 12 weeks, semester, school year patterns
 
 Acceptance: Lessons can be dragged between time slots; duration adjustable via edge dragging; all recurring lesson management centralized in single interface; mobile touch interactions work similarly to app rearrangement.
+
+**✅ VERIFIED COMPLETE:**
+- ✅ **Drag-and-Drop with dnd-kit**: Full integration with react-big-calendar using custom draggable lesson events and droppable time slots
+- ✅ **Touch Support**: Mobile-friendly long-press drag initiation with visual feedback via DragOverlay
+- ✅ **Resize Functionality**: Top and bottom resize handles on lesson events for duration adjustment with 15-minute snap granularity
+- ✅ **Vacation Day Protection**: Prevents dragging/resizing lessons into Israeli vacation periods with user warnings
+- ✅ **Visual Drop Zones**: Time slots highlight on hover during drag operations for clear drop feedback
+- ✅ **Unified Recurring Modal**: Single "Manage Recurring Lessons" button replaces scattered individual group buttons
+- ✅ **Template System**: Quick templates (Semester: 16 weeks, Full Year: 32 weeks, Custom) with date picker
+- ✅ **Database Integration**: Real-time lesson updates with proper error handling and state synchronization
+- ✅ **Mobile-Responsive**: Touch-friendly resize handles and drag interactions optimized for mobile devices
 
 M9.10 — Projected Work Hours Reports
 

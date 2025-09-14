@@ -1,6 +1,14 @@
 import { useState, useEffect, useMemo } from 'react'
 import { Calendar, momentLocalizer } from 'react-big-calendar'
 import moment from 'moment'
+import {
+  DndContext,
+  DragOverlay,
+  useDraggable,
+  useDroppable,
+  closestCenter
+} from '@dnd-kit/core'
+import type { DragEndEvent, DragStartEvent } from '@dnd-kit/core'
 import { useAuth } from '../contexts/AuthContext'
 import { supabase } from '../lib/supabase'
 import { israeliCalendar } from '../services/israeliCalendar'
@@ -49,6 +57,18 @@ export function Lessons() {
   const [lessonFilter, setLessonFilter] = useState<'upcoming' | 'all'>('upcoming')
   const [currentDate, setCurrentDate] = useState(new Date())
   const [calendarView, setCalendarView] = useState<'calendar' | 'list'>('calendar')
+
+  // Drag and drop states
+  const [draggedLesson, setDraggedLesson] = useState<LessonWithGroup | null>(null)
+
+  // Recurring lessons modal states
+  const [showRecurringModal, setShowRecurringModal] = useState(false)
+  const [recurringFormData, setRecurringFormData] = useState({
+    groupId: '',
+    weeks: 12,
+    startDate: moment().format('YYYY-MM-DD'),
+    template: 'custom' as 'semester' | 'year' | 'custom'
+  })
 
   // Lesson record states
   const [openLessonRecord, setOpenLessonRecord] = useState<string | null>(null)
@@ -842,6 +862,243 @@ export function Lessons() {
     return {}
   }
 
+  // Drag and drop handlers
+  const handleDragStart = (event: DragStartEvent) => {
+    const lessonId = event.active.id as string
+    const lesson = lessons.find(l => l.id === lessonId)
+    if (lesson) {
+      setDraggedLesson(lesson)
+    }
+  }
+
+  const handleDragEnd = async (event: DragEndEvent) => {
+    const { active, over } = event
+    setDraggedLesson(null)
+
+    if (!over || !active) return
+
+    const activeId = active.id as string
+    const activeData = active.data?.current
+
+    // Handle resize operations
+    if (activeData?.type === 'resize') {
+      await handleLessonResize(activeId, activeData, event)
+      return
+    }
+
+    // Handle regular move operations
+    const lessonId = activeId
+    const lesson = lessons.find(l => l.id === lessonId)
+    if (!lesson) return
+
+    // Parse the drop target ID to get the new time and date
+    const dropData = over.data?.current
+    if (!dropData?.timeSlot) return
+
+    const { timeSlot, date } = dropData
+    const newStartTime = moment(`${date} ${timeSlot}`).toDate()
+    const originalDuration = moment(lesson.end_time).diff(moment(lesson.start_time), 'minutes')
+    const newEndTime = moment(newStartTime).add(originalDuration, 'minutes').toDate()
+
+    // Don't allow dropping on vacation days
+    if (israeliCalendar.isVacationDay(newStartTime)) {
+      const vacationPeriod = israeliCalendar.getVacationPeriod(newStartTime)
+      alert(`Cannot schedule lessons during ${vacationPeriod?.name || 'vacation period'}`)
+      return
+    }
+
+    await moveLessonToNewTime(lessonId, newStartTime, newEndTime)
+  }
+
+  const handleLessonResize = async (activeId: string, activeData: any, event: DragEndEvent) => {
+    const lessonId = activeId.replace('-resize-top', '').replace('-resize-bottom', '')
+    const lesson = lessons.find(l => l.id === lessonId)
+    if (!lesson) return
+
+    const direction = activeData.direction
+    const delta = event.delta
+
+    if (!delta) return
+
+    // Calculate time change based on pixel movement (approximate)
+    // Assuming ~2 pixels per minute (this is calendar-specific and may need adjustment)
+    const minuteChange = Math.round(delta.y / 2) * 15 // Snap to 15-minute increments
+
+    let newStartTime = new Date(lesson.start_time)
+    let newEndTime = new Date(lesson.end_time)
+
+    if (direction === 'top') {
+      // Resize from top - change start time
+      newStartTime = moment(lesson.start_time).add(minuteChange, 'minutes').toDate()
+      // Ensure minimum duration of 15 minutes
+      if (moment(newEndTime).diff(moment(newStartTime), 'minutes') < 15) {
+        newStartTime = moment(newEndTime).subtract(15, 'minutes').toDate()
+      }
+    } else if (direction === 'bottom') {
+      // Resize from bottom - change end time
+      newEndTime = moment(lesson.end_time).add(minuteChange, 'minutes').toDate()
+      // Ensure minimum duration of 15 minutes
+      if (moment(newEndTime).diff(moment(newStartTime), 'minutes') < 15) {
+        newEndTime = moment(newStartTime).add(15, 'minutes').toDate()
+      }
+    }
+
+    // Don't allow resizing to vacation days
+    if (israeliCalendar.isVacationDay(newStartTime) || israeliCalendar.isVacationDay(newEndTime)) {
+      const vacationPeriod = israeliCalendar.isVacationDay(newStartTime)
+        ? israeliCalendar.getVacationPeriod(newStartTime)
+        : israeliCalendar.getVacationPeriod(newEndTime)
+      alert(`Cannot resize lessons into ${vacationPeriod?.name || 'vacation period'}`)
+      return
+    }
+
+    await moveLessonToNewTime(lessonId, newStartTime, newEndTime)
+  }
+
+  const moveLessonToNewTime = async (lessonId: string, newStartTime: Date, newEndTime: Date) => {
+    try {
+      const { data, error } = await supabase
+        .from('lessons')
+        .update({
+          start_time: newStartTime.toISOString(),
+          end_time: newEndTime.toISOString()
+        })
+        .eq('id', lessonId)
+        .select(`
+          *,
+          group:groups(
+            name,
+            school:schools(name),
+            subject:subjects(name)
+          )
+        `)
+        .single()
+
+      if (error) throw error
+
+      // Update local state
+      setLessons(lessons.map(lesson =>
+        lesson.id === lessonId ? data : lesson
+      ))
+
+    } catch (err: any) {
+      setError(`Failed to move lesson: ${err.message}`)
+    }
+  }
+
+  // Custom draggable event component with resize handles
+  const DraggableLessonEvent = ({ event }: { event: LessonEvent }) => {
+    const {
+      attributes,
+      listeners,
+      setNodeRef,
+      transform,
+      isDragging,
+    } = useDraggable({
+      id: event.id,
+      data: {
+        lesson: event.lesson,
+        type: 'lesson'
+      }
+    })
+
+    // Separate draggable for resize handles
+    const {
+      attributes: topResizeAttributes,
+      listeners: topResizeListeners,
+      setNodeRef: setTopResizeRef,
+    } = useDraggable({
+      id: `${event.id}-resize-top`,
+      data: {
+        lesson: event.lesson,
+        type: 'resize',
+        direction: 'top'
+      }
+    })
+
+    const {
+      attributes: bottomResizeAttributes,
+      listeners: bottomResizeListeners,
+      setNodeRef: setBottomResizeRef,
+    } = useDraggable({
+      id: `${event.id}-resize-bottom`,
+      data: {
+        lesson: event.lesson,
+        type: 'resize',
+        direction: 'bottom'
+      }
+    })
+
+    const style = {
+      transform: transform ? `translate3d(${transform.x}px, ${transform.y}px, 0)` : undefined,
+      opacity: isDragging ? 0.5 : 1,
+      cursor: 'grab',
+    }
+
+    return (
+      <div
+        ref={setNodeRef}
+        style={style}
+        className="w-full h-full relative group"
+      >
+        {/* Top resize handle */}
+        <div
+          ref={setTopResizeRef}
+          {...topResizeListeners}
+          {...topResizeAttributes}
+          className="absolute top-0 left-0 right-0 h-2 cursor-ns-resize opacity-0 group-hover:opacity-100 bg-white/20 hover:bg-white/40 transition-opacity"
+          onMouseDown={(e) => e.stopPropagation()}
+        />
+
+        {/* Main draggable area */}
+        <div
+          {...listeners}
+          {...attributes}
+          className="w-full h-full flex items-center justify-center text-xs font-medium p-1"
+        >
+          <div className="truncate">{event.title}</div>
+        </div>
+
+        {/* Bottom resize handle */}
+        <div
+          ref={setBottomResizeRef}
+          {...bottomResizeListeners}
+          {...bottomResizeAttributes}
+          className="absolute bottom-0 left-0 right-0 h-2 cursor-ns-resize opacity-0 group-hover:opacity-100 bg-white/20 hover:bg-white/40 transition-opacity"
+          onMouseDown={(e) => e.stopPropagation()}
+        />
+      </div>
+    )
+  }
+
+  // Custom time slot component that acts as drop zone
+  const TimeSlotWrapper = (props: any) => {
+    const { children, value } = props
+
+    if (!value) return <>{children}</>
+
+    const timeSlot = moment(value).format('HH:mm')
+    const date = moment(value).format('YYYY-MM-DD')
+
+    const { isOver, setNodeRef } = useDroppable({
+      id: `timeslot-${date}-${timeSlot}`,
+      data: {
+        timeSlot,
+        date,
+        type: 'timeslot'
+      }
+    })
+
+    return (
+      <div
+        ref={setNodeRef}
+        className={`h-full w-full ${isOver ? 'bg-blue-100 dark:bg-blue-900/20' : ''}`}
+      >
+        {children}
+      </div>
+    )
+  }
+
   if (loading) {
     return (
       <div className="flex items-center justify-center h-64">
@@ -851,7 +1108,12 @@ export function Lessons() {
   }
 
   return (
-    <div className="space-y-6">
+    <DndContext
+      onDragStart={handleDragStart}
+      onDragEnd={handleDragEnd}
+      collisionDetection={closestCenter}
+    >
+      <div className="space-y-6">
       <div className="flex justify-between items-center">
         <h2 className="text-2xl font-bold">Lessons</h2>
         <div className="flex gap-2">
@@ -892,6 +1154,13 @@ export function Lessons() {
           >
             Add Lesson
           </button>
+          <button
+            onClick={() => setShowRecurringModal(true)}
+            className="bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700"
+            disabled={groups.length === 0}
+          >
+            Manage Recurring
+          </button>
         </div>
       </div>
 
@@ -907,37 +1176,151 @@ export function Lessons() {
         </div>
       )}
 
-      {/* Recurring Lessons Section */}
-      {groups.length > 0 && (
-        <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 p-4 rounded-lg">
-          <h3 className="font-semibold mb-3">Generate Recurring Lessons</h3>
-          <div className="space-y-2">
-            {groups.map(group => (
-              <div key={group.id} className="flex justify-between items-center bg-white dark:bg-gray-800 p-3 rounded">
+      {/* Recurring Lessons Management Modal */}
+      {showRecurringModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white dark:bg-gray-800 rounded-lg w-full max-w-2xl max-h-[80vh] overflow-hidden flex flex-col">
+            <div className="flex justify-between items-center p-4 border-b">
+              <h3 className="text-lg font-bold">Manage Recurring Lessons</h3>
+              <button
+                onClick={() => setShowRecurringModal(false)}
+                className="text-gray-500 hover:text-gray-700 text-xl"
+              >
+                ×
+              </button>
+            </div>
+
+            <div className="flex-1 overflow-y-auto p-4">
+              <div className="space-y-6">
+                {/* Quick Templates */}
                 <div>
-                  <span className="font-medium">{group.name}</span>
-                  <span className="text-gray-500 text-sm ml-2">
-                    ({(group as any).school?.name} • {(group as any).subject?.name})
-                  </span>
-                  {group.timeslots && group.timeslots.length > 0 && (
-                    <div className="text-xs text-gray-500 mt-1">
-                      {group.timeslots.map((slot: any, i: number) => (
-                        <span key={i} className="mr-2">
-                          {slot.day} {slot.startTime}-{slot.endTime}
-                        </span>
-                      ))}
-                    </div>
-                  )}
+                  <h4 className="font-semibold mb-3">Quick Templates</h4>
+                  <div className="grid grid-cols-3 gap-2">
+                    <button
+                      onClick={() => setRecurringFormData({ ...recurringFormData, template: 'semester', weeks: 16 })}
+                      className={`p-3 rounded border text-sm ${
+                        recurringFormData.template === 'semester'
+                          ? 'bg-blue-100 border-blue-500 text-blue-700'
+                          : 'bg-gray-50 border-gray-300 hover:bg-gray-100'
+                      }`}
+                    >
+                      Semester<br/><span className="text-xs text-gray-500">16 weeks</span>
+                    </button>
+                    <button
+                      onClick={() => setRecurringFormData({ ...recurringFormData, template: 'year', weeks: 32 })}
+                      className={`p-3 rounded border text-sm ${
+                        recurringFormData.template === 'year'
+                          ? 'bg-blue-100 border-blue-500 text-blue-700'
+                          : 'bg-gray-50 border-gray-300 hover:bg-gray-100'
+                      }`}
+                    >
+                      Full Year<br/><span className="text-xs text-gray-500">32 weeks</span>
+                    </button>
+                    <button
+                      onClick={() => setRecurringFormData({ ...recurringFormData, template: 'custom', weeks: 12 })}
+                      className={`p-3 rounded border text-sm ${
+                        recurringFormData.template === 'custom'
+                          ? 'bg-blue-100 border-blue-500 text-blue-700'
+                          : 'bg-gray-50 border-gray-300 hover:bg-gray-100'
+                      }`}
+                    >
+                      Custom<br/><span className="text-xs text-gray-500">Set manually</span>
+                    </button>
+                  </div>
                 </div>
-                <button
-                  onClick={() => generateRecurringLessons(group.id)}
-                  className="bg-green-600 text-white px-3 py-1 rounded text-sm hover:bg-green-700"
-                  disabled={!group.timeslots || group.timeslots.length === 0}
-                >
-                  Generate 12 Weeks
-                </button>
+
+                {/* Group Selection */}
+                <div>
+                  <label className="block text-sm font-medium mb-2">Select Group</label>
+                  <select
+                    value={recurringFormData.groupId}
+                    onChange={(e) => setRecurringFormData({ ...recurringFormData, groupId: e.target.value })}
+                    className="w-full px-3 py-2 border border-gray-300 rounded focus:outline-none focus:border-blue-500"
+                    required
+                  >
+                    <option value="">Choose a group...</option>
+                    {groups.map(group => (
+                      <option key={group.id} value={group.id}>
+                        {group.name} ({(group as any).school?.name} • {(group as any).subject?.name})
+                      </option>
+                    ))}
+                  </select>
+                </div>
+
+                {/* Custom Settings */}
+                {recurringFormData.template === 'custom' && (
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <label className="block text-sm font-medium mb-2">Number of Weeks</label>
+                      <input
+                        type="number"
+                        min="1"
+                        max="52"
+                        value={recurringFormData.weeks}
+                        onChange={(e) => setRecurringFormData({ ...recurringFormData, weeks: parseInt(e.target.value) || 1 })}
+                        className="w-full px-3 py-2 border border-gray-300 rounded focus:outline-none focus:border-blue-500"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium mb-2">Start Date</label>
+                      <input
+                        type="date"
+                        value={recurringFormData.startDate}
+                        onChange={(e) => setRecurringFormData({ ...recurringFormData, startDate: e.target.value })}
+                        className="w-full px-3 py-2 border border-gray-300 rounded focus:outline-none focus:border-blue-500"
+                      />
+                    </div>
+                  </div>
+                )}
+
+                {/* Selected Group Info */}
+                {recurringFormData.groupId && (
+                  <div className="bg-gray-50 dark:bg-gray-700 p-3 rounded">
+                    {(() => {
+                      const selectedGroup = groups.find(g => g.id === recurringFormData.groupId)
+                      return selectedGroup ? (
+                        <div>
+                          <div className="font-medium">{selectedGroup.name}</div>
+                          <div className="text-sm text-gray-600 dark:text-gray-400">
+                            {(selectedGroup as any).school?.name} • {(selectedGroup as any).subject?.name}
+                          </div>
+                          {selectedGroup.timeslots && selectedGroup.timeslots.length > 0 && (
+                            <div className="text-xs text-gray-500 mt-2">
+                              <strong>Schedule:</strong> {selectedGroup.timeslots.map((slot: any, i: number) => (
+                                <span key={i} className="ml-2">
+                                  {slot.day} {slot.startTime}-{slot.endTime}
+                                </span>
+                              ))}
+                            </div>
+                          )}
+                        </div>
+                      ) : null
+                    })()}
+                  </div>
+                )}
               </div>
-            ))}
+            </div>
+
+            <div className="flex justify-end gap-2 p-4 border-t">
+              <button
+                onClick={() => setShowRecurringModal(false)}
+                className="bg-gray-300 dark:bg-gray-600 text-gray-700 dark:text-gray-300 px-4 py-2 rounded hover:bg-gray-400 dark:hover:bg-gray-500"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={() => {
+                  if (recurringFormData.groupId) {
+                    generateRecurringLessons(recurringFormData.groupId, recurringFormData.weeks)
+                    setShowRecurringModal(false)
+                  }
+                }}
+                className="bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700"
+                disabled={!recurringFormData.groupId}
+              >
+                Generate {recurringFormData.weeks} Week{recurringFormData.weeks !== 1 ? 's' : ''}
+              </button>
+            </div>
           </div>
         </div>
       )}
@@ -1135,6 +1518,10 @@ export function Lessons() {
               selectable
               eventPropGetter={eventStyleGetter}
               dayPropGetter={dayStyleGetter}
+              components={{
+                event: DraggableLessonEvent,
+                timeSlotWrapper: TimeSlotWrapper,
+              }}
               formats={{
                 timeGutterFormat: 'HH:mm',
                 eventTimeRangeFormat: ({ start, end }: { start: Date, end: Date }) =>
@@ -1657,6 +2044,20 @@ export function Lessons() {
           </div>
         </div>
       )}
-    </div>
+      </div>
+
+      {/* Drag Overlay */}
+      <DragOverlay>
+        {draggedLesson ? (
+          <div className="bg-blue-600 text-white p-2 rounded shadow-lg border-2 border-blue-700 min-w-[120px]">
+            <div className="font-medium text-sm">{draggedLesson.group.name}</div>
+            <div className="text-xs opacity-90">{draggedLesson.group.school.name}</div>
+            <div className="text-xs opacity-75">
+              {moment(draggedLesson.start_time).format('HH:mm')} - {moment(draggedLesson.end_time).format('HH:mm')}
+            </div>
+          </div>
+        ) : null}
+      </DragOverlay>
+    </DndContext>
   )
 }
