@@ -627,36 +627,42 @@ export function Reports() {
   const exportHoursToExcel = () => {
     if (hoursReport.length === 0) return
 
-    const worksheet = XLSX.utils.json_to_sheet(
-      hoursReport.map(row => ({
-        'School': row.school,
-        'Subject': row.subject || '-',
-        'Group': row.group || '-',
-        'Active Lessons': row.activeLessons,
-        'Past Lessons': row.pastLessons || 0,
-        'Future Lessons': row.futureLessons || 0,
-        'Cancelled Lessons': row.cancelledLessons || 0,
-        'Total Hours': row.totalHours
-      }))
-    )
+    // Create detailed breakdown - each row represents a teaching date
+    const detailData: any[] = []
+    let grandTotalHours = 0
+
+    hoursReport.forEach(row => {
+      row.dates.forEach(dateEntry => {
+        detailData.push({
+          'School': row.school,
+          'Lesson Date': dateEntry.date,
+          'Hours': dateEntry.hours
+        })
+        grandTotalHours += dateEntry.hours
+      })
+    })
+
+    // Add a summary row at the end
+    detailData.push({
+      'School': 'TOTAL',
+      'Lesson Date': '',
+      'Hours': grandTotalHours
+    })
+
+    const worksheet = XLSX.utils.json_to_sheet(detailData)
 
     const workbook = XLSX.utils.book_new()
-    XLSX.utils.book_append_sheet(workbook, worksheet, 'Hours Report')
+    XLSX.utils.book_append_sheet(workbook, worksheet, 'Teaching Hours')
 
     // Auto-size columns
     const cols = [
-      { wch: 15 }, // School
-      { wch: 15 }, // Subject
-      { wch: 15 }, // Group
-      { wch: 12 }, // Active Lessons
-      { wch: 10 }, // Past Lessons
-      { wch: 12 }, // Future Lessons
-      { wch: 14 }, // Cancelled Lessons
-      { wch: 12 }  // Total Hours
+      { wch: 20 }, // School
+      { wch: 15 }, // Lesson Date
+      { wch: 12 }  // Hours
     ]
     worksheet['!cols'] = cols
 
-    const fileName = `Hours_Report_${new Date().toISOString().split('T')[0]}.xlsx`
+    const fileName = `Teaching_Hours_${new Date().toISOString().split('T')[0]}.xlsx`
 
     // Write file with proper options for Excel format
     XLSX.writeFile(workbook, fileName, {
