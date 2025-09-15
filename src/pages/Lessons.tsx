@@ -1,14 +1,8 @@
 import { useState, useEffect, useMemo } from 'react'
 import { Calendar, momentLocalizer } from 'react-big-calendar'
 import moment from 'moment'
-import {
-  DndContext,
-  DragOverlay,
-  useDraggable,
-  useDroppable,
-  closestCenter
-} from '@dnd-kit/core'
-import type { DragEndEvent, DragStartEvent } from '@dnd-kit/core'
+import withDragAndDrop from 'react-big-calendar/lib/addons/dragAndDrop'
+import 'react-big-calendar/lib/addons/dragAndDrop/styles.css'
 import { useAuth } from '../contexts/AuthContext'
 import { supabase } from '../lib/supabase'
 import { israeliCalendar } from '../services/israeliCalendar'
@@ -16,6 +10,7 @@ import type { Lesson, Group, LessonRecord, RosterItem, Attendance, Material } fr
 import 'react-big-calendar/lib/css/react-big-calendar.css'
 
 const localizer = momentLocalizer(moment)
+const DnDCalendar = withDragAndDrop(Calendar)
 
 interface LessonWithGroup extends Lesson {
   group: {
@@ -58,8 +53,7 @@ export function Lessons() {
   const [currentDate, setCurrentDate] = useState(new Date())
   const [calendarView, setCalendarView] = useState<'calendar' | 'list'>('calendar')
 
-  // Drag and drop states
-  const [draggedLesson, setDraggedLesson] = useState<LessonWithGroup | null>(null)
+  // Removed custom drag states - using react-big-calendar built-in DnD
 
   // Recurring lessons modal states
   const [showRecurringModal, setShowRecurringModal] = useState(false)
@@ -84,6 +78,14 @@ export function Lessons() {
     planned: '',
     homework: '',
     notes: ''
+  })
+
+  // Time editing states
+  const [isEditingTime, setIsEditingTime] = useState(false)
+  const [editTimeData, setEditTimeData] = useState({
+    date: '',
+    startTime: '',
+    endTime: ''
   })
   const [lessonViewMode, setLessonViewMode] = useState<'simple' | 'advanced'>('simple')
   const [previousLessonData, setPreviousLessonData] = useState<LessonRecord | null>(null)
@@ -869,97 +871,196 @@ export function Lessons() {
     return {}
   }
 
-  // Drag and drop handlers
-  const handleDragStart = (event: DragStartEvent) => {
-    const lessonId = event.active.id as string
-    const lesson = lessons.find(l => l.id === lessonId)
-    if (lesson) {
-      setDraggedLesson(lesson)
-    }
+  // Built-in drag and drop handler for react-big-calendar
+  const handleEventDrop = async ({ event, start, end }: { event: LessonEvent, start: Date, end: Date }) => {
+    await smartScheduleLesson(event.lesson.id, start, end)
   }
 
-  const handleDragEnd = async (event: DragEndEvent) => {
-    const { active, over } = event
-    setDraggedLesson(null)
-
-    if (!over || !active) return
-
-    const activeId = active.id as string
-    const activeData = active.data?.current
-
-    // Handle resize operations
-    if (activeData?.type === 'resize') {
-      await handleLessonResize(activeId, activeData, event)
-      return
-    }
-
-    // Handle regular move operations
-    const lessonId = activeId
-    const lesson = lessons.find(l => l.id === lessonId)
-    if (!lesson) return
-
-    // Parse the drop target ID to get the new time and date
-    const dropData = over.data?.current
-    if (!dropData?.timeSlot) return
-
-    const { timeSlot, date } = dropData
-    const newStartTime = moment(`${date} ${timeSlot}`).toDate()
-    const originalDuration = moment(lesson.end_time).diff(moment(lesson.start_time), 'minutes')
-    const newEndTime = moment(newStartTime).add(originalDuration, 'minutes').toDate()
-
-    // Don't allow dropping on vacation days
-    if (israeliCalendar.isVacationDay(newStartTime)) {
-      const vacationPeriod = israeliCalendar.getVacationPeriod(newStartTime)
+  // Smart scheduling function that handles conflicts
+  const smartScheduleLesson = async (lessonId: string, newStart: Date, newEnd: Date) => {
+    // Don't allow scheduling on vacation days
+    if (israeliCalendar.isVacationDay(newStart)) {
+      const vacationPeriod = israeliCalendar.getVacationPeriod(newStart)
       alert(`Cannot schedule lessons during ${vacationPeriod?.name || 'vacation period'}`)
       return
     }
 
-    await moveLessonToNewTime(lessonId, newStartTime, newEndTime)
-  }
-
-  const handleLessonResize = async (activeId: string, activeData: any, event: DragEndEvent) => {
-    const lessonId = activeId.replace('-resize-top', '').replace('-resize-bottom', '')
     const lesson = lessons.find(l => l.id === lessonId)
     if (!lesson) return
 
-    const direction = activeData.direction
-    const delta = event.delta
+    // Calculate the duration to maintain it
+    const originalDuration = moment(lesson.end_time).diff(moment(lesson.start_time), 'minutes')
+    const finalEndTime = moment(newStart).add(originalDuration, 'minutes').toDate()
 
-    if (!delta) return
+    // Find overlapping lessons
+    const overlappingLessons = lessons.filter(otherLesson => {
+      if (otherLesson.id === lessonId) return false
 
-    // Calculate time change based on pixel movement (approximate)
-    // Assuming ~2 pixels per minute (this is calendar-specific and may need adjustment)
-    const minuteChange = Math.round(delta.y / 2) * 15 // Snap to 15-minute increments
+      const otherStart = moment(otherLesson.start_time)
+      const otherEnd = moment(otherLesson.end_time)
+      const newStartMoment = moment(newStart)
+      const newEndMoment = moment(finalEndTime)
 
-    let newStartTime = new Date(lesson.start_time)
-    let newEndTime = new Date(lesson.end_time)
+      return (newStartMoment.isBefore(otherEnd) && newEndMoment.isAfter(otherStart))
+    })
 
-    if (direction === 'top') {
-      // Resize from top - change start time
-      newStartTime = moment(lesson.start_time).add(minuteChange, 'minutes').toDate()
-      // Ensure minimum duration of 15 minutes
-      if (moment(newEndTime).diff(moment(newStartTime), 'minutes') < 15) {
-        newStartTime = moment(newEndTime).subtract(15, 'minutes').toDate()
-      }
-    } else if (direction === 'bottom') {
-      // Resize from bottom - change end time
-      newEndTime = moment(lesson.end_time).add(minuteChange, 'minutes').toDate()
-      // Ensure minimum duration of 15 minutes
-      if (moment(newEndTime).diff(moment(newStartTime), 'minutes') < 15) {
-        newEndTime = moment(newStartTime).add(15, 'minutes').toDate()
-      }
-    }
-
-    // Don't allow resizing to vacation days
-    if (israeliCalendar.isVacationDay(newStartTime) || israeliCalendar.isVacationDay(newEndTime)) {
-      const vacationPeriod = israeliCalendar.isVacationDay(newStartTime)
-        ? israeliCalendar.getVacationPeriod(newStartTime)
-        : israeliCalendar.getVacationPeriod(newEndTime)
-      alert(`Cannot resize lessons into ${vacationPeriod?.name || 'vacation period'}`)
+    // If no conflicts, move the lesson
+    if (overlappingLessons.length === 0) {
+      await moveLessonToNewTime(lessonId, newStart, finalEndTime)
       return
     }
 
-    await moveLessonToNewTime(lessonId, newStartTime, newEndTime)
+    // Ask user if they want to auto-reschedule conflicting lessons
+    const conflictingNames = overlappingLessons.map(l => l.group.name).join(', ')
+    const shouldReschedule = window.confirm(
+      `This time slot conflicts with: ${conflictingNames}\n\nWould you like to automatically move the conflicting lessons to available time slots?`
+    )
+
+    if (!shouldReschedule) {
+      return // User cancelled, don't move anything
+    }
+
+    try {
+      // Smart conflict resolution: find next available slots for conflicting lessons
+      const reschedulePromises = []
+      const rescheduledLessons: string[] = []
+      let allSlotsFound = true
+
+      // First, find slots for all conflicting lessons
+      for (const conflictingLesson of overlappingLessons) {
+        const conflictDuration = moment(conflictingLesson.end_time).diff(moment(conflictingLesson.start_time), 'minutes')
+        const newSlot = findNextAvailableSlot(finalEndTime, conflictDuration, conflictingLesson.id)
+
+        if (newSlot) {
+          reschedulePromises.push({
+            lessonId: conflictingLesson.id,
+            newStart: newSlot.start,
+            newEnd: newSlot.end,
+            lessonName: conflictingLesson.group.name
+          })
+        } else {
+          allSlotsFound = false
+          alert(`Could not find available time slot for "${conflictingLesson.group.name}". Please manually reschedule this lesson.`)
+        }
+      }
+
+      if (!allSlotsFound) {
+        return // Don't proceed if we can't reschedule all conflicts
+      }
+
+      // Move the main lesson first
+      await moveLessonToNewTime(lessonId, newStart, finalEndTime)
+
+      // Then move all conflicting lessons
+      for (const reschedule of reschedulePromises) {
+        await moveLessonToNewTime(reschedule.lessonId, reschedule.newStart, reschedule.newEnd)
+        rescheduledLessons.push(`${reschedule.lessonName} → ${moment(reschedule.newStart).format('ddd HH:mm')}`)
+      }
+
+      // Show success message
+      if (rescheduledLessons.length > 0) {
+        alert(`✅ Lesson moved successfully!\n\nAutomatically rescheduled:\n${rescheduledLessons.join('\n')}`)
+      }
+    } catch (error) {
+      alert('Error moving lessons. Please try again.')
+      console.error('Error in smart scheduling:', error)
+    }
+  }
+
+  // Helper function to find next available time slot with better logic
+  const findNextAvailableSlot = (afterTime: Date, durationMinutes: number, excludeLessonId: string, maxAttempts = 48): { start: Date, end: Date } | null => {
+    let attempts = 0
+    let searchTime = moment(afterTime)
+
+    while (attempts < maxAttempts) {
+      const startTime = searchTime.clone()
+      const endTime = startTime.clone().add(durationMinutes, 'minutes')
+
+      // Skip if outside working hours (7 AM - 10 PM)
+      if (startTime.hour() < 7 || endTime.hour() >= 22) {
+        searchTime = searchTime.clone().add(1, 'day').hour(7).minute(0).second(0)
+        attempts++
+        continue
+      }
+
+      // Skip vacation days
+      if (israeliCalendar.isVacationDay(startTime.toDate())) {
+        searchTime = searchTime.clone().add(1, 'day').hour(7).minute(0).second(0)
+        attempts++
+        continue
+      }
+
+      // Check if this slot conflicts with any other lessons
+      const hasConflict = lessons.some(lesson => {
+        if (lesson.id === excludeLessonId) return false
+
+        const lessonStart = moment(lesson.start_time)
+        const lessonEnd = moment(lesson.end_time)
+
+        return (startTime.isBefore(lessonEnd) && endTime.isAfter(lessonStart))
+      })
+
+      if (!hasConflict) {
+        return { start: startTime.toDate(), end: endTime.toDate() }
+      }
+
+      // Try 30 minutes later
+      searchTime = searchTime.clone().add(30, 'minutes')
+      attempts++
+    }
+
+    // If we can't find a slot within reasonable time, return null
+    return null
+  }
+
+
+  // Update lesson time manually from modal
+  const updateLessonTime = async () => {
+    if (!openLessonRecord) return
+
+    try {
+      const lesson = lessons.find(l => l.id === openLessonRecord)
+      if (!lesson) return
+
+      // Parse the edited date and times
+      const newStartDateTime = moment(`${editTimeData.date} ${editTimeData.startTime}`)
+      const newEndDateTime = moment(`${editTimeData.date} ${editTimeData.endTime}`)
+
+      // Validate times
+      if (!newStartDateTime.isValid() || !newEndDateTime.isValid()) {
+        alert('Invalid date or time format')
+        return
+      }
+
+      if (newEndDateTime.isBefore(newStartDateTime)) {
+        alert('End time must be after start time')
+        return
+      }
+
+      // Update in database
+      const { error } = await supabase
+        .from('lessons')
+        .update({
+          start_time: newStartDateTime.toISOString(),
+          end_time: newEndDateTime.toISOString()
+        })
+        .eq('id', openLessonRecord)
+
+      if (error) throw error
+
+      // Update local state
+      setLessons(prev => prev.map(l =>
+        l.id === openLessonRecord
+          ? { ...l, start_time: newStartDateTime.toISOString(), end_time: newEndDateTime.toISOString() }
+          : l
+      ))
+
+      setIsEditingTime(false)
+      alert('Lesson time updated successfully!')
+    } catch (error) {
+      console.error('Error updating lesson time:', error)
+      alert('Failed to update lesson time')
+    }
   }
 
   const moveLessonToNewTime = async (lessonId: string, newStartTime: Date, newEndTime: Date) => {
@@ -1164,118 +1265,16 @@ export function Lessons() {
     }
   }
 
-  // Custom draggable event component with resize handles
-  const DraggableLessonEvent = ({ event }: { event: LessonEvent }) => {
-    const {
-      attributes,
-      listeners,
-      setNodeRef,
-      transform,
-      isDragging,
-    } = useDraggable({
-      id: event.id,
-      data: {
-        lesson: event.lesson,
-        type: 'lesson'
-      }
-    })
-
-    // Separate draggable for resize handles
-    const {
-      attributes: topResizeAttributes,
-      listeners: topResizeListeners,
-      setNodeRef: setTopResizeRef,
-    } = useDraggable({
-      id: `${event.id}-resize-top`,
-      data: {
-        lesson: event.lesson,
-        type: 'resize',
-        direction: 'top'
-      }
-    })
-
-    const {
-      attributes: bottomResizeAttributes,
-      listeners: bottomResizeListeners,
-      setNodeRef: setBottomResizeRef,
-    } = useDraggable({
-      id: `${event.id}-resize-bottom`,
-      data: {
-        lesson: event.lesson,
-        type: 'resize',
-        direction: 'bottom'
-      }
-    })
-
-    const style = {
-      transform: transform ? `translate3d(${transform.x}px, ${transform.y}px, 0)` : undefined,
-      opacity: isDragging ? 0.5 : 1,
-      cursor: 'grab',
-    }
-
+  // Simple event component - click to open, drag to move (built-in)
+  const SimpleEventComponent = ({ event }: { event: LessonEvent }) => {
     return (
-      <div
-        ref={setNodeRef}
-        style={style}
-        className="w-full h-full relative group"
-      >
-        {/* Top resize handle */}
-        <div
-          ref={setTopResizeRef}
-          {...topResizeListeners}
-          {...topResizeAttributes}
-          className="absolute top-0 left-0 right-0 h-2 cursor-ns-resize opacity-0 group-hover:opacity-100 bg-white/20 hover:bg-white/40 transition-opacity"
-          onMouseDown={(e) => e.stopPropagation()}
-        />
-
-        {/* Main draggable area */}
-        <div
-          {...listeners}
-          {...attributes}
-          className="w-full h-full flex items-center justify-center text-xs font-medium p-1"
-        >
-          <div className="truncate">{event.title}</div>
-        </div>
-
-        {/* Bottom resize handle */}
-        <div
-          ref={setBottomResizeRef}
-          {...bottomResizeListeners}
-          {...bottomResizeAttributes}
-          className="absolute bottom-0 left-0 right-0 h-2 cursor-ns-resize opacity-0 group-hover:opacity-100 bg-white/20 hover:bg-white/40 transition-opacity"
-          onMouseDown={(e) => e.stopPropagation()}
-        />
+      <div className="w-full h-full flex items-center justify-center text-xs font-medium p-1 cursor-pointer hover:bg-black/10 transition-colors">
+        <div className="truncate">{event.title}</div>
       </div>
     )
   }
 
-  // Custom time slot component that acts as drop zone
-  const TimeSlotWrapper = (props: any) => {
-    const { children, value } = props
-
-    if (!value) return <>{children}</>
-
-    const timeSlot = moment(value).format('HH:mm')
-    const date = moment(value).format('YYYY-MM-DD')
-
-    const { isOver, setNodeRef } = useDroppable({
-      id: `timeslot-${date}-${timeSlot}`,
-      data: {
-        timeSlot,
-        date,
-        type: 'timeslot'
-      }
-    })
-
-    return (
-      <div
-        ref={setNodeRef}
-        className={`h-full w-full ${isOver ? 'bg-blue-100 dark:bg-blue-900/20' : ''}`}
-      >
-        {children}
-      </div>
-    )
-  }
+  // No need for custom time slot wrapper - react-big-calendar handles this
 
   if (loading) {
     return (
@@ -1286,12 +1285,7 @@ export function Lessons() {
   }
 
   return (
-    <DndContext
-      onDragStart={handleDragStart}
-      onDragEnd={handleDragEnd}
-      collisionDetection={closestCenter}
-    >
-      <div className="space-y-6">
+    <div className="space-y-6">
       <div className="flex justify-between items-center">
         <h2 className="text-2xl font-bold">Lessons</h2>
         <div className="flex gap-2">
@@ -1847,7 +1841,7 @@ export function Lessons() {
               `
             }} />
 
-            <Calendar
+            <DnDCalendar
               localizer={localizer}
               events={calendarEvents}
               startAccessor="start"
@@ -1856,18 +1850,19 @@ export function Lessons() {
               onNavigate={setCurrentDate}
               view="week"
               views={['week']}
-              step={15} // 15-minute increments for visual granularity
-              timeslots={2} // 2 slots per 30-minute period (gives us 15-min visual blocks)
-              min={new Date(0, 0, 0, 7, 0)} // 7:00 AM
-              max={new Date(0, 0, 0, 22, 0)} // 10:00 PM
+              step={15}
+              timeslots={2}
+              min={new Date(0, 0, 0, 7, 0)}
+              max={new Date(0, 0, 0, 22, 0)}
               onSelectEvent={handleSelectEvent}
               onSelectSlot={handleSelectSlot}
+              onEventDrop={handleEventDrop}
+              resizable={false}
               selectable
               eventPropGetter={eventStyleGetter}
               dayPropGetter={dayStyleGetter}
               components={{
-                event: DraggableLessonEvent,
-                timeSlotWrapper: TimeSlotWrapper,
+                event: SimpleEventComponent,
               }}
               formats={{
                 timeGutterFormat: 'HH:mm',
@@ -1960,6 +1955,75 @@ export function Lessons() {
                 <p className="text-sm text-gray-500">
                   {lessons.find(l => l.id === openLessonRecord)?.group.school.name} • {lessons.find(l => l.id === openLessonRecord)?.group.subject.name}
                 </p>
+
+                {/* Date and Time Display/Edit */}
+                <div className="mt-2">
+                  {!isEditingTime ? (
+                    <div className="flex items-center gap-2">
+                      <span className="text-sm font-medium text-gray-700 dark:text-gray-300">
+                        {(() => {
+                          const lesson = lessons.find(l => l.id === openLessonRecord)
+                          if (!lesson) return ''
+                          const date = moment(lesson.start_time).format('dddd, MMMM Do YYYY')
+                          const startTime = moment(lesson.start_time).format('HH:mm')
+                          const endTime = moment(lesson.end_time).format('HH:mm')
+                          return `${date} • ${startTime} - ${endTime}`
+                        })()}
+                      </span>
+                      <button
+                        onClick={() => {
+                          const lesson = lessons.find(l => l.id === openLessonRecord)
+                          if (lesson) {
+                            setEditTimeData({
+                              date: moment(lesson.start_time).format('YYYY-MM-DD'),
+                              startTime: moment(lesson.start_time).format('HH:mm'),
+                              endTime: moment(lesson.end_time).format('HH:mm')
+                            })
+                            setIsEditingTime(true)
+                          }
+                        }}
+                        className="text-blue-600 hover:text-blue-800 text-sm underline"
+                        title="Edit lesson time"
+                      >
+                        Edit Time
+                      </button>
+                    </div>
+                  ) : (
+                    <div className="flex items-center gap-2 mt-1">
+                      <input
+                        type="date"
+                        value={editTimeData.date}
+                        onChange={(e) => setEditTimeData(prev => ({ ...prev, date: e.target.value }))}
+                        className="text-sm border border-gray-300 rounded px-2 py-1 focus:outline-none focus:border-blue-500"
+                      />
+                      <input
+                        type="time"
+                        value={editTimeData.startTime}
+                        onChange={(e) => setEditTimeData(prev => ({ ...prev, startTime: e.target.value }))}
+                        className="text-sm border border-gray-300 rounded px-2 py-1 focus:outline-none focus:border-blue-500"
+                      />
+                      <span className="text-sm text-gray-500">to</span>
+                      <input
+                        type="time"
+                        value={editTimeData.endTime}
+                        onChange={(e) => setEditTimeData(prev => ({ ...prev, endTime: e.target.value }))}
+                        className="text-sm border border-gray-300 rounded px-2 py-1 focus:outline-none focus:border-blue-500"
+                      />
+                      <button
+                        onClick={updateLessonTime}
+                        className="bg-green-600 text-white px-3 py-1 rounded text-sm hover:bg-green-700"
+                      >
+                        Save
+                      </button>
+                      <button
+                        onClick={() => setIsEditingTime(false)}
+                        className="bg-gray-400 text-white px-3 py-1 rounded text-sm hover:bg-gray-500"
+                      >
+                        Cancel
+                      </button>
+                    </div>
+                  )}
+                </div>
               </div>
               <div className="flex items-center gap-2">
                 {/* View Toggle */}
@@ -1996,6 +2060,8 @@ export function Lessons() {
                     setAttendanceNoteText('')
                     setShowMaterialSelector(false)
                     setSelectedMaterials([])
+                    setIsEditingTime(false)
+                    setEditTimeData({ date: '', startTime: '', endTime: '' })
                   }}
                   className="text-gray-500 hover:text-gray-700 text-xl min-w-[44px] min-h-[44px] flex items-center justify-center"
                 >
@@ -2391,20 +2457,6 @@ export function Lessons() {
           </div>
         </div>
       )}
-      </div>
-
-      {/* Drag Overlay */}
-      <DragOverlay>
-        {draggedLesson ? (
-          <div className="bg-blue-600 text-white p-2 rounded shadow-lg border-2 border-blue-700 min-w-[120px]">
-            <div className="font-medium text-sm">{draggedLesson.group.name}</div>
-            <div className="text-xs opacity-90">{draggedLesson.group.school.name}</div>
-            <div className="text-xs opacity-75">
-              {moment(draggedLesson.start_time).format('HH:mm')} - {moment(draggedLesson.end_time).format('HH:mm')}
-            </div>
-          </div>
-        ) : null}
-      </DragOverlay>
-    </DndContext>
+    </div>
   )
 }

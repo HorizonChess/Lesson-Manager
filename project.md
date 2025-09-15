@@ -90,7 +90,7 @@ RLS-secured per user; device lock optional
 - **M1**: Supabase Auth + User bootstrap - Authentication working correctly ✅
 - **M2**: Schools & Subjects CRUD - Full implementation with user testing ✅
 
-**🎯 CURRENT TARGET:** M9.7 — Israeli Calendar Data Integration
+**🎯 CURRENT TARGET:** M9.11 — Drag-and-Drop Mechanics Enhancement
 
 **📊 Progress Summary:**
 - Phase 1 (M0-M1): Authentication & Infrastructure ✅ Complete
@@ -109,7 +109,8 @@ RLS-secured per user; device lock optional
 - Phase 9 (M9): Reports Foundation ✅ Complete
 - Phase 9.5 (M9.5): Dashboard Housekeeping ✅ Complete
 - Phase 9.6 (M9.6): Enhanced Reports Implementation ✅ Complete
-- Phase 9.7-9.10: Israeli Calendar & Projected Hours - Next Targets
+- Phase 9.7-9.10: Israeli Calendar & Calendar Interface ✅ Complete
+- Phase 9.11: Drag-and-Drop Mechanics Enhancement - Current Target
 - Phase 11-17: Polish & Advanced Features - Pending
 
 Milestones (incremental, small steps)
@@ -478,7 +479,7 @@ Acceptance: Calendar service correctly identifies Israeli holidays and school va
 - ✅ **Data Structure**: JSON-based vacation periods with school year organization and proper date parsing
 - ✅ **Test Verification**: Complete test suite confirming vacation day detection accuracy
 
-M9.8 — Calendar Interface Foundation
+M9.8 — Calendar Interface Foundation ✅ COMPLETE
 
 Transform lesson management from list-based to interactive calendar grid layout with drag-and-drop functionality.
 
@@ -494,6 +495,13 @@ Transform lesson management from list-based to interactive calendar grid layout 
 - **Mobile-Responsive**: Touch-friendly interface with appropriate gestures
 
 Acceptance: Lessons display in calendar grid format; vacation days clearly marked; week navigation functional on desktop and mobile.
+
+**✅ VERIFIED COMPLETE:**
+- ✅ **Weekly Calendar Grid**: Implemented using react-big-calendar with weekly view and proper time slots
+- ✅ **Visual Lesson Blocks**: Color-coded lesson events with group, school, and subject information
+- ✅ **Israeli Calendar Integration**: Vacation days integration with calendar interface
+- ✅ **Week Navigation**: Full week navigation with back/forward controls
+- ✅ **Mobile-Responsive**: Touch-friendly calendar interface optimized for mobile devices
 
 M9.9 — Drag-Drop Lesson Editing & Recurring Management ✅ COMPLETE
 
@@ -524,7 +532,7 @@ Acceptance: Lessons can be dragged between time slots; duration adjustable via e
 - ✅ **Database Integration**: Real-time lesson updates with proper error handling and state synchronization
 - ✅ **Mobile-Responsive**: Touch-friendly resize handles and drag interactions optimized for mobile devices
 
-M9.10 — Advanced Recurring Lesson Management
+M9.10 — Advanced Recurring Lesson Management ✅ COMPLETE
 
 Enhance recurring lesson management with editing capabilities and recurring pattern modifications.
 
@@ -541,6 +549,40 @@ Enhance recurring lesson management with editing capabilities and recurring patt
 - **Pattern Overview**: Visual display of all active recurring patterns per group
 
 Acceptance: Users can modify existing recurring lesson timeslots; bulk edit entire recurring patterns; manage complex recurring schedules with visual feedback and conflict detection.
+
+**✅ VERIFIED COMPLETE:**
+- ✅ **Enhanced Recurring Modal**: Complete UI restructure with clear separation between edit and create modes
+- ✅ **Smart Pattern Detection**: Algorithm enhancement to distinguish separate recurring series with same day/time but different date ranges
+- ✅ **End Date Editing**: Added end date field for better lesson series management
+- ✅ **Group Timeslot Editing**: Inline editing of day/time for existing recurring patterns with real-time updates
+- ✅ **Pattern Deletion**: Full recurring pattern deletion with confirmation and lesson count display
+- ✅ **Fixed Time Updates**: Resolved PM/AM conversion bugs in bulk timeslot modification
+- ✅ **Always-Visible Creation**: "Add New Pattern" section visible by default for better UX
+- ✅ **Improved Cancel Behavior**: Proper expand/collapse functionality for edit sections
+- ✅ **Unique Pattern IDs**: Pattern identification system that properly separates multiple recurring series per group
+
+M9.11 — Drag-and-Drop Mechanics Enhancement
+
+Refine drag-and-drop calendar interface to provide clear interaction boundaries and intuitive lesson manipulation.
+
+**Current Problem:** Calendar drag-and-drop behaves inconsistently with expandable areas that don't expand, lessons overlapping in unexpected ways, and unclear boundaries for drag operations.
+
+**Key Issues:**
+- Many parts of lesson blocks appear expandable but don't expand when clicked
+- Lessons can be moved on top of each other in confusing ways
+- Unclear visual boundaries for where lessons can be dropped
+- Resize functionality appears available in areas where it shouldn't work
+- Drag operations don't provide clear feedback about valid drop zones
+
+**Goal:** Create intuitive, predictable drag-and-drop mechanics with clear visual boundaries and consistent behavior.
+
+**Investigation Required:**
+- Analyze current dnd-kit integration with react-big-calendar
+- Identify conflicting event handlers and hover states
+- Review drag handle positioning and resize zone definitions
+- Examine drop zone boundaries and visual feedback systems
+
+Acceptance: Drag-and-drop operations work predictably with clear visual boundaries; resize handles only appear where functional; lessons move cleanly without unexpected overlapping behavior.
 
 M11 — Offline-first
 
