@@ -90,7 +90,7 @@ RLS-secured per user; device lock optional
 - **M1**: Supabase Auth + User bootstrap - Authentication working correctly ✅
 - **M2**: Schools & Subjects CRUD - Full implementation with user testing ✅
 
-**🎯 CURRENT TARGET:** M9.11 — Drag-and-Drop Mechanics Enhancement
+**🎯 CURRENT TARGET:** M11 — Smart Schedule Builder Wizard
 
 **📊 Progress Summary:**
 - Phase 1 (M0-M1): Authentication & Infrastructure ✅ Complete
@@ -110,8 +110,8 @@ RLS-secured per user; device lock optional
 - Phase 9.5 (M9.5): Dashboard Housekeeping ✅ Complete
 - Phase 9.6 (M9.6): Enhanced Reports Implementation ✅ Complete
 - Phase 9.7-9.10: Israeli Calendar & Calendar Interface ✅ Complete
-- Phase 9.11: Drag-and-Drop Mechanics Enhancement - Current Target
-- Phase 11-17: Polish & Advanced Features - Pending
+- Phase 9.11 (M9.11): Drag-and-Drop Mechanics Enhancement ✅ Complete
+- Phase 11: Smart Schedule Builder Wizard - Current Target
 
 Milestones (incremental, small steps)
 M0 — Project Skeleton ✅ COMPLETE
@@ -584,75 +584,64 @@ Refine drag-and-drop calendar interface to provide clear interaction boundaries 
 
 Acceptance: Drag-and-drop operations work predictably with clear visual boundaries; resize handles only appear where functional; lessons move cleanly without unexpected overlapping behavior.
 
-M11 — Offline-first
+**✅ VERIFIED COMPLETE:**
+- ✅ **Phase 1**: Replaced custom dnd-kit with react-big-calendar built-in DnD
+- ✅ **Phase 2**: Implemented smart scheduling with conflict resolution and automatic rescheduling
+- ✅ **Phase 3**: Added manual time editing capability in lesson record modal
+- ✅ **Drag Functionality**: Lessons can be moved via clean drag-and-drop interface
+- ✅ **Conflict Resolution**: Overlapping lessons automatically prompt user for rescheduling
+- ✅ **Time Editing**: Manual time adjustment available in lesson record modal with calendar sync
 
-Cache: schools, subjects, groups, upcoming lessons, recent records.
+M11 — Smart Schedule Builder Wizard
 
-Edits queue offline; sync on reconnect; last-write-wins.
-
-Acceptance: Turn off network → edit attendance/notes → reconnect → data server-side matches client.
-
-M12 — RTL & Accessibility polish
-
-End-to-end RTL layouts; keyboard/touch targets; language labels fit.
-
-Acceptance: Hebrew labels don't truncate; key screens usable one-handed on mobile.
-
-M13 — MVP Hardening
-
-Loading/empty/error states; basic toasts; guard rails for deletes (confirmations).
-
-Acceptance: No unhandled errors in common flows; smoke tests pass.
-
-M14 — Weekly Schedule View
-
-Calendar/weekly grid view showing recurring schedule; visual representation of all groups across days/times.
+Interactive wizard that guides users through complete schedule setup with intelligent defaults and customization options.
 
 **Key Features:**
-- Weekly calendar grid layout
-- "General Schedule" tab vs "Individual Lessons" tab
-- Visual time blocks showing group assignments
-- Color coding by school/subject
+- "Schedule Wizard" button opens guided modal workflow
+- Smart questions with branching logic based on existing data
+- Checkbox customization options for user preferences
+- Automatic schedule generation with Israeli school curriculum defaults
 
-Acceptance: Weekly view displays all recurring groups; easy to see daily/weekly patterns.
+**Wizard Flow:**
+1. **Existing Data Check**: "I noticed you already have lessons planned. Keep them or start fresh?"
+2. **School Setup**:
+   - "How many schools are you teaching in?" (user enters number)
+   - Dynamic form appears for entering school names based on count
+3. **Per-School Configuration** (for each school):
+   - Teaching schedule (day of week, start/end times: e.g., "8:00am to 13:30pm")
+   - Number of groups
+   - Duration (full year template or custom start/end dates)
+4. **Group Naming Strategy**:
+   - "Would you like to enter group names individually or use defaults (Group 1, Group 2, etc.)?"
+   - If individual: prompt for each group name per time slot
+   - If default: auto-generate sequential names
+5. **Schedule Generation**: Auto-create groups with recurring lessons
 
-M15 — Smart Schedule Builder
+**Default Israeli School Curriculum:**
+- 8:00-8:50 (Period 1)
+- 8:50-9:35 (Period 2)
+- 9:35-10:15 (Break)
+- 10:15-11:00 (Period 3)
+- 11:00-11:45 (Period 4)
+- 11:45-12:00 (Break)
+- 12:00-12:45 (Period 5)
+- 12:45-13:30 (Period 6)
+- 13:30-13:45 (Break)
+- 13:45-14:30 (Period 7)
+- 14:30-15:15 (Period 8)
 
-Wizard-based schedule creation: select school → set teaching hours → specify group count → auto-generate equal time slots.
+**Technical Implementation:**
+- **Professional UI/UX**: Use modern component library (e.g., Headless UI, Radix UI)
+- **Conversational Interface**: Progressive disclosure with smart branching logic
+- **Dynamic Forms**: Forms that adapt based on user input (school count, group preferences)
+- **Step Navigation**: Clear progress indication with back/next buttons
+- **Form Validation**: Real-time validation with helpful error messages
+- **Preview**: Schedule preview before final generation
+- **Bulk Operations**: Efficient database operations for mass creation
+- **Integration**: Seamless integration with existing Groups and Lessons systems
 
-**Key Features:**
-- "Set day's schedule" wizard workflow
-- Automatic slot distribution with proper spacing
-- Time calculation and equal division
-- Preview before confirming schedule
+Acceptance: Wizard completes full schedule setup from empty state; generates schools, subjects, groups, and recurring lessons; user can customize group names and teaching periods; preview shows accurate schedule before confirmation.
 
-Acceptance: Create full day schedule for school in under 1 minute; slots distributed evenly.
-
-M16 — Drag & Drop Schedule Management
-
-Interactive schedule editing with drag-and-drop for groups, time slots, and entire schools.
-
-**Key Features:**
-- Drag groups to reorder within a day
-- Resize time slots (expand/contract duration)
-- Drag entire schools to different days (migrates all groups/times)
-- Visual feedback during drag operations
-- Snap-to-grid for clean time alignment
-
-Acceptance: Reorder groups via drag-drop; resize slots; move school to different day.
-
-M17 — Schedule Conflict Detection & Resolution
-
-Smart conflict detection with resolution suggestions for overlapping times and scheduling issues.
-
-**Key Features:**
-- Real-time conflict detection during editing
-- Visual highlighting of problematic slots
-- Smart suggestions for resolving conflicts
-- Validation before saving changes
-- Automatic adjustment proposals
-
-Acceptance: Conflicts detected and highlighted; resolution suggestions provided; no invalid schedules saved.
 
 Acceptance checklist (MVP “Done”)
 

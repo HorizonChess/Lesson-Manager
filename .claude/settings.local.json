@@ -10,7 +10,8 @@
       "mcp__playwright__browser_click",
       "mcp__playwright__browser_close",
       "mcp__context7__get-library-docs",
-      "mcp__playwright__browser_navigate"
+      "mcp__playwright__browser_navigate",
+      "mcp__context7__resolve-library-id"
     ],
     "deny": [],
     "ask": []

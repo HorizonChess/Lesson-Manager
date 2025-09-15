@@ -3,6 +3,7 @@ import { useEffect, useState } from 'react'
 import { supabase } from '../lib/supabase'
 import { Link } from 'react-router-dom'
 import { israeliCalendar } from '../services/israeliCalendar'
+import { ScheduleWizard } from '../components/ScheduleWizard'
 import type { School, Subject, Group, Lesson, Task, Material } from '../types/database'
 
 interface DashboardStats {
@@ -235,9 +236,12 @@ ${templateJson}
       {/* Header */}
       <div className="flex justify-between items-center">
         <h1 className="text-2xl font-bold">Dashboard</h1>
-        <p className="text-gray-600 dark:text-gray-400">
-          Welcome back, {user?.email?.split('@')[0]}
-        </p>
+        <div className="flex items-center gap-4">
+          <ScheduleWizard />
+          <p className="text-gray-600 dark:text-gray-400">
+            Welcome back, {user?.email?.split('@')[0]}
+          </p>
+        </div>
       </div>
 
       {/* Calendar Update Prompt */}
