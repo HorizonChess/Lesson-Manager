@@ -166,10 +166,12 @@ export function ScheduleWizard() {
     try {
       // Step 1: Clear existing data if requested
       if (!keepExistingData) {
-        await supabase.from('lessons').delete().neq('id', '00000000-0000-0000-0000-000000000000')
-        await supabase.from('groups').delete().neq('id', '00000000-0000-0000-0000-000000000000')
-        await supabase.from('subjects').delete().neq('id', '00000000-0000-0000-0000-000000000000')
-        await supabase.from('schools').delete().neq('id', '00000000-0000-0000-0000-000000000000')
+        // Delete schools (cascade will handle lessons, groups, subjects)
+        const { error: schoolsDeleteError } = await supabase
+          .from('schools')
+          .delete()
+          .eq('user_id', user.id)
+        if (schoolsDeleteError) throw schoolsDeleteError
       }
 
       // Step 2: Create schools
@@ -188,8 +190,7 @@ export function ScheduleWizard() {
           .from('subjects')
           .insert([{
             name: 'General Teaching',
-            school_id: schoolData.id,
-            user_id: user.id
+            school_id: schoolData.id
           }])
           .select()
           .single()
@@ -211,8 +212,7 @@ export function ScheduleWizard() {
             .insert([{
               name: groupName,
               school_id: schoolData.id,
-              subject_id: subjectData.id,
-              user_id: user.id
+              subject_id: subjectData.id
             }])
             .select()
             .single()
@@ -220,11 +220,14 @@ export function ScheduleWizard() {
           if (groupError) throw groupError
 
           // Create recurring lessons for the entire school year
+          const now = moment()
+          const currentSchoolYear = now.month() >= 6 ? now.year() : now.year() - 1 // July = month 6, so July+ = new school year
+
           const startDate = schoolConfig.durationType === 'full-year'
-            ? moment('2024-09-01')
+            ? moment(`${currentSchoolYear}-09-01`)
             : moment(schoolConfig.startDate)
           const endDate = schoolConfig.durationType === 'full-year'
-            ? moment('2025-06-30')
+            ? moment(`${currentSchoolYear + 1}-06-30`)
             : moment(schoolConfig.endDate)
 
           // Generate lessons for each week
@@ -248,8 +251,7 @@ export function ScheduleWizard() {
                 group_id: groupData.id,
                 start_time: lessonStart.toISOString(),
                 end_time: lessonEnd.toISOString(),
-                is_cancelled: false,
-                user_id: user.id
+                is_cancelled: false
               })
             }
 
@@ -495,7 +497,9 @@ export function ScheduleWizard() {
                       }}
                       className="h-4 w-4 text-blue-600"
                     />
-                    <span className="ml-2 text-sm">Full School Year (Sep 2024 - Jun 2025)</span>
+                    <span className="ml-2 text-sm">
+                      Full School Year (Sep {moment().month() >= 6 ? moment().year() : moment().year() - 1} - Jun {moment().month() >= 6 ? moment().year() + 1 : moment().year()})
+                    </span>
                   </label>
                   <label className="flex items-center">
                     <input

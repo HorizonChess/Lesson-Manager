@@ -11,7 +11,8 @@
       "mcp__playwright__browser_close",
       "mcp__context7__get-library-docs",
       "mcp__playwright__browser_navigate",
-      "mcp__context7__resolve-library-id"
+      "mcp__context7__resolve-library-id",
+      "mcp__playwright__browser_snapshot"
     ],
     "deny": [],
     "ask": []
