@@ -90,7 +90,9 @@ RLS-secured per user; device lock optional
 - **M1**: Supabase Auth + User bootstrap - Authentication working correctly ✅
 - **M2**: Schools & Subjects CRUD - Full implementation with user testing ✅
 
-**🎯 CURRENT TARGET:** M11 — Smart Schedule Builder Wizard
+**🎯 CURRENT TARGET:** M11 — Smart Schedule Builder Wizard ✅ NEARLY COMPLETE
+
+**🐛 KNOWN ISSUE:** Time configuration bug - wizard ignores user-specified start/end times and always uses default Israeli school periods starting at 8:00 AM
 
 **📊 Progress Summary:**
 - Phase 1 (M0-M1): Authentication & Infrastructure ✅ Complete
@@ -640,7 +642,24 @@ Interactive wizard that guides users through complete schedule setup with intell
 - **Bulk Operations**: Efficient database operations for mass creation
 - **Integration**: Seamless integration with existing Groups and Lessons systems
 
-Acceptance: Wizard completes full schedule setup from empty state; generates schools, subjects, groups, and recurring lessons; user can customize group names and teaching periods; preview shows accurate schedule before confirmation.
+**✅ COMPLETED IMPLEMENTATION:**
+- ✅ Professional UI using Headless UI with 8-step wizard modal
+- ✅ School-by-school configuration flow (fixed from initial copying bug)
+- ✅ Dynamic form generation based on user input
+- ✅ Smart existing data detection and user choice
+- ✅ Group naming strategy selection (individual vs default)
+- ✅ Complete database integration with proper RLS compliance
+- ✅ Current school year calculation (fixed from hardcoded 2024-2025)
+- ✅ Schedule generation creates schools, subjects, groups, and recurring lessons
+- ✅ Proper wizard step navigation and validation
+- ✅ Database schema compatibility fixes (removed invalid user_id fields)
+
+**🐛 REMAINING BUG:**
+- **Time Configuration Issue**: Wizard ignores user-specified start/end times (e.g., 10:00 AM - 11:30 AM) and always assigns lessons to default Israeli school periods starting at 8:00 AM. Groups need to be properly assigned to the time slots specified by the user.
+
+**🎯 NEXT TASK:** Fix lesson time assignment to respect user-configured start/end times instead of always using default 8:00 AM periods.
+
+Acceptance: Wizard completes full schedule setup from empty state; generates schools, subjects, groups, and recurring lessons; user can customize group names and teaching periods; ✅ WORKS but with time assignment bug documented above.
 
 
 Acceptance checklist (MVP “Done”)
