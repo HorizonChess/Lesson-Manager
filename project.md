@@ -90,13 +90,13 @@ RLS-secured per user; device lock optional
 - **M1**: Supabase Auth + User bootstrap - Authentication working correctly ✅
 - **M2**: Schools & Subjects CRUD - Full implementation with user testing ✅
 
-**🎯 CURRENT TARGET:** M11 — Smart Schedule Builder Wizard ✅ NEARLY COMPLETE
+**CURRENT TARGET:** M11 - Smart Schedule Builder Wizard (COMPLETE)
 
-**✅ BASIC FIX COMPLETED:** Time configuration now respects user's time window
+**LATEST FIX:** Time configuration now respects each teacher's preferred window
 
-**🎯 NEXT PHASE:** Quality of life improvements needed for advanced scheduling scenarios
+**NEXT PHASE:** Quality-of-life improvements for advanced scheduling scenarios
 
-**📊 Progress Summary:**
+**Progress Summary:**
 - Phase 1 (M0-M1): Authentication & Infrastructure ✅ Complete
 - Phase 2 (M2): Schools & Subjects Management ✅ Complete
 - Phase 3 (M3): Groups & Roster ✅ Complete
@@ -115,7 +115,7 @@ RLS-secured per user; device lock optional
 - Phase 9.6 (M9.6): Enhanced Reports Implementation ✅ Complete
 - Phase 9.7-9.10: Israeli Calendar & Calendar Interface ✅ Complete
 - Phase 9.11 (M9.11): Drag-and-Drop Mechanics Enhancement ✅ Complete
-- Phase 11: Smart Schedule Builder Wizard - Current Target
+- Phase 11: Smart Schedule Builder Wizard - Complete
 
 Milestones (incremental, small steps)
 M0 — Project Skeleton ✅ COMPLETE
@@ -622,14 +622,18 @@ Interactive wizard that guides users through complete schedule setup with intell
 - **Enhanced Distribution Algorithm**: Respects user preferences for group period allocation
 
 **Quality of Life Improvements:**
-- **95% Automated Experience**: Most users see clean, automatic allocation without any checkboxes
-- **Progressive Disclosure**: Advanced options only appear when algorithm detects edge cases
-- **Intelligent Time Mapping**: User time windows intelligently mapped to Israeli school curriculum periods
+- 95% automated experience: clean happy path with minimal prompts
+- Progressive disclosure so advanced controls only surface when needed
+- Intelligent time mapping keeps windows aligned with Israeli periods
+- Multi-period lesson controls with smart defaults and manual overrides
+- Custom time snapping toggle for partial matches
+- Scroll-safe modal layout keeps navigation visible on long forms
+- Detailed preview with inline group naming and quick adjustments
 
 **Remaining Enhancements (Optional):**
-- Progressive checkboxes for multi-period lessons (double/triple lessons)
-- Progressive checkboxes for custom times mapping to school periods
-- Enhanced preview with interactive controls
+- Partner-school templates to pre-fill day/time defaults
+- Bulk import for roster plus initial period preferences
+- Schedule audit log or undo support for generated lessons
 
 Acceptance: ✅ FULLY COMPLETE - Wizard creates complete schedules with smart period allocation, handles edge cases with progressive customization, and maps user time windows correctly to Israeli school periods.
 
@@ -651,6 +655,14 @@ Reports: attendance %, hours, coverage correct on sample data
 RTL and offline behaviors verified; RLS prevents cross-user access
 
 Backlog (post-MVP)
+- Partner-school templates that auto-fill common day/time defaults
+- Bulk roster import with initial period preferences
+- Schedule audit log / undo flow for generated lessons
+- Optional exact-time scheduling mode (skip snapping to standard periods)
+- Unified lesson + material templates with auto-fill into lesson records
+- School-level management overhaul and date-based cancellation tooling
+- Full UI/UX visual refresh
+
 
 Curriculum map & skill coverage heatmap
 

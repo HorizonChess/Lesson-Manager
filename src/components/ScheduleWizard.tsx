@@ -32,7 +32,9 @@ interface SchoolConfig {
   endDate: string
   // Advanced configuration options
   showAdvancedOptions?: boolean
-  customGroupDurations?: Record<number, number> // groupIndex -> periods
+  customGroupDurations?: number[]
+  enableMultiPeriodCustomization?: boolean
+  mapCustomTimesToPeriods?: boolean
   allowUnevenDistribution?: boolean
   preferredGroupForExtraPeriods?: number[]
 }
@@ -50,6 +52,50 @@ export function ScheduleWizard() {
   const [currentSchoolIndex, setCurrentSchoolIndex] = useState<number>(0)
   const [groupNamingStrategy, setGroupNamingStrategy] = useState<'individual' | 'default'>('default')
   const [customGroupNames, setCustomGroupNames] = useState<Record<string, string[]>>({})
+  const [expandedSchools, setExpandedSchools] = useState<Record<number, boolean>>({})
+  const [previewMode, setPreviewMode] = useState<'summary' | 'detailed'>('summary')
+
+  const updateGroupName = (schoolName: string, groupIndex: number, value: string) => {
+    setCustomGroupNames(prev => {
+      const next = { ...prev }
+      const current = next[schoolName] ? [...next[schoolName]] : []
+      current[groupIndex] = value
+      next[schoolName] = current
+      return next
+    })
+  }
+
+  const toggleSchoolPreview = (index: number) => {
+    setExpandedSchools(prev => ({
+      ...prev,
+      [index]: !prev[index]
+    }))
+  }
+
+  const goToSchoolConfig = (index: number) => {
+    const targetStep = wizardSteps.findIndex(step => step.id === 'school-config')
+    if (targetStep !== -1) {
+      setCurrentSchoolIndex(index)
+      setCurrentStep(targetStep)
+    }
+  }
+
+  const isSchoolConfigValid = (school?: SchoolConfig) => {
+    if (!school) return false
+    if (!school.name.trim()) return false
+    if (!school.dayOfWeek) return false
+    if (!school.startTime || !school.endTime) return false
+    if (school.groupCount < 1) return false
+
+    if (school.enableMultiPeriodCustomization) {
+      const details = buildScheduleDetails(school)
+      if (!details.customDistributionValid) {
+        return false
+      }
+    }
+
+    return true
+  }
 
   const currentWizardStep = wizardSteps[currentStep]
 
@@ -57,7 +103,7 @@ export function ScheduleWizard() {
     if (currentStep < wizardSteps.length - 1) {
       // Initialize schools array when moving to school names step
       if (wizardSteps[currentStep].id === 'school-count' && schools.length === 0) {
-        const newSchools: SchoolConfig[] = Array(schoolCount).fill(null).map((_, index) => ({
+        const newSchools: SchoolConfig[] = Array(schoolCount).fill(null).map(() => ({
           name: '',
           dayOfWeek: 'Monday',
           startTime: '08:00',
@@ -84,6 +130,12 @@ export function ScheduleWizard() {
 
       // If we're on the preview step, generate the schedule
       if (wizardSteps[currentStep].id === 'preview') {
+        const allValid = schools.every(isSchoolConfigValid)
+        if (!allValid) {
+          alert('Please finish configuring all schools before generating your schedule.')
+          return
+        }
+
         setLoading(true)
         try {
           await generateSchedule()
@@ -127,6 +179,8 @@ export function ScheduleWizard() {
     setCurrentSchoolIndex(0)
     setGroupNamingStrategy('default')
     setCustomGroupNames({})
+    setExpandedSchools({})
+    setPreviewMode('summary')
   }
 
   const checkExistingData = async () => {
@@ -145,6 +199,8 @@ export function ScheduleWizard() {
 
   const openWizard = async () => {
     setIsOpen(true)
+    setExpandedSchools({})
+    setPreviewMode('summary')
     const hasExistingData = await checkExistingData()
     if (!hasExistingData) {
       // Skip the existing data step if no data exists
@@ -212,7 +268,24 @@ export function ScheduleWizard() {
   }
 
   // Calculate how to distribute groups across available periods
-  const calculateGroupDistribution = (periodsAvailable: number, groupCount: number, preferredGroups?: number[]) => {
+  const calculateGroupDistribution = (
+    periodsAvailable: number,
+    groupCount: number,
+    preferredGroups?: number[],
+    customDurations?: number[]
+  ) => {
+    if (customDurations && customDurations.length === groupCount) {
+      const totalCustom = customDurations.reduce((sum, value) => sum + value, 0)
+      const hasInvalidValue = customDurations.some(value => value < 1)
+      if (!hasInvalidValue && totalCustom === periodsAvailable) {
+        return customDurations
+      }
+    }
+
+    if (periodsAvailable <= 0) {
+      return Array(groupCount).fill(1)
+    }
+
     if (periodsAvailable === groupCount) {
       // Perfect 1:1 mapping
       return Array(groupCount).fill(1)
@@ -240,55 +313,114 @@ export function ScheduleWizard() {
     }
   }
 
-  // Enhanced period allocation with smart fallback
-  const getPeriodsInTimeWindow = (startTime: string, endTime: string, groupCount: number, preferredGroups?: number[]) => {
-    const analysis = analyzeTimeWindow(startTime, endTime, groupCount)
-    const distribution = calculateGroupDistribution(analysis.periodsInWindow.length, groupCount, preferredGroups)
+  interface ScheduleDetails {
+    analysis: ReturnType<typeof analyzeTimeWindow>
+    periodsForDistribution: { start: string; end: string }[]
+    distribution: number[]
+    slots: { start: string; end: string }[]
+    customDurations?: number[]
+    customDistributionValid: boolean
+    periodBalance: number
+  }
 
-    const selectedPeriods = []
+  const buildScheduleDetails = (config: SchoolConfig): ScheduleDetails => {
+    const analysis = analyzeTimeWindow(config.startTime, config.endTime, config.groupCount)
 
-    if (analysis.strategy === 'perfect-match' || analysis.strategy === 'partial-match') {
-      // Use period-based allocation
-      let periodIndex = 0
-      for (let i = 0; i < groupCount; i++) {
-        const periodsForThisGroup = distribution[i]
+    let periodsForDistribution = [...analysis.periodsInWindow]
+    if (analysis.strategy === 'custom-times' && config.mapCustomTimesToPeriods) {
+      const userStart = timeToMinutes(config.startTime)
+      const userEnd = timeToMinutes(config.endTime)
 
-        if (periodsForThisGroup === 1 && periodIndex < analysis.periodsInWindow.length) {
-          // Single period assignment
-          selectedPeriods.push(analysis.periodsInWindow[periodIndex])
+      let startIndex = 0
+      for (let i = 0; i < defaultPeriods.length; i++) {
+        if (timeToMinutes(defaultPeriods[i].start) <= userStart) {
+          startIndex = i
+        }
+      }
+
+      let endIndex = defaultPeriods.length - 1
+      for (let i = 0; i < defaultPeriods.length; i++) {
+        if (timeToMinutes(defaultPeriods[i].end) >= userEnd) {
+          endIndex = i
+          break
+        }
+      }
+
+      periodsForDistribution = defaultPeriods.slice(startIndex, endIndex + 1)
+    }
+
+    const customDurations = config.enableMultiPeriodCustomization ? config.customGroupDurations : undefined
+    const customDistributionValid = !!(
+      customDurations &&
+      customDurations.length === config.groupCount &&
+      customDurations.every(value => value >= 1) &&
+      customDurations.reduce((sum, value) => sum + value, 0) === periodsForDistribution.length
+    )
+
+    const distribution = calculateGroupDistribution(
+      periodsForDistribution.length,
+      config.groupCount,
+      config.preferredGroupForExtraPeriods,
+      customDistributionValid ? customDurations : undefined
+    )
+
+    const usePeriodBasedStrategy =
+      analysis.strategy === 'perfect-match' ||
+      analysis.strategy === 'partial-match' ||
+      (analysis.strategy === 'custom-times' && config.mapCustomTimesToPeriods)
+
+    const slots: { start: string; end: string }[] = []
+    let periodIndex = 0
+
+    if (usePeriodBasedStrategy) {
+      for (let i = 0; i < config.groupCount; i++) {
+        const periodsForGroup = distribution[i] ?? 1
+
+        if (periodsForGroup === 1 && periodIndex < periodsForDistribution.length) {
+          slots.push(periodsForDistribution[periodIndex])
           periodIndex++
-        } else if (periodsForThisGroup > 1 && periodIndex < analysis.periodsInWindow.length) {
-          // Multi-period assignment - create combined time span
-          const startPeriod = analysis.periodsInWindow[periodIndex]
-          const endPeriodIndex = Math.min(periodIndex + periodsForThisGroup - 1, analysis.periodsInWindow.length - 1)
-          const endPeriod = analysis.periodsInWindow[endPeriodIndex]
+        } else if (periodsForGroup > 1 && periodIndex < periodsForDistribution.length) {
+          const startPeriod = periodsForDistribution[periodIndex]
+          const endPeriodIndex = Math.min(periodIndex + periodsForGroup - 1, periodsForDistribution.length - 1)
+          const endPeriod = periodsForDistribution[endPeriodIndex]
 
-          selectedPeriods.push({
+          slots.push({
             start: startPeriod.start,
             end: endPeriod.end
           })
-          periodIndex += periodsForThisGroup
+          periodIndex += periodsForGroup
         } else {
-          // Fallback to custom time (shouldn't happen often)
-          selectedPeriods.push({
-            start: startTime,
-            end: endTime
+          slots.push({
+            start: config.startTime,
+            end: config.endTime
           })
         }
       }
     } else {
-      // Custom times strategy - preserve user's exact times
-      for (let i = 0; i < groupCount; i++) {
-        selectedPeriods.push({
-          start: startTime,
-          end: endTime
+      for (let i = 0; i < config.groupCount; i++) {
+        slots.push({
+          start: config.startTime,
+          end: config.endTime
         })
       }
     }
 
-    return selectedPeriods
+    const periodBalance = customDurations
+      ? periodsForDistribution.length - customDurations.reduce((sum, value) => sum + value, 0)
+      : 0
+
+    return {
+      analysis,
+      periodsForDistribution,
+      distribution,
+      slots,
+      customDurations,
+      customDistributionValid,
+      periodBalance
+    }
   }
 
+  // Enhanced period allocation with smart fallback
   const generateSchedule = async () => {
     if (!user) return
 
@@ -327,15 +459,11 @@ export function ScheduleWizard() {
         if (subjectError) throw subjectError
 
         // Create groups based on the configured periods within user's time window
-        const availablePeriods = getPeriodsInTimeWindow(
-          schoolConfig.startTime,
-          schoolConfig.endTime,
-          schoolConfig.groupCount,
-          schoolConfig.preferredGroupForExtraPeriods
-        )
+        const scheduleDetails = buildScheduleDetails(schoolConfig)
+        const availablePeriods = scheduleDetails.slots
 
         for (let i = 0; i < schoolConfig.groupCount; i++) {
-          const period = availablePeriods[i]
+          const period = availablePeriods[i] || { start: schoolConfig.startTime, end: schoolConfig.endTime }
           const groupName = groupNamingStrategy === 'individual'
             ? customGroupNames[schoolConfig.name]?.[i] || `Group ${i + 1}`
             : `Group ${i + 1}`
@@ -365,7 +493,7 @@ export function ScheduleWizard() {
             : moment(schoolConfig.endDate)
 
           // Generate lessons for each week
-          let currentDate = startDate.clone()
+          const currentDate = startDate.clone()
           const lessons = []
 
           while (currentDate.isBefore(endDate)) {
@@ -524,25 +652,59 @@ export function ScheduleWizard() {
           </div>
         )
 
-      case 'school-config':
+      case 'school-config': {
         const schoolToConfig = schools[currentSchoolIndex]
+        if (!schoolToConfig) {
+          return (
+            <div className="text-center text-sm text-gray-500 dark:text-gray-400">
+              Add a school name before configuring.
+            </div>
+          )
+        }
+
+        const scheduleDetails = buildScheduleDetails(schoolToConfig)
+        const analysis = scheduleDetails.analysis
+        const distribution = scheduleDetails.distribution
+        const defaultDistribution = calculateGroupDistribution(
+          scheduleDetails.periodsForDistribution.length,
+          schoolToConfig.groupCount,
+          schoolToConfig.preferredGroupForExtraPeriods
+        )
+        const totalAvailablePeriods = scheduleDetails.periodsForDistribution.length
+        const hasUnevenDistribution = distribution.some(periods => periods !== distribution[0])
+        const hasMultiplePeriods = distribution.some(periods => periods > 1)
+        const hasCustomTimes = analysis.strategy === 'custom-times'
+        const minPeriods = distribution.length ? Math.min(...distribution) : 0
+        const maxPeriods = distribution.length ? Math.max(...distribution) : 0
+        const extraGroupIndexes = distribution.reduce<number[]>((acc, value, index) => {
+          if (value > minPeriods) {
+            acc.push(index)
+          }
+          return acc
+        }, [])
+        const customPeriodBalance = schoolToConfig.enableMultiPeriodCustomization
+          ? scheduleDetails.periodBalance
+          : 0
+        const optionsRange = Math.max(totalAvailablePeriods || 1, maxPeriods || 1)
+        const firstPeriod = scheduleDetails.periodsForDistribution[0]
+        const lastPeriod = scheduleDetails.periodsForDistribution[scheduleDetails.periodsForDistribution.length - 1]
+        const extraSelectionLimit = extraGroupIndexes.length
 
         return (
           <div className="space-y-4">
             <div className="text-center">
-              <h3 className="text-lg font-medium text-gray-900 dark:text-white">Configure {schoolToConfig?.name || `School ${currentSchoolIndex + 1}`}</h3>
+              <h3 className="text-lg font-medium text-gray-900 dark:text-white">Configure {schoolToConfig.name || `School ${currentSchoolIndex + 1}`}</h3>
               <p className="mt-2 text-sm text-gray-500 dark:text-gray-400">
                 School {currentSchoolIndex + 1} of {schools.length} - Set up teaching schedule and group details
               </p>
             </div>
             <div className="space-y-4">
-              {/* Day of Week */}
               <div>
                 <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
                   Teaching Day
                 </label>
                 <select
-                  value={schoolToConfig?.dayOfWeek || 'Monday'}
+                  value={schoolToConfig.dayOfWeek || 'Monday'}
                   onChange={(e) => {
                     const newSchools = [...schools]
                     newSchools[currentSchoolIndex].dayOfWeek = e.target.value
@@ -556,7 +718,6 @@ export function ScheduleWizard() {
                 </select>
               </div>
 
-              {/* Time Range */}
               <div className="grid grid-cols-2 gap-3">
                 <div>
                   <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
@@ -564,7 +725,7 @@ export function ScheduleWizard() {
                   </label>
                   <input
                     type="time"
-                    value={schoolToConfig?.startTime || '08:00'}
+                    value={schoolToConfig.startTime || '08:00'}
                     onChange={(e) => {
                       const newSchools = [...schools]
                       newSchools[currentSchoolIndex].startTime = e.target.value
@@ -579,7 +740,7 @@ export function ScheduleWizard() {
                   </label>
                   <input
                     type="time"
-                    value={schoolToConfig?.endTime || '13:30'}
+                    value={schoolToConfig.endTime || '13:30'}
                     onChange={(e) => {
                       const newSchools = [...schools]
                       newSchools[currentSchoolIndex].endTime = e.target.value
@@ -590,7 +751,6 @@ export function ScheduleWizard() {
                 </div>
               </div>
 
-              {/* Group Count */}
               <div>
                 <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
                   Number of Groups
@@ -599,171 +759,224 @@ export function ScheduleWizard() {
                   type="number"
                   min="1"
                   max="8"
-                  value={schoolToConfig?.groupCount || 6}
+                  value={schoolToConfig.groupCount || 6}
                   onChange={(e) => {
                     const newSchools = [...schools]
-                    newSchools[currentSchoolIndex].groupCount = parseInt(e.target.value) || 6
+                    newSchools[currentSchoolIndex].groupCount = parseInt(e.target.value, 10) || 6
                     setSchools(newSchools)
                   }}
                   className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-blue-500"
                 />
               </div>
 
-              {/* Smart Analysis and Progressive Options */}
-              {(() => {
-                if (!schoolToConfig) return null
-
-                const analysis = analyzeTimeWindow(
-                  schoolToConfig.startTime,
-                  schoolToConfig.endTime,
-                  schoolToConfig.groupCount
-                )
-
-                const distribution = calculateGroupDistribution(
-                  analysis.periodsInWindow.length,
-                  schoolToConfig.groupCount,
-                  schoolToConfig.preferredGroupForExtraPeriods
-                )
-
-                const hasUnevenDistribution = distribution.some(periods => periods !== distribution[0])
-                const hasCustomTimes = analysis.strategy === 'custom-times'
-                const hasMultiplePeriods = distribution.some(periods => periods > 1)
-
-                // Show smart preview
-                return (
-                  <div className="bg-blue-50 dark:bg-blue-900/20 rounded-lg p-3 space-y-3">
-                    <div className="text-sm">
-                      <div className="font-medium text-blue-800 dark:text-blue-300 mb-2">
-                        Smart Schedule Analysis
-                      </div>
-                      <div className="text-blue-700 dark:text-blue-400 space-y-1">
-                        <div>• Time window: {analysis.totalMinutes} min ({analysis.academicHours} academic hours)</div>
-                        <div>• Strategy: {analysis.strategy.replace('-', ' ')}</div>
-                        <div>• Available periods: {analysis.periodsInWindow.length}</div>
-                        {hasUnevenDistribution && (
-                          <div>• Distribution: {distribution.map((p, i) => `Group ${i+1}: ${p} period${p > 1 ? 's' : ''}`).join(', ')}</div>
-                        )}
-                      </div>
-                    </div>
-
-                    {/* Progressive Checkbox for Uneven Distribution */}
+              <div className="bg-blue-50 dark:bg-blue-900/20 rounded-lg p-3 space-y-3">
+                <div className="text-sm">
+                  <div className="font-medium text-blue-800 dark:text-blue-300 mb-2">
+                    Smart Schedule Analysis
+                  </div>
+                  <div className="text-blue-700 dark:text-blue-400 space-y-1">
+                    <div>- Time window: {analysis.totalMinutes} min ({analysis.academicHours} academic hours)</div>
+                    <div>- Strategy: {analysis.strategy.replace('-', ' ')}</div>
+                    <div>- Available periods: {analysis.periodsInWindow.length}</div>
                     {hasUnevenDistribution && (
-                      <div className="border-t border-blue-200 dark:border-blue-700 pt-3">
-                        <label className="flex items-start">
-                          <input
-                            type="checkbox"
-                            checked={schoolToConfig.showAdvancedOptions || false}
-                            onChange={(e) => {
-                              const newSchools = [...schools]
-                              newSchools[currentSchoolIndex].showAdvancedOptions = e.target.checked
-                              setSchools(newSchools)
-                            }}
-                            className="h-4 w-4 text-blue-600 mt-0.5"
-                          />
-                          <div className="ml-2">
-                            <div className="text-sm font-medium text-blue-800 dark:text-blue-300">
-                              Customize uneven distribution
-                            </div>
-                            <div className="text-xs text-blue-600 dark:text-blue-400">
-                              Some groups will get {Math.max(...distribution)} periods, others {Math.min(...distribution)}.
-                              Check this to control which groups get extra periods.
-                            </div>
-                          </div>
-                        </label>
-
-                        {/* Advanced Options Panel */}
-                        {schoolToConfig.showAdvancedOptions && (
-                          <div className="mt-3 space-y-3 bg-white dark:bg-gray-800 rounded p-3 border border-blue-200 dark:border-blue-700">
-                            <div className="text-sm font-medium text-gray-700 dark:text-gray-300">
-                              Select groups that should get extra periods:
-                            </div>
-                            <div className="grid grid-cols-2 gap-2">
-                              {Array.from({ length: schoolToConfig.groupCount }, (_, i) => {
-                                const willGetExtra = i < (distribution.filter(p => p > Math.min(...distribution)).length)
-                                const isSelected = schoolToConfig.preferredGroupForExtraPeriods?.includes(i) || false
-
-                                return (
-                                  <label key={i} className="flex items-center">
-                                    <input
-                                      type="checkbox"
-                                      checked={isSelected}
-                                      onChange={(e) => {
-                                        const newSchools = [...schools]
-                                        const current = newSchools[currentSchoolIndex].preferredGroupForExtraPeriods || []
-                                        if (e.target.checked) {
-                                          newSchools[currentSchoolIndex].preferredGroupForExtraPeriods = [...current, i].slice(0, distribution.filter(p => p > Math.min(...distribution)).length)
-                                        } else {
-                                          newSchools[currentSchoolIndex].preferredGroupForExtraPeriods = current.filter(g => g !== i)
-                                        }
-                                        setSchools(newSchools)
-                                      }}
-                                      className="h-3 w-3 text-blue-600"
-                                    />
-                                    <span className="ml-1 text-xs text-gray-600 dark:text-gray-400">
-                                      Group {i + 1} {willGetExtra && !isSelected ? '(auto)' : ''}
-                                    </span>
-                                  </label>
-                                )
-                              })}
-                            </div>
-                            <div className="text-xs text-gray-500 dark:text-gray-400">
-                              Groups with extra periods will get {Math.max(...distribution)} periods instead of {Math.min(...distribution)}.
-                            </div>
-                          </div>
-                        )}
-                      </div>
+                      <div>- Distribution: {distribution.map((p, i) => `Group ${i + 1}: ${p} period${p > 1 ? 's' : ''}`).join(', ')}</div>
                     )}
+                  </div>
+                </div>
 
-                    {/* Progressive Checkbox for Multi-Period Lessons */}
-                    {hasMultiplePeriods && !hasUnevenDistribution && (
-                      <div className="border-t border-blue-200 dark:border-blue-700 pt-3">
-                        <label className="flex items-start">
-                          <input
-                            type="checkbox"
-                            checked={false} // Will implement in next iteration
-                            onChange={() => {}}
-                            className="h-4 w-4 text-blue-600 mt-0.5"
-                          />
-                          <div className="ml-2">
-                            <div className="text-sm font-medium text-blue-800 dark:text-blue-300">
-                              Customize double/triple lessons
-                            </div>
-                            <div className="text-xs text-blue-600 dark:text-blue-400">
-                              Groups will get {Math.max(...distribution)}-period lessons.
-                              Check this to split some into separate single periods.
-                            </div>
-                          </div>
-                        </label>
+                {hasUnevenDistribution && (
+                  <div className="border-t border-blue-200 dark:border-blue-700 pt-3">
+                    <label className="flex items-start">
+                      <input
+                        type="checkbox"
+                        checked={schoolToConfig.showAdvancedOptions || false}
+                        onChange={(e) => {
+                          const newSchools = [...schools]
+                          newSchools[currentSchoolIndex].showAdvancedOptions = e.target.checked
+                          if (!e.target.checked) {
+                            newSchools[currentSchoolIndex].preferredGroupForExtraPeriods = undefined
+                          }
+                          setSchools(newSchools)
+                        }}
+                        className="h-4 w-4 text-blue-600 mt-0.5"
+                      />
+                      <div className="ml-2">
+                        <div className="text-sm font-medium text-blue-800 dark:text-blue-300">
+                          Customize uneven distribution
+                        </div>
+                        <div className="text-xs text-blue-600 dark:text-blue-400">
+                          Some groups will get {maxPeriods} periods, others {minPeriods}. Check this to pick who gets the extra slots.
+                        </div>
                       </div>
-                    )}
+                    </label>
 
-                    {/* Progressive Checkbox for Custom Times */}
-                    {hasCustomTimes && (
-                      <div className="border-t border-blue-200 dark:border-blue-700 pt-3">
-                        <label className="flex items-start">
-                          <input
-                            type="checkbox"
-                            checked={false} // Will implement in next iteration
-                            onChange={() => {}}
-                            className="h-4 w-4 text-blue-600 mt-0.5"
-                          />
-                          <div className="ml-2">
-                            <div className="text-sm font-medium text-blue-800 dark:text-blue-300">
-                              Map to school periods instead
-                            </div>
-                            <div className="text-xs text-blue-600 dark:text-blue-400">
-                              Your times don't align with standard periods.
-                              Check this to use nearby school periods instead of exact times.
-                            </div>
-                          </div>
-                        </label>
+                    {schoolToConfig.showAdvancedOptions && (
+                      <div className="mt-3 space-y-3 bg-white dark:bg-gray-800 rounded p-3 border border-blue-200 dark:border-blue-700">
+                        <div className="text-sm font-medium text-gray-700 dark:text-gray-300">
+                          Select groups that should get extra periods:
+                        </div>
+                        <div className="grid grid-cols-2 gap-2">
+                          {Array.from({ length: schoolToConfig.groupCount }, (_, i) => {
+                            const willGetExtra = extraGroupIndexes.includes(i)
+                            const currentSelection = schoolToConfig.preferredGroupForExtraPeriods || []
+                            const isSelected = currentSelection.includes(i)
+
+                            return (
+                              <label key={i} className="flex items-center">
+                                <input
+                                  type="checkbox"
+                                  checked={isSelected}
+                                  onChange={(e) => {
+                                    const newSchools = [...schools]
+                                    const existing = newSchools[currentSchoolIndex].preferredGroupForExtraPeriods || []
+                                    if (e.target.checked) {
+                                      const next = Array.from(new Set([...existing, i]))
+                                      newSchools[currentSchoolIndex].preferredGroupForExtraPeriods = next.slice(0, extraSelectionLimit)
+                                    } else {
+                                      newSchools[currentSchoolIndex].preferredGroupForExtraPeriods = existing.filter(value => value !== i)
+                                    }
+                                    setSchools(newSchools)
+                                  }}
+                                  className="h-3 w-3 text-blue-600"
+                                />
+                                <span className="ml-1 text-xs text-gray-600 dark:text-gray-400">
+                                  Group {i + 1}{willGetExtra && !isSelected ? ' (auto)' : ''}
+                                </span>
+                              </label>
+                            )
+                          })}
+                        </div>
+                        <div className="text-xs text-gray-500 dark:text-gray-400">
+                          Groups with extra periods will get {maxPeriods} periods instead of {minPeriods}.
+                        </div>
                       </div>
                     )}
                   </div>
-                )
-              })()}
+                )}
 
-              {/* Duration Type */}
+                {hasMultiplePeriods && !hasUnevenDistribution && (
+                  <div className="border-t border-blue-200 dark:border-blue-700 pt-3">
+                    <label className="flex items-start">
+                      <input
+                        type="checkbox"
+                        checked={schoolToConfig.enableMultiPeriodCustomization || false}
+                        onChange={(e) => {
+                          const newSchools = [...schools]
+                          if (e.target.checked) {
+                            newSchools[currentSchoolIndex].enableMultiPeriodCustomization = true
+                            newSchools[currentSchoolIndex].customGroupDurations = [...defaultDistribution]
+                          } else {
+                            newSchools[currentSchoolIndex].enableMultiPeriodCustomization = false
+                            newSchools[currentSchoolIndex].customGroupDurations = undefined
+                          }
+                          setSchools(newSchools)
+                        }}
+                        className="h-4 w-4 text-blue-600 mt-0.5"
+                      />
+                      <div className="ml-2">
+                        <div className="text-sm font-medium text-blue-800 dark:text-blue-300">
+                          Customize double/triple lessons
+                        </div>
+                        <div className="text-xs text-blue-600 dark:text-blue-400">
+                          Groups will get {maxPeriods}-period lessons by default. Adjust to fit your teaching style.
+                        </div>
+                      </div>
+                    </label>
+
+                    {schoolToConfig.enableMultiPeriodCustomization && (
+                      <div className="mt-3 space-y-3 bg-white dark:bg-gray-800 rounded p-3 border border-blue-200 dark:border-blue-700">
+                        <div className="flex items-center justify-between text-xs text-gray-500 dark:text-gray-400">
+                          <span>Total periods available: {totalAvailablePeriods}</span>
+                          <button
+                            type="button"
+                            onClick={() => {
+                              const newSchools = [...schools]
+                              newSchools[currentSchoolIndex].customGroupDurations = [...defaultDistribution]
+                              setSchools(newSchools)
+                            }}
+                            className="text-blue-600 dark:text-blue-400 hover:underline"
+                          >
+                            Reset to smart defaults
+                          </button>
+                        </div>
+                        <div className="space-y-2">
+                          {Array.from({ length: schoolToConfig.groupCount }, (_, i) => {
+                            const value = schoolToConfig.customGroupDurations?.[i] ?? distribution[i] ?? 1
+
+                            return (
+                              <div key={i} className="flex items-center justify-between">
+                                <span className="text-sm text-gray-700 dark:text-gray-300">Group {i + 1}</span>
+                                <div className="flex items-center gap-2">
+                                  <select
+                                    value={value}
+                                    onChange={(e) => {
+                                      const newValue = parseInt(e.target.value, 10) || 1
+                                      const newSchools = [...schools]
+                                      const base = newSchools[currentSchoolIndex].customGroupDurations ?? [...defaultDistribution]
+                                      const durations = [...base]
+                                      durations[i] = newValue
+                                      newSchools[currentSchoolIndex].customGroupDurations = durations
+                                      setSchools(newSchools)
+                                    }}
+                                    className="border border-gray-300 rounded px-2 py-1 text-sm focus:outline-none focus:border-blue-500"
+                                  >
+                                    {Array.from({ length: optionsRange }, (_, optionIndex) => optionIndex + 1).map(optionValue => (
+                                      <option key={optionValue} value={optionValue}>{optionValue}</option>
+                                    ))}
+                                  </select>
+                                  <span className="text-xs text-gray-500 dark:text-gray-400">
+                                    period{value > 1 ? 's' : ''}
+                                  </span>
+                                </div>
+                              </div>
+                            )
+                          })}
+                        </div>
+                        <div
+                          className={`text-xs ${customPeriodBalance === 0 ? 'text-green-700 dark:text-green-300' : 'text-red-600 dark:text-red-400'}`}
+                        >
+                          {customPeriodBalance === 0
+                            ? 'All periods allocated perfectly.'
+                            : customPeriodBalance > 0
+                              ? `${customPeriodBalance} period${customPeriodBalance === 1 ? '' : 's'} still unassigned.`
+                              : `Over-allocated by ${Math.abs(customPeriodBalance)} period${Math.abs(customPeriodBalance) === 1 ? '' : 's'}.`}
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                )}
+
+                {hasCustomTimes && (
+                  <div className="border-t border-blue-200 dark:border-blue-700 pt-3">
+                    <label className="flex items-start">
+                      <input
+                        type="checkbox"
+                        checked={schoolToConfig.mapCustomTimesToPeriods || false}
+                        onChange={(e) => {
+                          const newSchools = [...schools]
+                          newSchools[currentSchoolIndex].mapCustomTimesToPeriods = e.target.checked
+                          setSchools(newSchools)
+                        }}
+                        className="h-4 w-4 text-blue-600 mt-0.5"
+                      />
+                      <div className="ml-2">
+                        <div className="text-sm font-medium text-blue-800 dark:text-blue-300">
+                          Map to school periods instead
+                        </div>
+                        <div className="text-xs text-blue-600 dark:text-blue-400">
+                          Your times don't align with standard periods. Snap to nearby periods for cleaner lesson blocks.
+                        </div>
+                        {schoolToConfig.mapCustomTimesToPeriods && (
+                          <div className="text-xs text-blue-500 dark:text-blue-300 mt-1">
+                            We'll use {(firstPeriod ? firstPeriod.start : schoolToConfig.startTime)} - {(lastPeriod ? lastPeriod.end : schoolToConfig.endTime)} as the boundary.
+                          </div>
+                        )}
+                      </div>
+                    </label>
+                  </div>
+                )}
+              </div>
+
               <div>
                 <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                   Teaching Duration
@@ -774,8 +987,8 @@ export function ScheduleWizard() {
                       type="radio"
                       name={`duration-${currentSchoolIndex}`}
                       value="full-year"
-                      checked={schoolToConfig?.durationType === 'full-year'}
-                      onChange={(e) => {
+                      checked={schoolToConfig.durationType === 'full-year'}
+                      onChange={() => {
                         const newSchools = [...schools]
                         newSchools[currentSchoolIndex].durationType = 'full-year'
                         setSchools(newSchools)
@@ -791,8 +1004,8 @@ export function ScheduleWizard() {
                       type="radio"
                       name={`duration-${currentSchoolIndex}`}
                       value="custom"
-                      checked={schoolToConfig?.durationType === 'custom'}
-                      onChange={(e) => {
+                      checked={schoolToConfig.durationType === 'custom'}
+                      onChange={() => {
                         const newSchools = [...schools]
                         newSchools[currentSchoolIndex].durationType = 'custom'
                         setSchools(newSchools)
@@ -802,7 +1015,7 @@ export function ScheduleWizard() {
                     <span className="ml-2 text-sm">Custom Date Range</span>
                   </label>
                 </div>
-                {schoolToConfig?.durationType === 'custom' && (
+                {schoolToConfig.durationType === 'custom' && (
                   <div className="grid grid-cols-2 gap-3 mt-3">
                     <div>
                       <label className="block text-xs text-gray-500 dark:text-gray-400 mb-1">Start Date</label>
@@ -836,7 +1049,7 @@ export function ScheduleWizard() {
             </div>
           </div>
         )
-
+      }
       case 'group-naming':
         return (
           <div className="space-y-4">
@@ -883,42 +1096,137 @@ export function ScheduleWizard() {
           </div>
         )
 
-      case 'preview':
+      case 'preview': {
+        if (schools.length === 0) {
+          return (
+            <div className="text-center text-sm text-gray-500 dark:text-gray-400">
+              Add at least one school to preview your schedule.
+            </div>
+          )
+        }
+
+        const schoolsWithDetails = schools.map((school, index) => ({
+          school,
+          details: buildScheduleDetails(school),
+          index
+        }))
+        const totalGroups = schools.reduce((sum, school) => sum + school.groupCount, 0)
+
         return (
           <div className="space-y-4">
-            <div className="text-center">
-              <h3 className="text-lg font-medium text-gray-900 dark:text-white">Preview Your Schedule</h3>
-              <p className="mt-2 text-sm text-gray-500 dark:text-gray-400">
-                Review everything before I create your schedule
-              </p>
+            <div className="flex items-center justify-between">
+              <div className="text-center flex-1">
+                <h3 className="text-lg font-medium text-gray-900 dark:text-white">Preview Your Schedule</h3>
+                <p className="mt-2 text-sm text-gray-500 dark:text-gray-400">
+                  Review everything before I create your schedule
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={() => setPreviewMode(previewMode === 'summary' ? 'detailed' : 'summary')}
+                className="text-xs text-blue-600 dark:text-blue-400 hover:underline"
+              >
+                {previewMode === 'summary' ? 'Detailed view' : 'Summary view'}
+              </button>
             </div>
-            <div className="bg-gray-50 dark:bg-gray-700 rounded-lg p-4 space-y-4 max-h-64 overflow-y-auto">
-              {schools.map((school, index) => (
-                <div key={index} className="border-b pb-3 last:border-b-0 last:pb-0">
-                  <h4 className="font-medium text-gray-900 dark:text-white">{school.name}</h4>
-                  <div className="text-sm text-gray-600 dark:text-gray-400">
-                    {school.dayOfWeek}s, {school.startTime} - {school.endTime}
-                  </div>
-                  <div className="text-sm text-gray-600 dark:text-gray-400">
-                    {school.groupCount} groups • {school.durationType === 'full-year' ? 'Full year' : 'Custom dates'}
-                  </div>
-                </div>
-              ))}
-            </div>
+
             <div className="bg-blue-50 dark:bg-blue-900/20 rounded-lg p-3">
               <div className="text-sm text-blue-800 dark:text-blue-300">
                 <strong>What I'll create:</strong>
                 <ul className="mt-1 ml-4 list-disc space-y-1">
                   <li>{schools.length} school{schools.length > 1 ? 's' : ''}</li>
-                  <li>{schools.reduce((sum, school) => sum + school.groupCount, 0)} groups total</li>
+                  <li>{totalGroups} groups total</li>
                   <li>Recurring lessons for the entire school year</li>
-                  <li>Israeli school period structure (8 periods + breaks)</li>
+                  <li>{previewMode === 'detailed' ? 'Smart period allocation per group' : 'Israeli period structure summary'}</li>
                 </ul>
               </div>
             </div>
+
+            <div className="space-y-3 max-h-64 overflow-y-auto pr-1">
+              {schoolsWithDetails.map(({ school, details, index }) => {
+                const isExpanded = previewMode === 'detailed' || !!expandedSchools[index]
+                const groupCount = school.groupCount
+                const fallbackNames = Array.from({ length: groupCount }, (_, i) => `Group ${i + 1}`)
+                const storedNames = customGroupNames[school.name] || []
+                const resolvedNames = fallbackNames.map((fallback, idx) => storedNames[idx] || fallback)
+                const distribution = details.distribution
+                const showCustomWarning = school.enableMultiPeriodCustomization && !details.customDistributionValid
+
+                return (
+                  <div key={index} className="border border-gray-200 dark:border-gray-700 rounded-lg bg-white dark:bg-gray-800 p-3">
+                    <div className="flex items-start justify-between gap-2">
+                      <div>
+                        <h4 className="font-medium text-gray-900 dark:text-white">{school.name}</h4>
+                        <div className="text-sm text-gray-600 dark:text-gray-400">
+                          {school.dayOfWeek}s, {school.startTime} - {school.endTime} - {groupCount} group{groupCount > 1 ? 's' : ''}
+                        </div>
+                        <div className="text-xs text-gray-500 dark:text-gray-400">
+                          Strategy: {details.analysis.strategy.replace('-', ' ')} - {details.periodsForDistribution.length} period slots
+                        </div>
+                        {showCustomWarning && (
+                          <div className="text-xs text-red-600 dark:text-red-400 mt-1">
+                            Allocate all periods before continuing.
+                          </div>
+                        )}
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <button
+                          type="button"
+                          onClick={() => goToSchoolConfig(index)}
+                          className="text-xs text-blue-600 dark:text-blue-400 hover:underline"
+                        >
+                          Adjust
+                        </button>
+                        {previewMode === 'summary' && (
+                          <button
+                            type="button"
+                            onClick={() => toggleSchoolPreview(index)}
+                            className="text-xs text-gray-600 dark:text-gray-300 hover:underline"
+                          >
+                            {isExpanded ? 'Hide' : 'Details'}
+                          </button>
+                        )}
+                      </div>
+                    </div>
+
+                    {isExpanded && (
+                      <div className="mt-3 space-y-2">
+                        {details.slots.map((slot, groupIndex) => {
+                          const periodCount = distribution[groupIndex] ?? 1
+                          const storedName = customGroupNames[school.name]?.[groupIndex] ?? ''
+                          const displayName = groupNamingStrategy === 'individual'
+                            ? storedName || resolvedNames[groupIndex]
+                            : resolvedNames[groupIndex]
+
+                          return (
+                            <div key={groupIndex} className="flex items-center justify-between bg-gray-50 dark:bg-gray-700 rounded px-3 py-2">
+                              <div className="flex-1">
+                                {previewMode === 'detailed' && groupNamingStrategy === 'individual' ? (
+                                  <input
+                                    value={storedName}
+                                    onChange={(e) => updateGroupName(school.name, groupIndex, e.target.value)}
+                                    placeholder={`Group ${groupIndex + 1}`}
+                                    className="w-40 text-sm border border-gray-300 rounded px-2 py-1 focus:outline-none focus:border-blue-500 dark:bg-gray-800 dark:border-gray-600"
+                                  />
+                                ) : (
+                                  <div className="text-sm font-medium text-gray-800 dark:text-gray-100">{displayName}</div>
+                                )}
+                                <div className="text-xs text-gray-500 dark:text-gray-300">
+                                  {slot.start} - {slot.end} - {periodCount} period{periodCount > 1 ? 's' : ''}
+                                </div>
+                              </div>
+                            </div>
+                          )
+                        })}
+                      </div>
+                    )}
+                  </div>
+                )
+              })}
+            </div>
           </div>
         )
-
+      }
       case 'complete':
         return (
           <div className="text-center space-y-4">
@@ -969,14 +1277,10 @@ export function ScheduleWizard() {
         return schoolCount >= 1 && schoolCount <= 10
       case 'school-names':
         return schools.every(school => school.name.trim().length > 0)
-      case 'school-config':
+      case 'school-config': {
         const currentSchool = schools[currentSchoolIndex]
-        return currentSchool &&
-          currentSchool.name.trim().length > 0 &&
-          currentSchool.dayOfWeek &&
-          currentSchool.startTime &&
-          currentSchool.endTime &&
-          currentSchool.groupCount >= 1
+        return isSchoolConfigValid(currentSchool)
+      }
       case 'group-naming':
         return groupNamingStrategy !== null
       case 'preview':
@@ -1027,11 +1331,13 @@ export function ScheduleWizard() {
               <DialogTitle className="text-lg font-semibold text-gray-900 dark:text-white mb-2">
                 {currentWizardStep.title}
               </DialogTitle>
-              <Description className="text-sm text-gray-500 dark:text-gray-400 mb-6">
+              <Description className="text-sm text-gray-500 dark:text-gray-400 mb-4">
                 {currentWizardStep.description}
               </Description>
 
-              {renderStepContent()}
+              <div className="max-h-[55vh] overflow-y-auto pr-1 sm:pr-2 space-y-4">
+                {renderStepContent()}
+              </div>
             </div>
 
             {/* Navigation */}
