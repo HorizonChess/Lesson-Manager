@@ -1,15 +1,18 @@
 import { useState, useEffect } from 'react'
 import { useAuth } from '../contexts/AuthContext'
-import { supabase } from '../lib/supabase'
-import type { Material, Tag, MaterialTag, Subject } from '../types/database'
-
-interface MaterialWithTags extends Material {
-  tags: Tag[]
-}
-
-interface TagWithSubject extends Tag {
-  subject?: Subject
-}
+import type { Subject } from '../types/database'
+import {
+  fetchMaterialsWithTags,
+  fetchTagsWithSubjects,
+  fetchSubjectsWithSchools,
+  createMaterial as createMaterialService,
+  updateMaterial as updateMaterialService,
+  deleteMaterialById,
+  createTag as createTagService,
+  deleteTagById,
+  type MaterialWithTags,
+  type TagWithSubject
+} from '../services/materials'
 
 export function Materials() {
   const { user } = useAuth()
@@ -54,48 +57,8 @@ export function Materials() {
   const fetchMaterials = async () => {
     try {
       setLoading(true)
-
-      const { data: materialsData, error: materialsError } = await supabase
-        .from('materials')
-        .select('*')
-        .order('title')
-
-      if (materialsError) throw materialsError
-
-      const { data: materialTagsData, error: materialTagsError } = await supabase
-        .from('material_tags')
-        .select(`
-          material_id,
-          tag_id,
-          tags (*)
-        `)
-
-      if (materialTagsError) throw materialTagsError
-
-      const { data: tagsData, error: tagsError } = await supabase
-        .from('tags')
-        .select('*')
-        .order('name')
-
-      if (tagsError) throw tagsError
-
-      // Group tags by material_id
-      const tagsByMaterial: Record<string, Tag[]> = {}
-      materialTagsData?.forEach((mt: any) => {
-        if (!tagsByMaterial[mt.material_id]) {
-          tagsByMaterial[mt.material_id] = []
-        }
-        if (mt.tags) {
-          tagsByMaterial[mt.material_id].push(mt.tags)
-        }
-      })
-
-      const materialsWithTags = (materialsData || []).map(material => ({
-        ...material,
-        tags: tagsByMaterial[material.id] || []
-      }))
-
-      setMaterials(materialsWithTags)
+      const data = await fetchMaterialsWithTags()
+      setMaterials(data)
     } catch (err: any) {
       setError(err.message)
     } finally {
@@ -105,13 +68,8 @@ export function Materials() {
 
   const fetchTags = async () => {
     try {
-      const { data, error } = await supabase
-        .from('tags')
-        .select('*')
-        .order('name')
-
-      if (error) throw error
-      setTags(data || [])
+      const data = await fetchTagsWithSubjects()
+      setTags(data)
     } catch (err: any) {
       setError(err.message)
     }
@@ -119,16 +77,8 @@ export function Materials() {
 
   const fetchSubjects = async () => {
     try {
-      const { data, error } = await supabase
-        .from('subjects')
-        .select(`
-          *,
-          school:schools(name)
-        `)
-        .order('name')
-
-      if (error) throw error
-      setSubjects(data || [])
+      const data = await fetchSubjectsWithSchools()
+      setSubjects(data)
     } catch (err: any) {
       setError(err.message)
     }
@@ -139,41 +89,24 @@ export function Materials() {
     if (!newMaterial.title.trim() || !user) return
 
     try {
-      const { data, error } = await supabase
-        .from('materials')
-        .insert({
-          user_id: user.id,
-          title: newMaterial.title.trim(),
-          description: newMaterial.description.trim() || null,
-          file_url: newMaterial.file_url.trim() || null,
-        })
-        .select()
-        .single()
+      await createMaterialService(user.id, {
+        title: newMaterial.title,
+        description: newMaterial.description,
+        fileUrl: newMaterial.file_url,
+        tagIds: selectedTags
+      })
 
-      if (error) throw error
-
-      // Add tags if any selected
-      if (selectedTags.length > 0) {
-        const tagInserts = selectedTags.map(tagId => ({
-          material_id: data.id,
-          tag_id: tagId
-        }))
-
-        const { error: tagError } = await supabase
-          .from('material_tags')
-          .insert(tagInserts)
-
-        if (tagError) throw tagError
-      }
-
-      // Refresh materials to get updated tags
       await fetchMaterials()
 
       setNewMaterial({ title: '', description: '', file_url: '' })
       setSelectedTags([])
       setShowAddMaterial(false)
     } catch (err: any) {
-      setError(err.message)
+      if (err.message?.includes('duplicate')) {
+        setError('Material already exists')
+      } else {
+        setError(err.message)
+      }
     }
   }
 
@@ -181,35 +114,12 @@ export function Materials() {
     if (!editMaterial.title.trim()) return
 
     try {
-      const { error } = await supabase
-        .from('materials')
-        .update({
-          title: editMaterial.title.trim(),
-          description: editMaterial.description.trim() || null,
-          file_url: editMaterial.file_url.trim() || null,
-        })
-        .eq('id', materialId)
-
-      if (error) throw error
-
-      // Update tags - remove all existing and add new ones
-      await supabase
-        .from('material_tags')
-        .delete()
-        .eq('material_id', materialId)
-
-      if (editingTags.length > 0) {
-        const tagInserts = editingTags.map(tagId => ({
-          material_id: materialId,
-          tag_id: tagId
-        }))
-
-        const { error: tagError } = await supabase
-          .from('material_tags')
-          .insert(tagInserts)
-
-        if (tagError) throw tagError
-      }
+      await updateMaterialService(materialId, {
+        title: editMaterial.title,
+        description: editMaterial.description,
+        fileUrl: editMaterial.file_url,
+        tagIds: editingTags
+      })
 
       await fetchMaterials()
       setEditingMaterial(null)
@@ -224,13 +134,7 @@ export function Materials() {
     if (!confirm('Are you sure you want to delete this lesson plan? This will also remove it from all lesson records.')) return
 
     try {
-      const { error } = await supabase
-        .from('materials')
-        .delete()
-        .eq('id', materialId)
-
-      if (error) throw error
-
+      await deleteMaterialById(materialId)
       setMaterials(materials.filter(m => m.id !== materialId))
     } catch (err: any) {
       setError(err.message)
@@ -242,24 +146,18 @@ export function Materials() {
     if (!newTagName.trim() || !user) return
 
     try {
-      const { data, error } = await supabase
-        .from('tags')
-        .insert({
-          user_id: user.id,
-          name: newTagName.trim(),
-          subject_id: newTagSubject || null,
-        })
-        .select()
-        .single()
+      const tag = await createTagService({
+        userId: user.id,
+        name: newTagName,
+        subjectId: newTagSubject || null
+      })
 
-      if (error) throw error
-
-      setTags([...tags, data])
+      setTags([...tags, tag])
       setNewTagName('')
       setNewTagSubject('')
       setShowAddTag(false)
     } catch (err: any) {
-      if (err.message.includes('duplicate')) {
+      if (err.message?.includes('duplicate')) {
         setError('Tag name already exists')
       } else {
         setError(err.message)
@@ -271,13 +169,7 @@ export function Materials() {
     if (!confirm('Are you sure you want to delete this tag? This will remove it from all lesson plans.')) return
 
     try {
-      const { error } = await supabase
-        .from('tags')
-        .delete()
-        .eq('id', tagId)
-
-      if (error) throw error
-
+      await deleteTagById(tagId)
       setTags(tags.filter(t => t.id !== tagId))
       await fetchMaterials()
     } catch (err: any) {
