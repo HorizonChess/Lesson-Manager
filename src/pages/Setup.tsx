@@ -1,20 +1,22 @@
 import { useState, useEffect } from 'react'
 import { useAuth } from '../contexts/AuthContext'
-import { supabase } from '../lib/supabase'
-import type { School, Subject, Group, RosterItem } from '../types/database'
-
-interface SchoolWithStructure extends School {
-  subjects: SubjectWithGroups[]
-}
-
-interface SubjectWithGroups extends Subject {
-  groups: GroupWithRoster[]
-}
-
-interface GroupWithRoster extends Group {
-  roster: RosterItem[]
-  roster_count: number
-}
+import {
+  fetchSetupData,
+  createSchool,
+  updateSchoolName,
+  deleteSchoolById,
+  createSubject,
+  updateSubjectName,
+  deleteSubjectById,
+  createGroup,
+  updateGroupName,
+  deleteGroupById,
+  addStudent as addStudentService,
+  deleteStudent as deleteStudentService,
+  type SchoolWithStructure,
+  type SubjectWithGroups,
+  type GroupWithRoster
+} from '../services/setupPage'
 
 export function Setup() {
   const { user } = useAuth()
@@ -57,37 +59,8 @@ export function Setup() {
     try {
       setLoading(true)
 
-      // Fetch schools with all nested data
-      const { data: schoolsData, error: schoolsError } = await supabase
-        .from('schools')
-        .select(`
-          *,
-          subjects:subjects(
-            *,
-            groups:groups(
-              *,
-              roster:roster_items(*)
-            )
-          )
-        `)
-        .order('name')
-
-      if (schoolsError) throw schoolsError
-
-      // Process the data to add roster counts
-      const processedSchools = (schoolsData || []).map(school => ({
-        ...school,
-        subjects: (school.subjects || []).map((subject: any) => ({
-          ...subject,
-          groups: (subject.groups || []).map((group: any) => ({
-            ...group,
-            roster: group.roster || [],
-            roster_count: (group.roster || []).length
-          }))
-        }))
-      }))
-
-      setSchools(processedSchools)
+      const data = await fetchSetupData()
+      setSchools(data)
     } catch (err: any) {
       setError(err.message)
     } finally {
@@ -125,18 +98,7 @@ export function Setup() {
     if (!newSchoolName.trim() || !user) return
 
     try {
-      const { data, error } = await supabase
-        .from('schools')
-        .insert({
-          user_id: user.id,
-          name: newSchoolName.trim(),
-        })
-        .select()
-        .single()
-
-      if (error) throw error
-
-      const newSchool = { ...data, subjects: [] }
+      const newSchool = await createSchool(user.id, newSchoolName)
       setSchools([...schools, newSchool])
       setNewSchoolName('')
       setShowAddSchool(false)
@@ -151,16 +113,9 @@ export function Setup() {
     if (!newName.trim()) return
 
     try {
-      const { data, error } = await supabase
-        .from('schools')
-        .update({ name: newName.trim() })
-        .eq('id', schoolId)
-        .select()
-        .single()
+      const updated = await updateSchoolName(schoolId, newName)
 
-      if (error) throw error
-
-      setSchools(schools.map(s => s.id === schoolId ? { ...s, name: data.name } : s))
+      setSchools(schools.map(s => s.id === schoolId ? { ...s, name: updated.name } : s))
       setEditingSchool(null)
       setEditSchoolName('')
     } catch (err: any) {
@@ -172,12 +127,7 @@ export function Setup() {
     if (!confirm('Are you sure you want to delete this school? This will also delete all its subjects, groups, and related data.')) return
 
     try {
-      const { error } = await supabase
-        .from('schools')
-        .delete()
-        .eq('id', schoolId)
-
-      if (error) throw error
+      await deleteSchoolById(schoolId)
 
       setSchools(schools.filter(s => s.id !== schoolId))
     } catch (err: any) {
@@ -191,21 +141,11 @@ export function Setup() {
     if (!newSubjectName.trim() || !showAddSubject) return
 
     try {
-      const { data, error } = await supabase
-        .from('subjects')
-        .insert({
-          school_id: showAddSubject,
-          name: newSubjectName.trim(),
-        })
-        .select()
-        .single()
+      const newSubject = await createSubject(showAddSubject, newSubjectName)
 
-      if (error) throw error
-
-      const newSubject = { ...data, groups: [] }
       setSchools(schools.map(school =>
         school.id === showAddSubject
-          ? { ...school, subjects: [...school.subjects, newSubject] }
+          ? { ...school, subjects: [...school.subjects, { ...newSubject, groups: [] }] }
           : school
       ))
       setNewSubjectName('')
@@ -219,21 +159,14 @@ export function Setup() {
     if (!newName.trim()) return
 
     try {
-      const { data, error } = await supabase
-        .from('subjects')
-        .update({ name: newName.trim() })
-        .eq('id', subjectId)
-        .select()
-        .single()
-
-      if (error) throw error
+      const updatedSubject = await updateSubjectName(subjectId, newName)
 
       setSchools(schools.map(school =>
         school.id === schoolId
           ? {
               ...school,
               subjects: school.subjects.map(subject =>
-                subject.id === subjectId ? { ...subject, name: data.name } : subject
+                subject.id === subjectId ? { ...subject, name: updatedSubject.name } : subject
               )
             }
           : school
@@ -249,12 +182,7 @@ export function Setup() {
     if (!confirm('Are you sure you want to delete this subject? This will also delete all its groups and related data.')) return
 
     try {
-      const { error } = await supabase
-        .from('subjects')
-        .delete()
-        .eq('id', subjectId)
-
-      if (error) throw error
+      await deleteSubjectById(subjectId)
 
       setSchools(schools.map(school =>
         school.id === schoolId
@@ -279,20 +207,7 @@ export function Setup() {
     if (!schoolId) return
 
     try {
-      const { data, error } = await supabase
-        .from('groups')
-        .insert({
-          school_id: schoolId,
-          subject_id: showAddGroup,
-          name: newGroupName.trim(),
-          timeslots: [],
-        })
-        .select()
-        .single()
-
-      if (error) throw error
-
-      const newGroup = { ...data, roster: [], roster_count: 0 }
+      const newGroup = await createGroup(schoolId, showAddGroup, newGroupName)
       setSchools(schools.map(school =>
         school.subjects.some(subject => subject.id === showAddGroup)
           ? {
@@ -316,21 +231,14 @@ export function Setup() {
     if (!newName.trim()) return
 
     try {
-      const { data, error } = await supabase
-        .from('groups')
-        .update({ name: newName.trim() })
-        .eq('id', groupId)
-        .select()
-        .single()
-
-      if (error) throw error
+      const updatedGroup = await updateGroupName(groupId, newName)
 
       setSchools(schools.map(school => ({
         ...school,
         subjects: school.subjects.map(subject => ({
           ...subject,
           groups: subject.groups.map(group =>
-            group.id === groupId ? { ...group, name: data.name } : group
+            group.id === groupId ? { ...group, name: updatedGroup.name } : group
           )
         }))
       })))
@@ -345,12 +253,7 @@ export function Setup() {
     if (!confirm('Are you sure you want to delete this group? This will also delete all related lessons and data.')) return
 
     try {
-      const { error } = await supabase
-        .from('groups')
-        .delete()
-        .eq('id', groupId)
-
-      if (error) throw error
+      await deleteGroupById(groupId)
 
       setSchools(schools.map(school => ({
         ...school,
@@ -370,16 +273,7 @@ export function Setup() {
     if (!newStudentName.trim()) return
 
     try {
-      const { data, error } = await supabase
-        .from('roster_items')
-        .insert({
-          group_id: groupId,
-          student_name: newStudentName.trim(),
-        })
-        .select()
-        .single()
-
-      if (error) throw error
+      const newRosterItem = await addStudentService(groupId, newStudentName)
 
       setSchools(schools.map(school => ({
         ...school,
@@ -389,7 +283,7 @@ export function Setup() {
             group.id === groupId
               ? {
                   ...group,
-                  roster: [...group.roster, data],
+                  roster: [...group.roster, newRosterItem],
                   roster_count: group.roster_count + 1
                 }
               : group
@@ -406,12 +300,7 @@ export function Setup() {
     if (!confirm('Are you sure you want to remove this student?')) return
 
     try {
-      const { error } = await supabase
-        .from('roster_items')
-        .delete()
-        .eq('id', studentId)
-
-      if (error) throw error
+      await deleteStudentService(studentId)
 
       setSchools(schools.map(school => ({
         ...school,
