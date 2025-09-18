@@ -5,6 +5,14 @@ import withDragAndDrop from 'react-big-calendar/lib/addons/dragAndDrop'
 import 'react-big-calendar/lib/addons/dragAndDrop/styles.css'
 import { useAuth } from '../contexts/AuthContext'
 import { supabase } from '../lib/supabase'
+import {
+  fetchGroupsWithDetails,
+  fetchLessonsWithGroups,
+  deleteLessonsByIds,
+  fetchLessonRecordsMap,
+  fetchMaterialsList,
+  fetchLessonMaterialsMap
+} from '../services/lessonsPage'
 import { israeliCalendar } from '../services/israeliCalendar'
 import type { Lesson, Group, LessonRecord, RosterItem, Attendance, Material } from '../types/database'
 import 'react-big-calendar/lib/css/react-big-calendar.css'
@@ -113,105 +121,50 @@ export function Lessons() {
     try {
       setLoading(true)
 
-      // Fetch groups with school and subject info
-      const { data: groupsData, error: groupsError } = await supabase
-        .from('groups')
-        .select(`
-          *,
-          school:schools(name),
-          subject:subjects(name)
-        `)
-        .order('name')
+      const [groupsData, lessonsRaw, recordsByLesson, materialsData, lessonMaterialsMap] = await Promise.all([
+        fetchGroupsWithDetails(),
+        fetchLessonsWithGroups(),
+        fetchLessonRecordsMap(),
+        fetchMaterialsList(),
+        fetchLessonMaterialsMap()
+      ])
 
-      if (groupsError) throw groupsError
-
-      // Fetch lessons with group info
-      let { data: lessonsData, error: lessonsError } = await supabase
-        .from('lessons')
-        .select(`
-          *,
-          group:groups(
-            name,
-            school:schools(name),
-            subject:subjects(name)
-          )
-        `)
-        .order('start_time', { ascending: true })
-
-      if (lessonsError) throw lessonsError
-
-      // Clean up lessons scheduled on vacation days
       const lessonsToDelete: string[] = []
-      lessonsData?.forEach((lesson: any) => {
+      const filteredLessons = lessonsRaw.filter(lesson => {
         const lessonDate = new Date(lesson.start_time)
-        if (israeliCalendar.isVacationDay(lessonDate)) {
+        const onVacation = israeliCalendar.isVacationDay(lessonDate)
+        if (onVacation) {
           lessonsToDelete.push(lesson.id)
           console.log(`Found lesson on vacation day: ${lessonDate.toLocaleDateString()} - ${lesson.group?.name}`)
         }
+        return !onVacation
       })
 
-      // Delete lessons on vacation days
+      const normalizedLessons: LessonWithGroup[] = filteredLessons.map(lesson => ({
+        ...lesson,
+        group: {
+          name: lesson.group?.name ?? 'Unknown Group',
+          school: { name: lesson.group?.school?.name ?? 'Unknown School' },
+          subject: { name: lesson.group?.subject?.name ?? 'Unknown Subject' }
+        }
+      }))
+
       if (lessonsToDelete.length > 0) {
         console.log(`Deleting ${lessonsToDelete.length} lessons scheduled on vacation days`)
-        const { error: deleteError } = await supabase
-          .from('lessons')
-          .delete()
-          .in('id', lessonsToDelete)
-
-        if (deleteError) {
+        try {
+          await deleteLessonsByIds(lessonsToDelete)
+        } catch (deleteError) {
           console.error('Error deleting vacation lessons:', deleteError)
-        } else {
-          // Filter out deleted lessons from the data
-          lessonsData = lessonsData?.filter((lesson: any) => !lessonsToDelete.includes(lesson.id)) || []
         }
       }
 
-      // Fetch lesson records
-      const { data: recordsData, error: recordsError } = await supabase
-        .from('lesson_records')
-        .select('*')
-
-      if (recordsError) throw recordsError
-
-      // Index lesson records by lesson_id
-      const recordsByLesson = (recordsData || []).reduce((acc, record) => {
-        acc[record.lesson_id] = record
-        return acc
-      }, {} as Record<string, LessonRecord>)
-
-      // Fetch materials
-      const { data: materialsData, error: materialsError } = await supabase
-        .from('materials')
-        .select('*')
-        .order('title')
-
-      if (materialsError) throw materialsError
-
-      // Fetch lesson materials
-      const { data: lessonMaterialsData, error: lessonMaterialsError } = await supabase
-        .from('lesson_materials')
-        .select(`
-          lesson_record_id,
-          material:materials(*)
-        `)
-
-      if (lessonMaterialsError) throw lessonMaterialsError
-
       // Group materials by lesson record id
-      const materialsByLessonRecord: Record<string, Material[]> = {}
-      lessonMaterialsData?.forEach((lm: any) => {
-        if (!materialsByLessonRecord[lm.lesson_record_id]) {
-          materialsByLessonRecord[lm.lesson_record_id] = []
-        }
-        if (lm.material) {
-          materialsByLessonRecord[lm.lesson_record_id].push(lm.material)
-        }
-      })
+      const materialsByLessonRecord: Record<string, Material[]> = { ...lessonMaterialsMap }
 
-      setGroups(groupsData || [])
-      setLessons(lessonsData || [])
+      setGroups(groupsData)
+      setLessons(normalizedLessons)
       setLessonRecords(recordsByLesson)
-      setMaterials(materialsData || [])
+      setMaterials(materialsData)
       setLessonMaterials(materialsByLessonRecord)
     } catch (err: any) {
       setError(err.message)
