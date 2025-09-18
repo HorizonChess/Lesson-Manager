@@ -1,8 +1,11 @@
-﻿import { useState } from 'react'
+﻿import { useCallback, useMemo, useState, type Dispatch, type SetStateAction } from 'react'
 import moment from 'moment'
-import { supabase } from '../lib/supabase'
 import { useAuth } from '../contexts/AuthContext'
-import { buildScheduleDetails, calculateGroupDistribution } from '../lib/scheduling'
+import { buildScheduleDetails } from '../lib/scheduling'
+import { deleteSchoolsByUser, createSchool } from '../services/schools'
+import { createSubject } from '../services/subjects'
+import { createGroup } from '../services/groups'
+import { hasAnyLessons, insertLessons, type LessonInsert } from '../services/lessons'
 
 export interface WizardStep {
   id: string
@@ -11,7 +14,7 @@ export interface WizardStep {
 }
 
 export const wizardSteps: WizardStep[] = [
-  { id: 'intro', title: 'Welcome', description: "Let's set up your schedule" },
+  { id: 'intro', title: 'Welcome', description: 'Let\'s set up your schedule' },
   { id: 'existing-data', title: 'Existing Data', description: 'What to do with current lessons' },
   { id: 'school-count', title: 'Schools', description: 'How many schools are you teaching in?' },
   { id: 'school-names', title: 'School Names', description: 'Enter your school names' },
@@ -38,21 +41,50 @@ export interface SchoolConfig {
   preferredGroupForExtraPeriods?: number[]
 }
 
-interface UseScheduleWizardState {
+export type GroupNamingStrategy = 'individual' | 'default'
+export type PreviewMode = 'summary' | 'detailed'
+
+export interface UseScheduleWizardState {
   isOpen: boolean
-  openWizard: () => Promise<void>
-  closeWizard: () => void
+  loading: boolean
   currentStep: number
   currentWizardStep: WizardStep
+  currentSchoolIndex: number
+  keepExistingData: boolean | null
+  schoolCount: number
+  schools: SchoolConfig[]
+  groupNamingStrategy: GroupNamingStrategy
+  customGroupNames: Record<string, string[]>
+  expandedSchools: Record<number, boolean>
+  previewMode: PreviewMode
+  progressPercent: number
+  nextLabel: string
+  wizardSteps: WizardStep[]
+  openWizard: () => Promise<void>
+  closeWizard: () => void
   goToNextStep: () => Promise<void>
   goToPreviousStep: () => void
   canProceed: () => boolean
-  loading: boolean
-  renderStepContent: () => JSX.Element
-  wizardSteps: WizardStep[]
-  schoolsLength: number
-  currentSchoolIndex: number
+  updateGroupName: (schoolName: string, groupIndex: number, value: string) => void
+  toggleSchoolPreview: (index: number) => void
+  goToSchoolConfig: (index: number) => void
+  setKeepExistingData: Dispatch<SetStateAction<boolean | null>>
+  setSchoolCount: Dispatch<SetStateAction<number>>
+  setSchools: Dispatch<SetStateAction<SchoolConfig[]>>
+  setGroupNamingStrategy: Dispatch<SetStateAction<GroupNamingStrategy>>
+  setPreviewMode: Dispatch<SetStateAction<PreviewMode>>
 }
+
+const createDefaultSchoolConfig = (): SchoolConfig => ({
+  name: '',
+  dayOfWeek: 'Monday',
+  startTime: '08:00',
+  endTime: '13:30',
+  groupCount: 6,
+  durationType: 'full-year',
+  startDate: '2024-09-01',
+  endDate: '2024-06-30'
+})
 
 export function useScheduleWizard(): UseScheduleWizardState {
   const { user } = useAuth()
@@ -64,12 +96,12 @@ export function useScheduleWizard(): UseScheduleWizardState {
   const [schoolCount, setSchoolCount] = useState<number>(1)
   const [schools, setSchools] = useState<SchoolConfig[]>([])
   const [currentSchoolIndex, setCurrentSchoolIndex] = useState<number>(0)
-  const [groupNamingStrategy, setGroupNamingStrategy] = useState<'individual' | 'default'>('default')
+  const [groupNamingStrategy, setGroupNamingStrategy] = useState<GroupNamingStrategy>('default')
   const [customGroupNames, setCustomGroupNames] = useState<Record<string, string[]>>({})
   const [expandedSchools, setExpandedSchools] = useState<Record<number, boolean>>({})
-  const [previewMode, setPreviewMode] = useState<'summary' | 'detailed'>('summary')
+  const [previewMode, setPreviewMode] = useState<PreviewMode>('summary')
 
-  const updateGroupName = (schoolName: string, groupIndex: number, value: string) => {
+  const updateGroupName = useCallback((schoolName: string, groupIndex: number, value: string) => {
     setCustomGroupNames(prev => {
       const next = { ...prev }
       const current = next[schoolName] ? [...next[schoolName]] : []
@@ -77,24 +109,24 @@ export function useScheduleWizard(): UseScheduleWizardState {
       next[schoolName] = current
       return next
     })
-  }
+  }, [setCustomGroupNames])
 
-  const toggleSchoolPreview = (index: number) => {
+  const toggleSchoolPreview = useCallback((index: number) => {
     setExpandedSchools(prev => ({
       ...prev,
       [index]: !prev[index]
     }))
-  }
+  }, [setExpandedSchools])
 
-  const goToSchoolConfig = (index: number) => {
+  const goToSchoolConfig = useCallback((index: number) => {
     const targetStep = wizardSteps.findIndex(step => step.id === 'school-config')
     if (targetStep !== -1) {
       setCurrentSchoolIndex(index)
       setCurrentStep(targetStep)
     }
-  }
+  }, [setCurrentSchoolIndex, setCurrentStep])
 
-  const isSchoolConfigValid = (school?: SchoolConfig) => {
+  const isSchoolConfigValid = useCallback((school?: SchoolConfig) => {
     if (!school) return false
     if (!school.name.trim()) return false
     if (!school.dayOfWeek) return false
@@ -109,72 +141,15 @@ export function useScheduleWizard(): UseScheduleWizardState {
     }
 
     return true
-  }
+  }, [])
 
-  const currentWizardStep = wizardSteps[currentStep]
+  const currentWizardStep = useMemo(() => wizardSteps[currentStep], [currentStep])
 
-  const goToNextStep = async () => {
-    if (currentStep < wizardSteps.length - 1) {
-      if (wizardSteps[currentStep].id === 'school-count' && schools.length === 0) {
-        const newSchools: SchoolConfig[] = Array(schoolCount).fill(null).map(() => ({
-          name: '',
-          dayOfWeek: 'Monday',
-          startTime: '08:00',
-          endTime: '13:30',
-          groupCount: 6,
-          durationType: 'full-year',
-          startDate: '2024-09-01',
-          endDate: '2024-06-30'
-        }))
-        setSchools(newSchools)
-      }
+  const checkExistingData = useCallback(async () => {
+    return hasAnyLessons()
+  }, [])
 
-      if (wizardSteps[currentStep].id === 'school-config') {
-        if (currentSchoolIndex < schools.length - 1) {
-          setCurrentSchoolIndex(currentSchoolIndex + 1)
-          return
-        }
-        setCurrentSchoolIndex(0)
-      }
-
-      if (wizardSteps[currentStep].id === 'preview') {
-        const allValid = schools.every(isSchoolConfigValid)
-        if (!allValid) {
-          alert('Please finish configuring all schools before generating your schedule.')
-          return
-        }
-
-        setLoading(true)
-        try {
-          await generateSchedule()
-          setCurrentStep(currentStep + 1)
-        } catch (error) {
-          console.error('Error generating schedule:', error)
-          alert('Failed to generate schedule. Please try again.')
-        } finally {
-          setLoading(false)
-        }
-      } else {
-        setCurrentStep(currentStep + 1)
-      }
-    }
-  }
-
-  const goToPreviousStep = () => {
-    if (currentStep > 0) {
-      if (wizardSteps[currentStep].id === 'school-config') {
-        if (currentSchoolIndex > 0) {
-          setCurrentSchoolIndex(currentSchoolIndex - 1)
-          return
-        }
-        setCurrentSchoolIndex(0)
-      }
-
-      setCurrentStep(currentStep - 1)
-    }
-  }
-
-  const closeWizard = () => {
+  const closeWizard = useCallback(() => {
     setIsOpen(false)
     setCurrentStep(0)
     setKeepExistingData(null)
@@ -185,61 +160,31 @@ export function useScheduleWizard(): UseScheduleWizardState {
     setCustomGroupNames({})
     setExpandedSchools({})
     setPreviewMode('summary')
-  }
+    setLoading(false)
+  }, [
+    setCurrentSchoolIndex,
+    setCurrentStep,
+    setCustomGroupNames,
+    setExpandedSchools,
+    setGroupNamingStrategy,
+    setKeepExistingData,
+    setLoading,
+    setPreviewMode,
+    setSchoolCount,
+    setSchools
+  ])
 
-  const checkExistingData = async () => {
-    try {
-      const { data: existingLessons } = await supabase
-        .from('lessons')
-        .select('id')
-        .limit(1)
-
-      return existingLessons && existingLessons.length > 0
-    } catch (error) {
-      console.error('Error checking existing data:', error)
-      return false
-    }
-  }
-
-  const openWizard = async () => {
-    setIsOpen(true)
-    setExpandedSchools({})
-    setPreviewMode('summary')
-    const hasExistingData = await checkExistingData()
-    if (!hasExistingData) {
-      setCurrentStep(2)
-      setKeepExistingData(false)
-    }
-  }
-
-  const generateSchedule = async () => {
+  const generateSchedule = useCallback(async () => {
     if (!user) return
 
     try {
       if (!keepExistingData) {
-        const { error: schoolsDeleteError } = await supabase
-          .from('schools')
-          .delete()
-          .eq('user_id', user.id)
-        if (schoolsDeleteError) throw schoolsDeleteError
+        await deleteSchoolsByUser(user.id)
       }
 
       for (const schoolConfig of schools) {
-        const { data: schoolData, error: schoolError } = await supabase
-          .from('schools')
-          .insert([{ name: schoolConfig.name, user_id: user.id }])
-          .select()
-          .single()
-
-        if (schoolError) throw schoolError
-
-        const { data: subjectData, error: subjectError } = await supabase
-          .from('subjects')
-          .insert([{ name: 'General Teaching', school_id: schoolData.id }])
-          .select()
-          .single()
-
-        if (subjectError) throw subjectError
+        const school = await createSchool({ name: schoolConfig.name, userId: user.id })
+        const subject = await createSubject({ name: 'General Teaching', schoolId: school.id })
 
         const scheduleDetails = buildScheduleDetails(schoolConfig)
         const availablePeriods = scheduleDetails.slots
@@ -247,29 +192,27 @@ export function useScheduleWizard(): UseScheduleWizardState {
         for (let i = 0; i < schoolConfig.groupCount; i++) {
           const period = availablePeriods[i] || { start: schoolConfig.startTime, end: schoolConfig.endTime }
           const groupName = groupNamingStrategy === 'individual'
-            ? customGroupNames[schoolConfig.name]?.[i] || Group 
-            : Group 
+            ? customGroupNames[schoolConfig.name]?.[i] || `Group ${i + 1}`
+            : `Group ${i + 1}`
 
-          const { data: groupData, error: groupError } = await supabase
-            .from('groups')
-            .insert([{ name: groupName, school_id: schoolData.id, subject_id: subjectData.id }])
-            .select()
-            .single()
-
-          if (groupError) throw groupError
+          const group = await createGroup({
+            name: groupName,
+            schoolId: school.id,
+            subjectId: subject.id
+          })
 
           const now = moment()
           const currentSchoolYear = now.month() >= 6 ? now.year() : now.year() - 1
 
           const startDate = schoolConfig.durationType === 'full-year'
-            ? moment(${currentSchoolYear}-09-01)
+            ? moment(`${currentSchoolYear}-09-01`)
             : moment(schoolConfig.startDate)
           const endDate = schoolConfig.durationType === 'full-year'
-            ? moment(${currentSchoolYear + 1}-06-30)
+            ? moment(`${currentSchoolYear + 1}-06-30`)
             : moment(schoolConfig.endDate)
 
           const currentDate = startDate.clone()
-          const lessons = []
+          const lessons: LessonInsert[] = []
 
           while (currentDate.isBefore(endDate)) {
             const dayOfWeek = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'].indexOf(schoolConfig.dayOfWeek)
@@ -284,10 +227,10 @@ export function useScheduleWizard(): UseScheduleWizardState {
                 .minute(parseInt(period.end.split(':')[1]))
 
               lessons.push({
-                group_id: groupData.id,
-                start_time: lessonStart.toISOString(),
-                end_time: lessonEnd.toISOString(),
-                is_cancelled: false
+                groupId: group.id,
+                startTime: lessonStart.toISOString(),
+                endTime: lessonEnd.toISOString(),
+                isCancelled: false
               })
             }
 
@@ -295,11 +238,7 @@ export function useScheduleWizard(): UseScheduleWizardState {
           }
 
           if (lessons.length > 0) {
-            const { error: lessonsError } = await supabase
-              .from('lessons')
-              .insert(lessons)
-
-            if (lessonsError) throw lessonsError
+            await insertLessons(lessons)
           }
         }
       }
@@ -307,10 +246,89 @@ export function useScheduleWizard(): UseScheduleWizardState {
       console.error('Error generating schedule:', error)
       throw error
     }
-  }
+  }, [customGroupNames, groupNamingStrategy, keepExistingData, schools, user])
 
-  const canProceed = () => {
-    switch (wizardSteps[currentStep].id) {
+  const goToNextStep = useCallback(async () => {
+    if (currentStep >= wizardSteps.length - 1) return
+
+    const stepId = wizardSteps[currentStep].id
+
+    if (stepId === 'school-count' && schools.length === 0) {
+      setSchools(Array.from({ length: schoolCount }, () => createDefaultSchoolConfig()))
+    }
+
+    if (stepId === 'school-config') {
+      if (currentSchoolIndex < schools.length - 1) {
+        setCurrentSchoolIndex(currentSchoolIndex + 1)
+        return
+      }
+      setCurrentSchoolIndex(0)
+    }
+
+    if (stepId === 'preview') {
+      const allValid = schools.every(isSchoolConfigValid)
+      if (!allValid) {
+        alert('Please finish configuring all schools before generating your schedule.')
+        return
+      }
+
+      setLoading(true)
+      try {
+        await generateSchedule()
+        setCurrentStep(currentStep + 1)
+      } catch (error) {
+        console.error('Error generating schedule:', error)
+        alert('Failed to generate schedule. Please try again.')
+      } finally {
+        setLoading(false)
+      }
+      return
+    }
+
+    setCurrentStep(currentStep + 1)
+  }, [
+    currentSchoolIndex,
+    currentStep,
+    generateSchedule,
+    isSchoolConfigValid,
+    schoolCount,
+    schools
+  ])
+
+  const goToPreviousStep = useCallback(() => {
+    if (currentStep <= 0) return
+
+    const stepId = wizardSteps[currentStep].id
+
+    if (stepId === 'school-config') {
+      if (currentSchoolIndex > 0) {
+        setCurrentSchoolIndex(currentSchoolIndex - 1)
+        return
+      }
+      setCurrentSchoolIndex(0)
+    }
+
+    setCurrentStep(currentStep - 1)
+  }, [currentSchoolIndex, currentStep])
+
+  const openWizard = useCallback(async () => {
+    setIsOpen(true)
+    setExpandedSchools({})
+    setPreviewMode('summary')
+    setCurrentStep(0)
+    setKeepExistingData(null)
+
+    const hasExistingData = await checkExistingData()
+    if (!hasExistingData) {
+      setCurrentStep(2)
+      setKeepExistingData(false)
+    }
+  }, [checkExistingData])
+
+  const canProceed = useCallback(() => {
+    const stepId = wizardSteps[currentStep].id
+
+    switch (stepId) {
       case 'intro':
         return true
       case 'existing-data':
@@ -319,50 +337,65 @@ export function useScheduleWizard(): UseScheduleWizardState {
         return schoolCount >= 1 && schoolCount <= 10
       case 'school-names':
         return schools.every(school => school.name.trim().length > 0)
-      case 'school-config':
-        return isSchoolConfigValid(schools[currentSchoolIndex])
+      case 'school-config': {
+        const currentSchool = schools[currentSchoolIndex]
+        return isSchoolConfigValid(currentSchool)
+      }
+      case 'group-naming':
+        return groupNamingStrategy !== null
+      case 'preview':
+        return true
       default:
         return true
     }
-  }
+  }, [currentSchoolIndex, currentStep, groupNamingStrategy, isSchoolConfigValid, keepExistingData, schoolCount, schools])
 
-  const renderStepContent = () => {
-    switch (wizardSteps[currentStep].id) {
-      case 'intro':
-        return (
-          <div className="text-center">
-            <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-blue-100">
-              <svg className="h-6 w-6 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
-              </svg>
-            </div>
-            <div className="mt-3">
-              <h3 className="text-lg font-medium text-gray-900 dark:text-white">Schedule Builder Wizard</h3>
-              <p className="mt-2 text-sm text-gray-500 dark:text-gray-400">
-                I'll help you set up your complete teaching schedule quickly and easily.
-                This wizard will guide you through creating schools, subjects, groups, and recurring lessons.
-              </p>
-            </div>
-          </div>
-        )
+  const progressPercent = useMemo(() => {
+    return ((currentStep + 1) / wizardSteps.length) * 100
+  }, [currentStep])
 
-      // existing render cases follow ...
+  const nextLabel = useMemo(() => {
+    const stepId = wizardSteps[currentStep].id
+
+    if (stepId === 'preview') {
+      return 'Create Schedule'
     }
-  }
+
+    if (stepId === 'school-config' && currentSchoolIndex < schools.length - 1) {
+      return `Next School (${currentSchoolIndex + 2}/${schools.length})`
+    }
+
+    return 'Next'
+  }, [currentSchoolIndex, currentStep, schools])
 
   return {
     isOpen,
-    openWizard,
-    closeWizard,
+    loading,
     currentStep,
     currentWizardStep,
+    currentSchoolIndex,
+    keepExistingData,
+    schoolCount,
+    schools,
+    groupNamingStrategy,
+    customGroupNames,
+    expandedSchools,
+    previewMode,
+    progressPercent,
+    nextLabel,
+    wizardSteps,
+    openWizard,
+    closeWizard,
     goToNextStep,
     goToPreviousStep,
     canProceed,
-    loading,
-    renderStepContent,
-    wizardSteps,
-    schoolsLength: schools.length,
-    currentSchoolIndex
+    updateGroupName,
+    toggleSchoolPreview,
+    goToSchoolConfig,
+    setKeepExistingData,
+    setSchoolCount,
+    setSchools,
+    setGroupNamingStrategy,
+    setPreviewMode
   }
 }

@@ -1,311 +1,42 @@
-﻿import { buildScheduleDetails, calculateGroupDistribution } from '../lib/scheduling'\nimport { useState } from 'react'\nimport { Dialog, DialogPanel, DialogTitle, Description } from '@headlessui/react'\nimport { supabase } from '../lib/supabase'\nimport { useAuth } from '../contexts/AuthContext'\nimport moment from 'moment'\n\ninterface WizardStep {\n  id: string\n  title: string\n  description: string\n}\n\nconst wizardSteps: WizardStep[] = [\n  { id: 'intro', title: 'Welcome', description: 'Let\\'s set up your schedule' },\n  { id: 'existing-data', title: 'Existing Data', description: 'What to do with current lessons' },\n  { id: 'school-count', title: 'Schools', description: 'How many schools are you teaching in?' },\n  { id: 'school-names', title: 'School Names', description: 'Enter your school names' },\n  { id: 'school-config', title: 'School Configuration', description: 'Configure each school' },\n  { id: 'group-naming', title: 'Group Names', description: 'How would you like to name your groups?' },\n  { id: 'preview', title: 'Preview', description: 'Review your schedule before creation' },\n  { id: 'complete', title: 'Complete', description: 'Your schedule is ready!' }\n]\n\ninterface SchoolConfig {
-  name: string
-  dayOfWeek: string
-  startTime: string
-  endTime: string
-  groupCount: number
-  durationType: 'full-year' | 'custom'
-  startDate: string
-  endDate: string
-  // Advanced configuration options
-  showAdvancedOptions?: boolean
-  customGroupDurations?: number[]
-  enableMultiPeriodCustomization?: boolean
-  mapCustomTimesToPeriods?: boolean
-  allowUnevenDistribution?: boolean
-  preferredGroupForExtraPeriods?: number[]
-}
+﻿import { buildScheduleDetails, calculateGroupDistribution } from '../lib/scheduling'
+import { Dialog, DialogPanel, DialogTitle, Description } from '@headlessui/react'
+import moment from 'moment'
+import { useScheduleWizard } from '../hooks/useScheduleWizard'
 
 export function ScheduleWizard() {
-  const { user } = useAuth()
-  const [isOpen, setIsOpen] = useState(false)
-  const [currentStep, setCurrentStep] = useState(0)
-  const [loading, setLoading] = useState(false)
-
-  // Wizard state
-  const [keepExistingData, setKeepExistingData] = useState<boolean | null>(null)
-  const [schoolCount, setSchoolCount] = useState<number>(1)
-  const [schools, setSchools] = useState<SchoolConfig[]>([])
-  const [currentSchoolIndex, setCurrentSchoolIndex] = useState<number>(0)
-  const [groupNamingStrategy, setGroupNamingStrategy] = useState<'individual' | 'default'>('default')
-  const [customGroupNames, setCustomGroupNames] = useState<Record<string, string[]>>({})
-  const [expandedSchools, setExpandedSchools] = useState<Record<number, boolean>>({})
-  const [previewMode, setPreviewMode] = useState<'summary' | 'detailed'>('summary')
-
-  const updateGroupName = (schoolName: string, groupIndex: number, value: string) => {
-    setCustomGroupNames(prev => {
-      const next = { ...prev }
-      const current = next[schoolName] ? [...next[schoolName]] : []
-      current[groupIndex] = value
-      next[schoolName] = current
-      return next
-    })
-  }
-
-  const toggleSchoolPreview = (index: number) => {
-    setExpandedSchools(prev => ({
-      ...prev,
-      [index]: !prev[index]
-    }))
-  }
-
-  const goToSchoolConfig = (index: number) => {
-    const targetStep = wizardSteps.findIndex(step => step.id === 'school-config')
-    if (targetStep !== -1) {
-      setCurrentSchoolIndex(index)
-      setCurrentStep(targetStep)
-    }
-  }
-
-  const isSchoolConfigValid = (school?: SchoolConfig) => {
-    if (!school) return false
-    if (!school.name.trim()) return false
-    if (!school.dayOfWeek) return false
-    if (!school.startTime || !school.endTime) return false
-    if (school.groupCount < 1) return false
-
-    if (school.enableMultiPeriodCustomization) {
-      const details = buildScheduleDetails(school)
-      if (!details.customDistributionValid) {
-        return false
-      }
-    }
-
-    return true
-  }
-
-  const currentWizardStep = wizardSteps[currentStep]
-
-  const goToNextStep = async () => {
-    if (currentStep < wizardSteps.length - 1) {
-      // Initialize schools array when moving to school names step
-      if (wizardSteps[currentStep].id === 'school-count' && schools.length === 0) {
-        const newSchools: SchoolConfig[] = Array(schoolCount).fill(null).map(() => ({
-          name: '',
-          dayOfWeek: 'Monday',
-          startTime: '08:00',
-          endTime: '13:30',
-          groupCount: 6,
-          durationType: 'full-year',
-          startDate: '2024-09-01',
-          endDate: '2024-06-30'
-        }))
-        setSchools(newSchools)
-      }
-
-      // Handle school configuration navigation
-      if (wizardSteps[currentStep].id === 'school-config') {
-        if (currentSchoolIndex < schools.length - 1) {
-          // Move to next school
-          setCurrentSchoolIndex(currentSchoolIndex + 1)
-          return // Stay on school-config step
-        } else {
-          // All schools configured, move to next step
-          setCurrentSchoolIndex(0) // Reset for potential back navigation
-        }
-      }
-
-      // If we're on the preview step, generate the schedule
-      if (wizardSteps[currentStep].id === 'preview') {
-        const allValid = schools.every(isSchoolConfigValid)
-        if (!allValid) {
-          alert('Please finish configuring all schools before generating your schedule.')
-          return
-        }
-
-        setLoading(true)
-        try {
-          await generateSchedule()
-          setCurrentStep(currentStep + 1)
-        } catch (error) {
-          console.error('Error generating schedule:', error)
-          alert('Failed to generate schedule. Please try again.')
-        } finally {
-          setLoading(false)
-        }
-      } else {
-        setCurrentStep(currentStep + 1)
-      }
-    }
-  }
-
-  const goToPreviousStep = () => {
-    if (currentStep > 0) {
-      // Handle school configuration navigation
-      if (wizardSteps[currentStep].id === 'school-config') {
-        if (currentSchoolIndex > 0) {
-          // Go to previous school
-          setCurrentSchoolIndex(currentSchoolIndex - 1)
-          return // Stay on school-config step
-        } else {
-          // First school, go to previous step
-          setCurrentSchoolIndex(0)
-        }
-      }
-
-      setCurrentStep(currentStep - 1)
-    }
-  }
-
-  const closeWizard = () => {
-    setIsOpen(false)
-    setCurrentStep(0)
-    setKeepExistingData(null)
-    setSchoolCount(1)
-    setSchools([])
-    setCurrentSchoolIndex(0)
-    setGroupNamingStrategy('default')
-    setCustomGroupNames({})
-    setExpandedSchools({})
-    setPreviewMode('summary')
-  }
-
-  const checkExistingData = async () => {
-    try {
-      const { data: existingLessons } = await supabase
-        .from('lessons')
-        .select('id')
-        .limit(1)
-
-      return existingLessons && existingLessons.length > 0
-    } catch (error) {
-      console.error('Error checking existing data:', error)
-      return false
-    }
-  }
-
-  const openWizard = async () => {
-    setIsOpen(true)
-    setExpandedSchools({})
-    setPreviewMode('summary')
-    const hasExistingData = await checkExistingData()
-    if (!hasExistingData) {
-      // Skip the existing data step if no data exists
-      setCurrentStep(2) // Go directly to school count
-      setKeepExistingData(false)
-    }
-  }
-
-  // Default Israeli school periods
-  const generateSchedule = async () => {
-    if (!user) return
-
-    try {
-      // Step 1: Clear existing data if requested
-      if (!keepExistingData) {
-        // Delete schools (cascade will handle lessons, groups, subjects)
-        const { error: schoolsDeleteError } = await supabase
-          .from('schools')
-          .delete()
-          .eq('user_id', user.id)
-        if (schoolsDeleteError) throw schoolsDeleteError
-      }
-
-      // Step 2: Create schools
-      for (const schoolConfig of schools) {
-        // Create school
-        const { data: schoolData, error: schoolError } = await supabase
-          .from('schools')
-          .insert([{ name: schoolConfig.name, user_id: user.id }])
-          .select()
-          .single()
-
-        if (schoolError) throw schoolError
-
-        // Create a default subject for each school
-        const { data: subjectData, error: subjectError } = await supabase
-          .from('subjects')
-          .insert([{
-            name: 'General Teaching',
-            school_id: schoolData.id
-          }])
-          .select()
-          .single()
-
-        if (subjectError) throw subjectError
-
-        // Create groups based on the configured periods within user's time window
-        const scheduleDetails = buildScheduleDetails(schoolConfig)
-        const availablePeriods = scheduleDetails.slots
-
-        for (let i = 0; i < schoolConfig.groupCount; i++) {
-          const period = availablePeriods[i] || { start: schoolConfig.startTime, end: schoolConfig.endTime }
-          const groupName = groupNamingStrategy === 'individual'
-            ? customGroupNames[schoolConfig.name]?.[i] || `Group ${i + 1}`
-            : `Group ${i + 1}`
-
-          // Create group
-          const { data: groupData, error: groupError } = await supabase
-            .from('groups')
-            .insert([{
-              name: groupName,
-              school_id: schoolData.id,
-              subject_id: subjectData.id
-            }])
-            .select()
-            .single()
-
-          if (groupError) throw groupError
-
-          // Create recurring lessons for the entire school year
-          const now = moment()
-          const currentSchoolYear = now.month() >= 6 ? now.year() : now.year() - 1 // July = month 6, so July+ = new school year
-
-          const startDate = schoolConfig.durationType === 'full-year'
-            ? moment(`${currentSchoolYear}-09-01`)
-            : moment(schoolConfig.startDate)
-          const endDate = schoolConfig.durationType === 'full-year'
-            ? moment(`${currentSchoolYear + 1}-06-30`)
-            : moment(schoolConfig.endDate)
-
-          // Generate lessons for each week
-          const currentDate = startDate.clone()
-          const lessons = []
-
-          while (currentDate.isBefore(endDate)) {
-            // Find the next occurrence of the specified day
-            const dayOfWeek = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'].indexOf(schoolConfig.dayOfWeek)
-            const lessonDate = currentDate.clone().day(dayOfWeek)
-
-            if (lessonDate.isSameOrAfter(startDate) && lessonDate.isSameOrBefore(endDate)) {
-              const lessonStart = lessonDate.clone()
-                .hour(parseInt(period.start.split(':')[0]))
-                .minute(parseInt(period.start.split(':')[1]))
-              const lessonEnd = lessonDate.clone()
-                .hour(parseInt(period.end.split(':')[0]))
-                .minute(parseInt(period.end.split(':')[1]))
-
-              lessons.push({
-                group_id: groupData.id,
-                start_time: lessonStart.toISOString(),
-                end_time: lessonEnd.toISOString(),
-                is_cancelled: false
-              })
-            }
-
-            currentDate.add(1, 'week')
-          }
-
-          // Batch insert lessons
-          if (lessons.length > 0) {
-            const { error: lessonsError } = await supabase
-              .from('lessons')
-              .insert(lessons)
-
-            if (lessonsError) throw lessonsError
-          }
-        }
-      }
-
-      console.log('Schedule generated successfully!')
-    } catch (error) {
-      console.error('Error generating schedule:', error)
-      throw error
-    }
-  }
+  const {
+    isOpen,
+    loading,
+    currentStep,
+    currentWizardStep,
+    currentSchoolIndex,
+    keepExistingData,
+    schoolCount,
+    schools,
+    groupNamingStrategy,
+    customGroupNames,
+    expandedSchools,
+    previewMode,
+    progressPercent,
+    nextLabel,
+    wizardSteps,
+    openWizard,
+    closeWizard,
+    goToNextStep,
+    goToPreviousStep,
+    canProceed,
+    updateGroupName,
+    toggleSchoolPreview,
+    goToSchoolConfig,
+    setKeepExistingData,
+    setSchoolCount,
+    setSchools,
+    setGroupNamingStrategy,
+    setPreviewMode
+  } = useScheduleWizard()
 
   const renderStepContent = () => {
-    switch (wizardSteps[currentStep].id) {
+    switch (currentWizardStep.id) {
       case 'intro':
         return (
           <div className="text-center">
@@ -1033,29 +764,6 @@ export function ScheduleWizard() {
     }
   }
 
-  const canProceed = () => {
-    switch (wizardSteps[currentStep].id) {
-      case 'intro':
-        return true
-      case 'existing-data':
-        return keepExistingData !== null
-      case 'school-count':
-        return schoolCount >= 1 && schoolCount <= 10
-      case 'school-names':
-        return schools.every(school => school.name.trim().length > 0)
-      case 'school-config': {
-        const currentSchool = schools[currentSchoolIndex]
-        return isSchoolConfigValid(currentSchool)
-      }
-      case 'group-naming':
-        return groupNamingStrategy !== null
-      case 'preview':
-        return true
-      default:
-        return true
-    }
-  }
-
   return (
     <>
       <button
@@ -1081,13 +789,13 @@ export function ScheduleWizard() {
                   Step {currentStep + 1} of {wizardSteps.length}
                 </div>
                 <div className="text-sm text-gray-500 dark:text-gray-400">
-                  {Math.round(((currentStep + 1) / wizardSteps.length) * 100)}%
+                  {Math.round(progressPercent)}%
                 </div>
               </div>
               <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2">
                 <div
                   className="bg-blue-600 h-2 rounded-full transition-all duration-300"
-                  style={{ width: `${((currentStep + 1) / wizardSteps.length) * 100}%` }}
+                  style={{ width: `${progressPercent}%` }}
                 />
               </div>
             </div>
@@ -1130,9 +838,7 @@ export function ScheduleWizard() {
                   {loading && (
                     <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
                   )}
-                  {wizardSteps[currentStep].id === 'preview' ? 'Create Schedule' :
-                   wizardSteps[currentStep].id === 'school-config' && currentSchoolIndex < schools.length - 1 ?
-                   `Next School (${currentSchoolIndex + 2}/${schools.length})` : 'Next'}
+                  {nextLabel}
                 </button>
               )}
             </div>
@@ -1142,9 +848,3 @@ export function ScheduleWizard() {
     </>
   )
 }
-
-
-
-
-
-
