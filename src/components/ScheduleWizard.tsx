@@ -30,6 +30,11 @@ interface SchoolConfig {
   durationType: 'full-year' | 'custom'
   startDate: string
   endDate: string
+  // Advanced configuration options
+  showAdvancedOptions?: boolean
+  customGroupDurations?: Record<number, number> // groupIndex -> periods
+  allowUnevenDistribution?: boolean
+  preferredGroupForExtraPeriods?: number[]
 }
 
 export function ScheduleWizard() {
@@ -160,6 +165,130 @@ export function ScheduleWizard() {
     { start: '14:30', end: '15:15' }  // Period 8
   ]
 
+  // Helper function to convert time string to minutes
+  const timeToMinutes = (time: string) => {
+    const [hours, minutes] = time.split(':').map(Number)
+    return hours * 60 + minutes
+  }
+
+  // Analyze user's time window and determine best allocation strategy
+  const analyzeTimeWindow = (startTime: string, endTime: string, groupCount: number) => {
+    const userStart = timeToMinutes(startTime)
+    const userEnd = timeToMinutes(endTime)
+    const totalMinutes = userEnd - userStart
+
+    // Find periods that fall within or overlap the user's time window
+    const periodsInWindow = defaultPeriods.filter(period => {
+      const periodStart = timeToMinutes(period.start)
+      const periodEnd = timeToMinutes(period.end)
+      return periodStart < userEnd && periodEnd > userStart
+    })
+
+    // Academic hours = actual periods within time window (excludes breaks)
+    const academicHours = periodsInWindow.length
+
+    // Check for perfect alignment with period boundaries
+    const perfectStartMatch = defaultPeriods.some(p => timeToMinutes(p.start) === userStart)
+    const perfectEndMatch = defaultPeriods.some(p => timeToMinutes(p.end) === userEnd)
+    const perfectAlignment = perfectStartMatch && perfectEndMatch
+
+    // Determine allocation strategy
+    let strategy: 'perfect-match' | 'partial-match' | 'custom-times' = 'custom-times'
+
+    if (perfectAlignment && periodsInWindow.length > 0) {
+      strategy = 'perfect-match'
+    } else if (periodsInWindow.length > 0 && Math.abs(periodsInWindow.length - academicHours) <= 1) {
+      strategy = 'partial-match'
+    }
+
+    return {
+      strategy,
+      academicHours,
+      periodsInWindow,
+      totalMinutes,
+      perfectAlignment,
+      suggestedPeriods: periodsInWindow.slice(0, Math.max(groupCount, 1))
+    }
+  }
+
+  // Calculate how to distribute groups across available periods
+  const calculateGroupDistribution = (periodsAvailable: number, groupCount: number, preferredGroups?: number[]) => {
+    if (periodsAvailable === groupCount) {
+      // Perfect 1:1 mapping
+      return Array(groupCount).fill(1)
+    } else if (periodsAvailable > groupCount) {
+      // More periods than groups - some groups get multiple periods
+      const basePeriods = Math.floor(periodsAvailable / groupCount)
+      const extraPeriods = periodsAvailable % groupCount
+
+      const distribution = Array(groupCount).fill(basePeriods)
+
+      // Use preferred groups if specified, otherwise distribute to first N groups
+      if (preferredGroups && preferredGroups.length >= extraPeriods) {
+        for (let i = 0; i < extraPeriods; i++) {
+          distribution[preferredGroups[i]]++
+        }
+      } else {
+        for (let i = 0; i < extraPeriods; i++) {
+          distribution[i]++
+        }
+      }
+      return distribution
+    } else {
+      // Fewer periods than groups - each group gets 1 period, some may need custom times
+      return Array(groupCount).fill(1)
+    }
+  }
+
+  // Enhanced period allocation with smart fallback
+  const getPeriodsInTimeWindow = (startTime: string, endTime: string, groupCount: number, preferredGroups?: number[]) => {
+    const analysis = analyzeTimeWindow(startTime, endTime, groupCount)
+    const distribution = calculateGroupDistribution(analysis.periodsInWindow.length, groupCount, preferredGroups)
+
+    const selectedPeriods = []
+
+    if (analysis.strategy === 'perfect-match' || analysis.strategy === 'partial-match') {
+      // Use period-based allocation
+      let periodIndex = 0
+      for (let i = 0; i < groupCount; i++) {
+        const periodsForThisGroup = distribution[i]
+
+        if (periodsForThisGroup === 1 && periodIndex < analysis.periodsInWindow.length) {
+          // Single period assignment
+          selectedPeriods.push(analysis.periodsInWindow[periodIndex])
+          periodIndex++
+        } else if (periodsForThisGroup > 1 && periodIndex < analysis.periodsInWindow.length) {
+          // Multi-period assignment - create combined time span
+          const startPeriod = analysis.periodsInWindow[periodIndex]
+          const endPeriodIndex = Math.min(periodIndex + periodsForThisGroup - 1, analysis.periodsInWindow.length - 1)
+          const endPeriod = analysis.periodsInWindow[endPeriodIndex]
+
+          selectedPeriods.push({
+            start: startPeriod.start,
+            end: endPeriod.end
+          })
+          periodIndex += periodsForThisGroup
+        } else {
+          // Fallback to custom time (shouldn't happen often)
+          selectedPeriods.push({
+            start: startTime,
+            end: endTime
+          })
+        }
+      }
+    } else {
+      // Custom times strategy - preserve user's exact times
+      for (let i = 0; i < groupCount; i++) {
+        selectedPeriods.push({
+          start: startTime,
+          end: endTime
+        })
+      }
+    }
+
+    return selectedPeriods
+  }
+
   const generateSchedule = async () => {
     if (!user) return
 
@@ -197,8 +326,13 @@ export function ScheduleWizard() {
 
         if (subjectError) throw subjectError
 
-        // Create groups based on the configured periods
-        const availablePeriods = defaultPeriods.slice(0, schoolConfig.groupCount)
+        // Create groups based on the configured periods within user's time window
+        const availablePeriods = getPeriodsInTimeWindow(
+          schoolConfig.startTime,
+          schoolConfig.endTime,
+          schoolConfig.groupCount,
+          schoolConfig.preferredGroupForExtraPeriods
+        )
 
         for (let i = 0; i < schoolConfig.groupCount; i++) {
           const period = availablePeriods[i]
@@ -355,9 +489,6 @@ export function ScheduleWizard() {
                 className="w-24 text-center text-2xl font-bold border-2 border-blue-300 rounded-lg p-3 focus:outline-none focus:border-blue-500"
               />
             </div>
-            <div className="text-center text-sm text-gray-500 dark:text-gray-400">
-              Most teachers work with 1-3 schools
-            </div>
           </div>
         )
 
@@ -477,6 +608,160 @@ export function ScheduleWizard() {
                   className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-blue-500"
                 />
               </div>
+
+              {/* Smart Analysis and Progressive Options */}
+              {(() => {
+                if (!schoolToConfig) return null
+
+                const analysis = analyzeTimeWindow(
+                  schoolToConfig.startTime,
+                  schoolToConfig.endTime,
+                  schoolToConfig.groupCount
+                )
+
+                const distribution = calculateGroupDistribution(
+                  analysis.periodsInWindow.length,
+                  schoolToConfig.groupCount,
+                  schoolToConfig.preferredGroupForExtraPeriods
+                )
+
+                const hasUnevenDistribution = distribution.some(periods => periods !== distribution[0])
+                const hasCustomTimes = analysis.strategy === 'custom-times'
+                const hasMultiplePeriods = distribution.some(periods => periods > 1)
+
+                // Show smart preview
+                return (
+                  <div className="bg-blue-50 dark:bg-blue-900/20 rounded-lg p-3 space-y-3">
+                    <div className="text-sm">
+                      <div className="font-medium text-blue-800 dark:text-blue-300 mb-2">
+                        Smart Schedule Analysis
+                      </div>
+                      <div className="text-blue-700 dark:text-blue-400 space-y-1">
+                        <div>• Time window: {analysis.totalMinutes} min ({analysis.academicHours} academic hours)</div>
+                        <div>• Strategy: {analysis.strategy.replace('-', ' ')}</div>
+                        <div>• Available periods: {analysis.periodsInWindow.length}</div>
+                        {hasUnevenDistribution && (
+                          <div>• Distribution: {distribution.map((p, i) => `Group ${i+1}: ${p} period${p > 1 ? 's' : ''}`).join(', ')}</div>
+                        )}
+                      </div>
+                    </div>
+
+                    {/* Progressive Checkbox for Uneven Distribution */}
+                    {hasUnevenDistribution && (
+                      <div className="border-t border-blue-200 dark:border-blue-700 pt-3">
+                        <label className="flex items-start">
+                          <input
+                            type="checkbox"
+                            checked={schoolToConfig.showAdvancedOptions || false}
+                            onChange={(e) => {
+                              const newSchools = [...schools]
+                              newSchools[currentSchoolIndex].showAdvancedOptions = e.target.checked
+                              setSchools(newSchools)
+                            }}
+                            className="h-4 w-4 text-blue-600 mt-0.5"
+                          />
+                          <div className="ml-2">
+                            <div className="text-sm font-medium text-blue-800 dark:text-blue-300">
+                              Customize uneven distribution
+                            </div>
+                            <div className="text-xs text-blue-600 dark:text-blue-400">
+                              Some groups will get {Math.max(...distribution)} periods, others {Math.min(...distribution)}.
+                              Check this to control which groups get extra periods.
+                            </div>
+                          </div>
+                        </label>
+
+                        {/* Advanced Options Panel */}
+                        {schoolToConfig.showAdvancedOptions && (
+                          <div className="mt-3 space-y-3 bg-white dark:bg-gray-800 rounded p-3 border border-blue-200 dark:border-blue-700">
+                            <div className="text-sm font-medium text-gray-700 dark:text-gray-300">
+                              Select groups that should get extra periods:
+                            </div>
+                            <div className="grid grid-cols-2 gap-2">
+                              {Array.from({ length: schoolToConfig.groupCount }, (_, i) => {
+                                const willGetExtra = i < (distribution.filter(p => p > Math.min(...distribution)).length)
+                                const isSelected = schoolToConfig.preferredGroupForExtraPeriods?.includes(i) || false
+
+                                return (
+                                  <label key={i} className="flex items-center">
+                                    <input
+                                      type="checkbox"
+                                      checked={isSelected}
+                                      onChange={(e) => {
+                                        const newSchools = [...schools]
+                                        const current = newSchools[currentSchoolIndex].preferredGroupForExtraPeriods || []
+                                        if (e.target.checked) {
+                                          newSchools[currentSchoolIndex].preferredGroupForExtraPeriods = [...current, i].slice(0, distribution.filter(p => p > Math.min(...distribution)).length)
+                                        } else {
+                                          newSchools[currentSchoolIndex].preferredGroupForExtraPeriods = current.filter(g => g !== i)
+                                        }
+                                        setSchools(newSchools)
+                                      }}
+                                      className="h-3 w-3 text-blue-600"
+                                    />
+                                    <span className="ml-1 text-xs text-gray-600 dark:text-gray-400">
+                                      Group {i + 1} {willGetExtra && !isSelected ? '(auto)' : ''}
+                                    </span>
+                                  </label>
+                                )
+                              })}
+                            </div>
+                            <div className="text-xs text-gray-500 dark:text-gray-400">
+                              Groups with extra periods will get {Math.max(...distribution)} periods instead of {Math.min(...distribution)}.
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                    )}
+
+                    {/* Progressive Checkbox for Multi-Period Lessons */}
+                    {hasMultiplePeriods && !hasUnevenDistribution && (
+                      <div className="border-t border-blue-200 dark:border-blue-700 pt-3">
+                        <label className="flex items-start">
+                          <input
+                            type="checkbox"
+                            checked={false} // Will implement in next iteration
+                            onChange={() => {}}
+                            className="h-4 w-4 text-blue-600 mt-0.5"
+                          />
+                          <div className="ml-2">
+                            <div className="text-sm font-medium text-blue-800 dark:text-blue-300">
+                              Customize double/triple lessons
+                            </div>
+                            <div className="text-xs text-blue-600 dark:text-blue-400">
+                              Groups will get {Math.max(...distribution)}-period lessons.
+                              Check this to split some into separate single periods.
+                            </div>
+                          </div>
+                        </label>
+                      </div>
+                    )}
+
+                    {/* Progressive Checkbox for Custom Times */}
+                    {hasCustomTimes && (
+                      <div className="border-t border-blue-200 dark:border-blue-700 pt-3">
+                        <label className="flex items-start">
+                          <input
+                            type="checkbox"
+                            checked={false} // Will implement in next iteration
+                            onChange={() => {}}
+                            className="h-4 w-4 text-blue-600 mt-0.5"
+                          />
+                          <div className="ml-2">
+                            <div className="text-sm font-medium text-blue-800 dark:text-blue-300">
+                              Map to school periods instead
+                            </div>
+                            <div className="text-xs text-blue-600 dark:text-blue-400">
+                              Your times don't align with standard periods.
+                              Check this to use nearby school periods instead of exact times.
+                            </div>
+                          </div>
+                        </label>
+                      </div>
+                    )}
+                  </div>
+                )
+              })()}
 
               {/* Duration Type */}
               <div>
