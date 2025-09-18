@@ -38,6 +38,7 @@ Scheduling unit tests (tsconfig.scheduling.json) passing as of 2025-09-18 17:10.
 - Introduced src/services/dashboard.ts and refactored src/pages/Dashboard.tsx plus src/components/GroupOverview.tsx to consume the shared helpers for counts, lesson lookups, tasks, materials, attendance, and roster CRUD.
 - Lessons data load now uses src/services/lessonsPage.ts (groups/lessons/materials fetch clean-up); remaining mutations still inline pending migration.
 - Materials library now reads/writes via src/services/materials.ts (material/tag CRUD centralized); TODO: move upload/deletion side-effects if added later.
+- Groups page now relies on src/services/groupsPage.ts for schools/subjects/groups/roster fetch + CRUD; wizard cleanup next.
 - `npx tsc --noEmit` and scheduling CLI checks remain green (npx tsc -p tsconfig.scheduling.json + node .tmp/scheduling-tests/tests/scheduling.test.js).
 - Follow-up: migrate remaining high-volume views (Lessons, Materials, Setup) to the service layer and introduce TanStack Query wrappers.
 

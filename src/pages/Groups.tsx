@@ -1,7 +1,5 @@
 import { useState, useEffect } from 'react'
 import { useAuth } from '../contexts/AuthContext'
-import { supabase } from '../lib/supabase'
-import type { Group, School, Subject, RosterItem } from '../types/database'
 
 interface Timeslot {
   day: string
@@ -58,55 +56,17 @@ export function Groups() {
     try {
       setLoading(true)
 
-      // Fetch schools
-      const { data: schoolsData, error: schoolsError } = await supabase
-        .from('schools')
-        .select('*')
-        .order('name')
+      const [schoolsData, subjectsData, groupsData, rostersData] = await Promise.all([
+        fetchSchools(),
+        fetchSubjects(),
+        fetchGroupsWithRelations(),
+        fetchRosters()
+      ])
 
-      if (schoolsError) throw schoolsError
-
-      // Fetch subjects
-      const { data: subjectsData, error: subjectsError } = await supabase
-        .from('subjects')
-        .select('*')
-        .order('name')
-
-      if (subjectsError) throw subjectsError
-
-      // Fetch groups with school and subject names
-      const { data: groupsData, error: groupsError } = await supabase
-        .from('groups')
-        .select(`
-          *,
-          school:schools(name),
-          subject:subjects(name)
-        `)
-        .order('name')
-
-      if (groupsError) throw groupsError
-
-      // Fetch roster items for all groups
-      const { data: rosterData, error: rosterError } = await supabase
-        .from('roster_items')
-        .select('*')
-        .order('student_name')
-
-      if (rosterError) throw rosterError
-
-      // Group roster items by group_id
-      const rostersByGroup = (rosterData || []).reduce((acc, item) => {
-        if (!acc[item.group_id]) {
-          acc[item.group_id] = []
-        }
-        acc[item.group_id].push(item)
-        return acc
-      }, {} as Record<string, RosterItem[]>)
-
-      setSchools(schoolsData || [])
-      setSubjects(subjectsData || [])
-      setGroups(groupsData || [])
-      setRosters(rostersByGroup)
+      setSchools(schoolsData)
+      setSubjects(subjectsData)
+      setGroups(groupsData)
+      setRosters(rostersData)
     } catch (err: any) {
       setError(err.message)
     } finally {
@@ -150,20 +110,12 @@ export function Groups() {
     if (!newGroupName.trim() || !selectedSchool || !selectedSubject) return
 
     try {
-      const { data, error } = await supabase
-        .from('groups')
-        .insert({
-          school_id: selectedSchool,
-          subject_id: selectedSubject,
-          name: newGroupName.trim(),
-          timeslots: timeslots.filter(slot => slot.day && slot.startTime && slot.endTime)
-        })
-        .select(`
-          *,
-          school:schools(name),
-          subject:subjects(name)
-        `)
-        .single()
+      const data = await createGroupWithRelations({
+        schoolId: selectedSchool,
+        subjectId: selectedSubject,
+        name: newGroupName,
+        timeslots: timeslots.filter(slot => slot.day && slot.startTime && slot.endTime)
+      })
 
       if (error) throw error
 
@@ -182,21 +134,13 @@ export function Groups() {
     if (!editGroupName.trim() || !editGroupSchool || !editGroupSubject) return
 
     try {
-      const { data, error } = await supabase
-        .from('groups')
-        .update({
-          name: editGroupName.trim(),
-          school_id: editGroupSchool,
-          subject_id: editGroupSubject,
-          timeslots: editGroupTimeslots.filter(slot => slot.day && slot.startTime && slot.endTime)
-        })
-        .eq('id', groupId)
-        .select(`
-          *,
-          school:schools(name),
-          subject:subjects(name)
-        `)
-        .single()
+      const data = await updateGroupWithRelations({
+        groupId,
+        schoolId: editGroupSchool,
+        subjectId: editGroupSubject,
+        name: editGroupName,
+        timeslots: editGroupTimeslots.filter(slot => slot.day && slot.startTime && slot.endTime)
+      })
 
       if (error) throw error
 
@@ -215,12 +159,7 @@ export function Groups() {
     if (!confirm('Are you sure you want to delete this group? This will also delete all its lessons and related data.')) return
 
     try {
-      const { error } = await supabase
-        .from('groups')
-        .delete()
-        .eq('id', groupId)
-
-      if (error) throw error
+      await deleteGroupById(groupId)
 
       setGroups(groups.filter(g => g.id !== groupId))
       // Remove roster items for this group
@@ -237,20 +176,11 @@ export function Groups() {
     if (!newStudentName.trim()) return
 
     try {
-      const { data, error } = await supabase
-        .from('roster_items')
-        .insert({
-          group_id: groupId,
-          student_name: newStudentName.trim(),
-        })
-        .select()
-        .single()
-
-      if (error) throw error
+      const student = await addStudentToGroup(groupId, newStudentName)
 
       setRosters({
         ...rosters,
-        [groupId]: [...(rosters[groupId] || []), data]
+        [groupId]: [...(rosters[groupId] || []), student]
       })
       setNewStudentName('')
       setShowAddStudent(null)
@@ -263,18 +193,11 @@ export function Groups() {
     if (!newName.trim()) return
 
     try {
-      const { data, error } = await supabase
-        .from('roster_items')
-        .update({ student_name: newName.trim() })
-        .eq('id', studentId)
-        .select()
-        .single()
-
-      if (error) throw error
+      const updatedStudent = await updateStudentName(studentId, newName)
 
       setRosters({
         ...rosters,
-        [groupId]: (rosters[groupId] || []).map(s => s.id === studentId ? data : s)
+        [groupId]: (rosters[groupId] || []).map(s => s.id === studentId ? updatedStudent : s)
       })
       setEditingStudent(null)
       setEditStudentName('')
@@ -287,12 +210,7 @@ export function Groups() {
     if (!confirm('Are you sure you want to remove this student from the group?')) return
 
     try {
-      const { error } = await supabase
-        .from('roster_items')
-        .delete()
-        .eq('id', studentId)
-
-      if (error) throw error
+      await deleteStudentById(studentId)
 
       setRosters({
         ...rosters,
