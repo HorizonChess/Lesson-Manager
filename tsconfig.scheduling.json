@@ -1,0 +1,19 @@
+﻿{
+  "extends": "./tsconfig.json",
+  "compilerOptions": {
+    "outDir": "./.tmp/scheduling-tests",
+    "module": "ESNext",
+    "target": "ES2020",
+    "moduleResolution": "Bundler",
+    "esModuleInterop": true,
+    "resolveJsonModule": false,
+    "types": ["node"],
+    "noEmit": false,
+    "skipLibCheck": true
+  },
+  "include": [
+    "src/lib/scheduling/index.ts",
+    "tests/scheduling.test.ts"
+  ]
+}
+

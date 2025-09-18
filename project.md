@@ -1,6 +1,6 @@
-Here’s a tight React + Supabase MVP brief for an AI memory file. No code, just clear targets and small, sequential milestones.
+﻿Hereג€™s a tight React + Supabase MVP brief for an AI memory file. No code, just clear targets and small, sequential milestones.
 
-Teacher Scheduler — MVP (React + Supabase)
+Teacher Scheduler ג€” MVP (React + Supabase)
 Goal
 
 Single-teacher app to manage multiple schools, multiple subjects per school, groups, lessons, lesson records, materials, attendance, tasks, and basic reports. Mobile-first, offline-friendly, RTL-ready. No conflict detection.
@@ -39,11 +39,11 @@ LessonRecord (1:1 with Lesson: covered, planned next, homework, notes)
 
 RosterItem (students in Group)
 
-Attendance (per LessonRecord × RosterItem: present/absent/late, note)
+Attendance (per LessonRecord ֳ— RosterItem: present/absent/late, note)
 
 Material (library items; reusable; tagged)
 
-LessonMaterial (join Material ↔ LessonRecord)
+LessonMaterial (join Material ג†” LessonRecord)
 
 Tag (skill/topic/meta) + MaterialTag (join)
 
@@ -57,15 +57,15 @@ Lesson references exactly one Group
 
 Max one LessonRecord per Lesson (create on first edit)
 
-Attendance only for students in the Lesson’s Group
+Attendance only for students in the Lessonג€™s Group
 
-Materials are reusable; attaching doesn’t duplicate
+Materials are reusable; attaching doesnג€™t duplicate
 
 Primary flows
 
 Dashboard: today + week lessons; quick stats; tasks
 
-Start Class / Lesson Record: Attendance, Covered, Planned (next), Homework, Attachments, Notes; “Copy Planned → Covered”
+Start Class / Lesson Record: Attendance, Covered, Planned (next), Homework, Attachments, Notes; ג€Copy Planned ג†’ Coveredג€
 
 Groups: overview, timeline, roster, settings
 
@@ -85,77 +85,78 @@ RLS-secured per user; device lock optional
 
 ## Current Progress
 
-**✅ COMPLETED MILESTONES:**
-- **M0**: Project skeleton with React + TypeScript + Vite + Tailwind + RTL toggle ✅
-- **M1**: Supabase Auth + User bootstrap - Authentication working correctly ✅
-- **M2**: Schools & Subjects CRUD - Full implementation with user testing ✅
+**ג… COMPLETED MILESTONES:**
+- **M0**: Project skeleton with React + TypeScript + Vite + Tailwind + RTL toggle ג…
+- **M1**: Supabase Auth + User bootstrap - Authentication working correctly ג…
+- **M2**: Schools & Subjects CRUD - Full implementation with user testing ג…
 
 **CURRENT TARGET:** M11 - Smart Schedule Builder Wizard (COMPLETE)
 
 **LATEST FIX:** Time configuration now respects each teacher's preferred window
 
 **NEXT PHASE:** Quality-of-life improvements for advanced scheduling scenarios
+**Rewrite Plan:** See docs/rewrite-plan.md for phased cleanup + feature rollout. Tests tracked in docs/manual-test-plan.md.
 
 **Progress Summary:**
-- Phase 1 (M0-M1): Authentication & Infrastructure ✅ Complete
-- Phase 2 (M2): Schools & Subjects Management ✅ Complete
-- Phase 3 (M3): Groups & Roster ✅ Complete
-- Phase 4 (M4): Lessons & Recurring Scheduling ✅ Complete
-- Phase 5 (M5): Lesson Record ✅ Complete
-- Phase 6 (M6): Attendance ✅ Complete
-- Phase 7 (M7): Lesson Plans & Tags ✅ Complete
-- Phase 8 (M8): Tasks ✅ Complete
-- Phase 8.5 (M8.5): Housekeeping ✅ Complete
-- Phase 8.6 (M8.6): Group Overview Modal Foundation ✅ Complete
-- Phase 8.7 (M8.7): Students & Settings Tabs ✅ Complete
-- Phase 8.8 (M8.8): Attendance Tab Integration ✅ Complete
-- Phase 8.9 (M8.9): Lessons Tab Integration ✅ Complete
-- Phase 9 (M9): Reports Foundation ✅ Complete
-- Phase 9.5 (M9.5): Dashboard Housekeeping ✅ Complete
-- Phase 9.6 (M9.6): Enhanced Reports Implementation ✅ Complete
-- Phase 9.7-9.10: Israeli Calendar & Calendar Interface ✅ Complete
-- Phase 9.11 (M9.11): Drag-and-Drop Mechanics Enhancement ✅ Complete
+- Phase 1 (M0-M1): Authentication & Infrastructure ג… Complete
+- Phase 2 (M2): Schools & Subjects Management ג… Complete
+- Phase 3 (M3): Groups & Roster ג… Complete
+- Phase 4 (M4): Lessons & Recurring Scheduling ג… Complete
+- Phase 5 (M5): Lesson Record ג… Complete
+- Phase 6 (M6): Attendance ג… Complete
+- Phase 7 (M7): Lesson Plans & Tags ג… Complete
+- Phase 8 (M8): Tasks ג… Complete
+- Phase 8.5 (M8.5): Housekeeping ג… Complete
+- Phase 8.6 (M8.6): Group Overview Modal Foundation ג… Complete
+- Phase 8.7 (M8.7): Students & Settings Tabs ג… Complete
+- Phase 8.8 (M8.8): Attendance Tab Integration ג… Complete
+- Phase 8.9 (M8.9): Lessons Tab Integration ג… Complete
+- Phase 9 (M9): Reports Foundation ג… Complete
+- Phase 9.5 (M9.5): Dashboard Housekeeping ג… Complete
+- Phase 9.6 (M9.6): Enhanced Reports Implementation ג… Complete
+- Phase 9.7-9.10: Israeli Calendar & Calendar Interface ג… Complete
+- Phase 9.11 (M9.11): Drag-and-Drop Mechanics Enhancement ג… Complete
 - Phase 11: Smart Schedule Builder Wizard - Complete
 
 Milestones (incremental, small steps)
-M0 — Project Skeleton ✅ COMPLETE
+M0 ג€” Project Skeleton ג… COMPLETE
 
 Create React app structure; install core libs; basic routing; Tailwind; RTL toggle scaffold.
 
 Acceptance: App boots; routes render; dark/RTL toggles visually reflect.
 
-M1 — Supabase Auth + User bootstrap ✅ COMPLETE
+M1 ג€” Supabase Auth + User bootstrap ג… COMPLETE
 
 Email/OAuth sign-in; ensure per-user row exists; RLS enabled on all tables.
 
 Acceptance: Sign in/out works; test query returns only own data.
 
-M2 — Schools & Subjects (multi-subject) ✅ COMPLETE
+M2 ג€” Schools & Subjects (multi-subject) ג… COMPLETE
 
 CRUD for School; CRUD for Subject under School.
 
 Acceptance: Create 2 schools with 2 subjects each; list/filter by school.
 
-**✅ VERIFIED COMPLETE:**
-- ✅ Full CRUD operations: Create, Read, Update, Delete for schools and subjects
-- ✅ School filtering functionality implemented
-- ✅ Inline editing with Enter/Escape keyboard shortcuts
-- ✅ Real-time UI updates and error handling
+**ג… VERIFIED COMPLETE:**
+- ג… Full CRUD operations: Create, Read, Update, Delete for schools and subjects
+- ג… School filtering functionality implemented
+- ג… Inline editing with Enter/Escape keyboard shortcuts
+- ג… Real-time UI updates and error handling
 
-M3 — Groups & Roster ✅ COMPLETE
+M3 ג€” Groups & Roster ג… COMPLETE
 
 Create Group (select School + Subject); add timeslots metadata; roster CRUD.
 
 Acceptance: Group details view shows timeslots; add 5 students to roster.
 
-**✅ VERIFIED COMPLETE:**
-- ✅ Group creation with School + Subject selection
-- ✅ Timeslots metadata (day of week + start/end times)
-- ✅ Full roster CRUD: Add, edit, delete students
-- ✅ Inline editing with Enter/Escape keyboard shortcuts
-- ✅ Dynamic timeslot management (add/remove multiple slots)
+**ג… VERIFIED COMPLETE:**
+- ג… Group creation with School + Subject selection
+- ג… Timeslots metadata (day of week + start/end times)
+- ג… Full roster CRUD: Add, edit, delete students
+- ג… Inline editing with Enter/Escape keyboard shortcuts
+- ג… Dynamic timeslot management (add/remove multiple slots)
 
-M4 — Lessons & Recurring Scheduling ✅ COMPLETE
+M4 ג€” Lessons & Recurring Scheduling ג… COMPLETE
 
 Create individual lessons (ad-hoc) and recurring lessons (from group timeslots); agenda/week list UI (no conflict logic).
 
@@ -165,84 +166,84 @@ Create individual lessons (ad-hoc) and recurring lessons (from group timeslots);
 - Calendar/agenda view showing upcoming lessons
 - Cancel individual lessons without affecting recurrence pattern
 
-Acceptance: Create recurring lessons from group timeslots; upcoming 7–14 days show lessons; canceled flag hides from hours report.
+Acceptance: Create recurring lessons from group timeslots; upcoming 7ג€“14 days show lessons; canceled flag hides from hours report.
 
-**✅ VERIFIED COMPLETE:**
-- ✅ Manual lesson creation with group/date/time selection
-- ✅ Recurring lesson generation from group timeslots (12 weeks)
-- ✅ Calendar agenda view grouped by date
-- ✅ Lesson cancellation/restoration functionality
-- ✅ Delete lessons permanently
-- ✅ Toggle between upcoming and all lessons view
+**ג… VERIFIED COMPLETE:**
+- ג… Manual lesson creation with group/date/time selection
+- ג… Recurring lesson generation from group timeslots (12 weeks)
+- ג… Calendar agenda view grouped by date
+- ג… Lesson cancellation/restoration functionality
+- ג… Delete lessons permanently
+- ג… Toggle between upcoming and all lessons view
 
-M5 — Lesson Record ✅ COMPLETE
+M5 ג€” Lesson Record ג… COMPLETE
 
-Auto-create LessonRecord on open; sections: Covered, Planned, Homework, Notes; "Copy Planned → Covered".
+Auto-create LessonRecord on open; sections: Covered, Planned, Homework, Notes; "Copy Planned ג†’ Covered".
 
 Acceptance: Edits persist; reload shows data unchanged.
 
-**✅ VERIFIED COMPLETE:**
-- ✅ Auto-create lesson record on first open
-- ✅ Four sections: Covered, Planned, Homework, Notes
-- ✅ "Copy Planned → Covered" functionality
-- ✅ Data persistence across sessions
-- ✅ **BONUS: Enhanced UX** - Single "View Lesson" button, mobile-responsive modal, Simple/Advanced toggle, Previous lesson context
+**ג… VERIFIED COMPLETE:**
+- ג… Auto-create lesson record on first open
+- ג… Four sections: Covered, Planned, Homework, Notes
+- ג… "Copy Planned ג†’ Covered" functionality
+- ג… Data persistence across sessions
+- ג… **BONUS: Enhanced UX** - Single "View Lesson" button, mobile-responsive modal, Simple/Advanced toggle, Previous lesson context
 
-M6 — Attendance ✅ COMPLETE
+M6 ג€” Attendance ג… COMPLETE
 
 Bulk mark all present; per-student override; status: present/absent/late; note.
 
 Acceptance: Attendance % computed for a date range; persisted per lesson.
 
-**✅ VERIFIED COMPLETE:**
-- ✅ Bulk attendance marking with "Mark All Present/Absent/Late" functionality
-- ✅ Per-student attendance controls with Present/Absent/Late buttons
-- ✅ Individual attendance notes with inline editing
-- ✅ Real-time attendance percentage calculation and display
-- ✅ Mobile-friendly touch controls (44px minimum button size)
-- ✅ Data persistence and proper state management
+**ג… VERIFIED COMPLETE:**
+- ג… Bulk attendance marking with "Mark All Present/Absent/Late" functionality
+- ג… Per-student attendance controls with Present/Absent/Late buttons
+- ג… Individual attendance notes with inline editing
+- ג… Real-time attendance percentage calculation and display
+- ג… Mobile-friendly touch controls (44px minimum button size)
+- ג… Data persistence and proper state management
 
-M7 — Lesson Plans & Tags ✅ COMPLETE
+M7 ג€” Lesson Plans & Tags ג… COMPLETE
 
 Personal library; tag management; attach lesson plans to lesson record; reuse.
 
 Acceptance: One lesson plan attached to two different lessons; no duplication.
 
-**✅ VERIFIED COMPLETE:**
-- ✅ **Renamed to "Lesson Plans"**: More pedagogically appropriate than "Materials"
-- ✅ Full CRUD operations for lesson plans (Create, Read, Update, Delete)
-- ✅ Lesson plan properties: title, description, file URL
-- ✅ **Subject-organized tag management**: Tags attributed to specific subjects during creation
-- ✅ **n+1 collapsible sections**: General tags + one section per subject
-- ✅ Color-coded tag categories (General: gray, Subject-specific: blue)
-- ✅ Tag lesson plans with multiple tags and filter by tags
-- ✅ **Lesson plan attachment system**: Attach plans to lesson records via modal selector
-- ✅ **Reusability verified**: Same lesson plan can be attached to multiple lessons without duplication
-- ✅ Remove lesson plans from lessons individually
-- ✅ Mobile-responsive interface with touch-friendly controls
-- ✅ Search and filtering functionality for large libraries
-- ✅ **Database migration**: Added subject_id to tags table with proper RLS policies
+**ג… VERIFIED COMPLETE:**
+- ג… **Renamed to "Lesson Plans"**: More pedagogically appropriate than "Materials"
+- ג… Full CRUD operations for lesson plans (Create, Read, Update, Delete)
+- ג… Lesson plan properties: title, description, file URL
+- ג… **Subject-organized tag management**: Tags attributed to specific subjects during creation
+- ג… **n+1 collapsible sections**: General tags + one section per subject
+- ג… Color-coded tag categories (General: gray, Subject-specific: blue)
+- ג… Tag lesson plans with multiple tags and filter by tags
+- ג… **Lesson plan attachment system**: Attach plans to lesson records via modal selector
+- ג… **Reusability verified**: Same lesson plan can be attached to multiple lessons without duplication
+- ג… Remove lesson plans from lessons individually
+- ג… Mobile-responsive interface with touch-friendly controls
+- ג… Search and filtering functionality for large libraries
+- ג… **Database migration**: Added subject_id to tags table with proper RLS policies
 
-M8 — Tasks ✅ COMPLETE
+M8 ג€” Tasks ג… COMPLETE
 
 Create tasks; link optionally to Group or Lesson; open/done; filter by status.
 
 Acceptance: Task list filters correctly; linked entities navigable.
 
-**✅ VERIFIED COMPLETE:**
-- ✅ Full CRUD operations for tasks (Create, Read, Update, Delete)
-- ✅ Task properties: title (required), description (optional), completion status
-- ✅ **Optional linking system**: Tasks can link to Groups OR Lessons (mutually exclusive) or remain unlinked
-- ✅ **Dual filtering system**: Filter by status (All/Open/Completed) and link type (All/Group/Lesson/Unlinked)
-- ✅ **Navigation functionality**: Linked entities are clickable and navigate to related pages
-- ✅ Visual task completion with checkbox interface and strike-through styling
-- ✅ Real-time task counters (open vs completed)
-- ✅ Mobile-responsive interface with inline editing
-- ✅ Proper database relations and real-time updates
+**ג… VERIFIED COMPLETE:**
+- ג… Full CRUD operations for tasks (Create, Read, Update, Delete)
+- ג… Task properties: title (required), description (optional), completion status
+- ג… **Optional linking system**: Tasks can link to Groups OR Lessons (mutually exclusive) or remain unlinked
+- ג… **Dual filtering system**: Filter by status (All/Open/Completed) and link type (All/Group/Lesson/Unlinked)
+- ג… **Navigation functionality**: Linked entities are clickable and navigate to related pages
+- ג… Visual task completion with checkbox interface and strike-through styling
+- ג… Real-time task counters (open vs completed)
+- ג… Mobile-responsive interface with inline editing
+- ג… Proper database relations and real-time updates
 
-M8.5 — Housekeeping
+M8.5 ג€” Housekeeping
 
-Unified School/Subject/Group Management UX: Consolidate the fragmented workflow where users currently need to navigate between separate pages (Schools → Subjects, then Groups page) to set up their teaching structure.
+Unified School/Subject/Group Management UX: Consolidate the fragmented workflow where users currently need to navigate between separate pages (Schools ג†’ Subjects, then Groups page) to set up their teaching structure.
 
 **Current Problem:**
 - Create school in Schools page
@@ -251,30 +252,30 @@ Unified School/Subject/Group Management UX: Consolidate the fragmented workflow 
 - Select school + subject in Groups page
 - Fragmented, non-intuitive workflow
 
-**Goal:** Create a unified management interface where the entire teaching structure (School → Subjects → Groups) can be managed in one cohesive location.
+**Goal:** Create a unified management interface where the entire teaching structure (School ג†’ Subjects ג†’ Groups) can be managed in one cohesive location.
 
 **Key Requirements:**
 1. **Tab naming**: Name this tab "School overview"
 2. **Improved collapsing element**:
    - Clicking on the entire box (not just folder icon) should trigger collapse/expand
    - Smart auto-expansion logic:
-     - If ≤5-6 entries total in school: automatically open all groups
+     - If ג‰₪5-6 entries total in school: automatically open all groups
      - If >6 entries: check subject distribution
        - If divided between subjects: let user manually collapse/expand
        - If not divided between subjects: automatically collapse by default
 
 Acceptance: Teachers can set up complete teaching structure (school, subjects, groups with rosters) without navigating between multiple pages. Collapsing behavior is intuitive and automatically adapts to content size.
 
-**✅ VERIFIED COMPLETE:**
-- ✅ Unified School Overview interface combining Schools, Subjects, Groups, and Roster management
-- ✅ Smart collapsing logic: auto-collapse when >6 groups across multiple subjects
-- ✅ Click-anywhere collapsing for schools and subjects with folder/document icons
-- ✅ Student lists collapsed by default with toggle functionality
-- ✅ Removed redundant Groups navigation tab
-- ✅ Complete CRUD operations for all levels (School → Subject → Group → Student)
-- ✅ Hierarchical timeslot management integrated at group level
+**ג… VERIFIED COMPLETE:**
+- ג… Unified School Overview interface combining Schools, Subjects, Groups, and Roster management
+- ג… Smart collapsing logic: auto-collapse when >6 groups across multiple subjects
+- ג… Click-anywhere collapsing for schools and subjects with folder/document icons
+- ג… Student lists collapsed by default with toggle functionality
+- ג… Removed redundant Groups navigation tab
+- ג… Complete CRUD operations for all levels (School ג†’ Subject ג†’ Group ג†’ Student)
+- ג… Hierarchical timeslot management integrated at group level
 
-M8.6 — Group Overview Modal Foundation
+M8.6 ג€” Group Overview Modal Foundation
 
 Create comprehensive group management interface accessible by clicking groups in School Overview.
 
@@ -289,16 +290,16 @@ Create comprehensive group management interface accessible by clicking groups in
 
 Acceptance: Clicking any group opens modal with basic structure and navigation between tabs.
 
-**✅ VERIFIED COMPLETE:**
-- ✅ Reusable Modal component with full accessibility (ARIA, focus management, keyboard navigation)
-- ✅ GroupOverview component with four-tab structure (Students, Attendance, Lessons, Settings)
-- ✅ Modal state management and helper functions in Schools page
-- ✅ Clickable group names with hover effects and tooltips
-- ✅ Responsive XL modal size for comprehensive group management
-- ✅ ESC key and backdrop click to close functionality
-- ✅ Tab structure ready for content implementation in subsequent milestones
+**ג… VERIFIED COMPLETE:**
+- ג… Reusable Modal component with full accessibility (ARIA, focus management, keyboard navigation)
+- ג… GroupOverview component with four-tab structure (Students, Attendance, Lessons, Settings)
+- ג… Modal state management and helper functions in Schools page
+- ג… Clickable group names with hover effects and tooltips
+- ג… Responsive XL modal size for comprehensive group management
+- ג… ESC key and backdrop click to close functionality
+- ג… Tab structure ready for content implementation in subsequent milestones
 
-M8.7 — Students & Settings Tabs
+M8.7 ג€” Students & Settings Tabs
 
 Implement core group information and roster management within Group Overview modal.
 
@@ -312,18 +313,18 @@ Implement core group information and roster management within Group Overview mod
 
 Acceptance: Students and Settings tabs fully functional with all CRUD operations working seamlessly.
 
-**✅ VERIFIED COMPLETE:**
-- ✅ **Students Tab**: Full roster management with add/edit/delete student functionality
-- ✅ **Settings Tab**: Complete group settings editing (name, schedule, statistics)
-- ✅ **Real-time State Management**: All changes reflected immediately in School Overview
-- ✅ **Student CRUD**: Add students via modal form, inline editing with Enter/Escape keys, delete with confirmation
-- ✅ **Group Settings CRUD**: Edit group name, modify timeslots with add/remove functionality, delete group with confirmation
-- ✅ **Statistics Display**: Shows student count and weekly hours calculation
-- ✅ **Error Handling**: Proper error display and user feedback for all operations
-- ✅ **Data Integration**: Seamless integration with existing Schools page state management
-- ✅ **UX Consistency**: Maintains design patterns and interactions consistent with rest of application
+**ג… VERIFIED COMPLETE:**
+- ג… **Students Tab**: Full roster management with add/edit/delete student functionality
+- ג… **Settings Tab**: Complete group settings editing (name, schedule, statistics)
+- ג… **Real-time State Management**: All changes reflected immediately in School Overview
+- ג… **Student CRUD**: Add students via modal form, inline editing with Enter/Escape keys, delete with confirmation
+- ג… **Group Settings CRUD**: Edit group name, modify timeslots with add/remove functionality, delete group with confirmation
+- ג… **Statistics Display**: Shows student count and weekly hours calculation
+- ג… **Error Handling**: Proper error display and user feedback for all operations
+- ג… **Data Integration**: Seamless integration with existing Schools page state management
+- ג… **UX Consistency**: Maintains design patterns and interactions consistent with rest of application
 
-M8.8 — Attendance Tab Integration ✅ COMPLETE
+M8.8 ג€” Attendance Tab Integration ג… COMPLETE
 
 Integrate attendance history and management within Group Overview modal.
 
@@ -337,16 +338,16 @@ Integrate attendance history and management within Group Overview modal.
 
 Acceptance: Complete attendance overview with filtering and detailed history accessible per group.
 
-**✅ VERIFIED COMPLETE:**
-- ✅ **Date Range Filtering**: Implemented From/To date inputs with 30-day default range and real-time data refetch
-- ✅ **Attendance Statistics Dashboard**: Three statistics cards showing Total Lessons, Lessons With Attendance, and Average Attendance percentage
-- ✅ **Lesson-by-Lesson Display**: Individual lesson cards with date/time, attendance percentage, and color-coded performance badges
-- ✅ **Student Attendance Grid**: Per-student attendance status display with present/absent/late indicators
-- ✅ **Data Integration**: Fetches lessons, lesson records, and attendance data specific to the group with proper error handling
-- ✅ **Loading States**: Proper loading indicators and empty states for various data scenarios
-- ✅ **Extended Type Support**: AttendanceWithStudent interface for joining student names from roster items
+**ג… VERIFIED COMPLETE:**
+- ג… **Date Range Filtering**: Implemented From/To date inputs with 30-day default range and real-time data refetch
+- ג… **Attendance Statistics Dashboard**: Three statistics cards showing Total Lessons, Lessons With Attendance, and Average Attendance percentage
+- ג… **Lesson-by-Lesson Display**: Individual lesson cards with date/time, attendance percentage, and color-coded performance badges
+- ג… **Student Attendance Grid**: Per-student attendance status display with present/absent/late indicators
+- ג… **Data Integration**: Fetches lessons, lesson records, and attendance data specific to the group with proper error handling
+- ג… **Loading States**: Proper loading indicators and empty states for various data scenarios
+- ג… **Extended Type Support**: AttendanceWithStudent interface for joining student names from roster items
 
-M8.9 — Lessons Tab Integration ✅ COMPLETE
+M8.9 ג€” Lessons Tab Integration ג… COMPLETE
 
 Integrate lesson management and records within Group Overview modal.
 
@@ -360,20 +361,20 @@ Integrate lesson management and records within Group Overview modal.
 
 Acceptance: Complete lesson lifecycle management accessible from group context with full integration to existing lesson functionality.
 
-**✅ VERIFIED COMPLETE:**
-- ✅ **Comprehensive Lessons Display**: Separate sections for upcoming (chronologically sorted) and past lessons (most recent first)
-- ✅ **Lesson Statistics**: Header showing total lessons and active lessons count with real-time updates
-- ✅ **Enhanced Date Formatting**: All dates display in DD/MM/YYYY format (e.g., 15/09/2024) instead of US format
-- ✅ **Lesson Record Integration**: Full lesson record content previews (covered, planned, homework) in past lessons section
-- ✅ **Action Buttons**: View, Cancel/Restore, Delete functionality for all lessons with proper state management
-- ✅ **Visual Status Indicators**: Color-coded sections (green for upcoming, blue for past, red for cancelled) with status icons
-- ✅ **Tab State Persistence**: Fixed Alt+Tab browser switching issue - tab state now preserved in parent component
-- ✅ **Lesson Record Modal**: Full lesson editing modal with shared data sources between tabs and modal
-- ✅ **Unified Data Management**: Modal and lessons tab use same `lessonRecords` and `attendanceData` states for consistency
-- ✅ **Attendance Integration**: Complete attendance management within lesson record modal using shared roster data
-- ✅ **Real-time Updates**: Changes in modal immediately reflected in lessons tab and vice versa
+**ג… VERIFIED COMPLETE:**
+- ג… **Comprehensive Lessons Display**: Separate sections for upcoming (chronologically sorted) and past lessons (most recent first)
+- ג… **Lesson Statistics**: Header showing total lessons and active lessons count with real-time updates
+- ג… **Enhanced Date Formatting**: All dates display in DD/MM/YYYY format (e.g., 15/09/2024) instead of US format
+- ג… **Lesson Record Integration**: Full lesson record content previews (covered, planned, homework) in past lessons section
+- ג… **Action Buttons**: View, Cancel/Restore, Delete functionality for all lessons with proper state management
+- ג… **Visual Status Indicators**: Color-coded sections (green for upcoming, blue for past, red for cancelled) with status icons
+- ג… **Tab State Persistence**: Fixed Alt+Tab browser switching issue - tab state now preserved in parent component
+- ג… **Lesson Record Modal**: Full lesson editing modal with shared data sources between tabs and modal
+- ג… **Unified Data Management**: Modal and lessons tab use same `lessonRecords` and `attendanceData` states for consistency
+- ג… **Attendance Integration**: Complete attendance management within lesson record modal using shared roster data
+- ג… **Real-time Updates**: Changes in modal immediately reflected in lessons tab and vice versa
 
-M9 — Reports ✅ COMPLETE
+M9 ג€” Reports ג… COMPLETE
 
 Attendance report per group/date range.
 
@@ -383,14 +384,14 @@ Coverage list: lessons + "covered" text.
 
 Acceptance: Reports match hand-calculated checks on seed data.
 
-**✅ VERIFIED COMPLETE:**
-- ✅ **Reports Page Foundation**: Complete UI structure with filters and report generation buttons
-- ✅ **Filter System**: Hierarchical school → subject → group selection with date range picker
-- ✅ **Three Report Types**: Attendance, Hours, and Coverage reports matching project specifications
-- ✅ **Navigation Integration**: Reports page accessible from main navigation menu
-- ✅ **UI Framework**: Ready for full report generation logic implementation
+**ג… VERIFIED COMPLETE:**
+- ג… **Reports Page Foundation**: Complete UI structure with filters and report generation buttons
+- ג… **Filter System**: Hierarchical school ג†’ subject ג†’ group selection with date range picker
+- ג… **Three Report Types**: Attendance, Hours, and Coverage reports matching project specifications
+- ג… **Navigation Integration**: Reports page accessible from main navigation menu
+- ג… **UI Framework**: Ready for full report generation logic implementation
 
-M9.5 — Dashboard Housekeeping ✅ COMPLETE
+M9.5 ג€” Dashboard Housekeeping ג… COMPLETE
 
 Transform the outdated Dashboard into a useful teacher's daily hub by removing debug elements and placeholder content, replacing them with relevant information and quick access to frequently used features.
 
@@ -412,16 +413,16 @@ Transform the outdated Dashboard into a useful teacher's daily hub by removing d
 
 Acceptance: Dashboard provides immediate value to teachers with relevant daily information and quick access to common workflows. No debug/development information visible to end users.
 
-**✅ VERIFIED COMPLETE:**
-- ✅ **Functional Daily Hub**: Dashboard now shows today's schedule, meaningful stats, and quick access cards
-- ✅ **Today's Overview**: Real lesson schedule display with proper time formatting and status indicators
-- ✅ **Meaningful Quick Stats**: Schools, Groups, This Week lessons, Pending Tasks with proper Sunday-Friday week calculation
-- ✅ **Quick Access Cards**: Functional navigation to School Overview, Lessons, Tasks, Lesson Plans with contextual information
-- ✅ **Debug Elements Removed**: Eliminated authentication testing, milestone status, and manual bootstrap functionality
-- ✅ **Modern UI**: Clean, responsive design matching current app patterns with proper loading and error states
-- ✅ **Recent Activity**: Dynamic sections showing recent tasks and lesson plans when available
+**ג… VERIFIED COMPLETE:**
+- ג… **Functional Daily Hub**: Dashboard now shows today's schedule, meaningful stats, and quick access cards
+- ג… **Today's Overview**: Real lesson schedule display with proper time formatting and status indicators
+- ג… **Meaningful Quick Stats**: Schools, Groups, This Week lessons, Pending Tasks with proper Sunday-Friday week calculation
+- ג… **Quick Access Cards**: Functional navigation to School Overview, Lessons, Tasks, Lesson Plans with contextual information
+- ג… **Debug Elements Removed**: Eliminated authentication testing, milestone status, and manual bootstrap functionality
+- ג… **Modern UI**: Clean, responsive design matching current app patterns with proper loading and error states
+- ג… **Recent Activity**: Dynamic sections showing recent tasks and lesson plans when available
 
-M9.6 — Reports Implementation ✅ COMPLETE
+M9.6 ג€” Reports Implementation ג… COMPLETE
 
 Complete the actual report generation logic for the three report types. Currently only UI foundation exists.
 
@@ -438,25 +439,25 @@ Complete the actual report generation logic for the three report types. Currentl
 
 Acceptance: All three reports generate accurate data; attendance percentages, hour calculations, and coverage lists match manual verification on test data.
 
-**✅ VERIFIED COMPLETE:**
-- ✅ **Cascading Filter System**: School → Subject → Group filtering with proper data population
-- ✅ **Attendance Report Generation**: Real data queries with attendance percentage calculations, color-coded results
-- ✅ **Hours Report Generation**: Duration calculations excluding cancelled lessons, proper grouping by filter level
-- ✅ **Coverage Report Generation**: Lesson records content display with date formatting (DD/MM/YYYY)
-- ✅ **Interactive Data Tables**: Responsive tables with hover effects, proper alignment, and truncated content with tooltips
-- ✅ **Excel Export Functionality**: Full .xlsx export with auto-sized columns, proper formatting, and date-stamped filenames
-- ✅ **Error Handling**: Comprehensive error states and loading indicators
-- ✅ **Data Validation**: Reports use real database queries with proper joins and filtering
-- ✅ **Fixed Date Range Logic**: Default range now 24th of previous month to 24th of current month for proper monthly reporting
-- ✅ **Fixed Filter Logic**: Reports load all lessons when no specific filters selected instead of empty results
-- ✅ **Enhanced Hours Report**: Shows past/future lesson breakdown with color-coded statistics and cancelled lesson tracking
-- ✅ **Working Excel Export**: Confirmed downloading proper .xlsx files with correct MIME types and formatting
-- ✅ **ENHANCED: Academic Hour Counting**: Implemented 30-60min=1h, 61-110min=2h, 111-180min=3h calculation system
-- ✅ **ENHANCED: Date-wise Hour Breakdown**: Interactive expandable rows showing hours by individual dates
-- ✅ **ENHANCED: Simplified Excel Export**: Clean 3-column format (School, Lesson Date, Hours) with date-by-date breakdown and totals
-- ✅ **ENHANCED: Working Excel Downloads**: Fixed all Excel export issues - now generates proper .xlsx files that open correctly in Excel
+**ג… VERIFIED COMPLETE:**
+- ג… **Cascading Filter System**: School ג†’ Subject ג†’ Group filtering with proper data population
+- ג… **Attendance Report Generation**: Real data queries with attendance percentage calculations, color-coded results
+- ג… **Hours Report Generation**: Duration calculations excluding cancelled lessons, proper grouping by filter level
+- ג… **Coverage Report Generation**: Lesson records content display with date formatting (DD/MM/YYYY)
+- ג… **Interactive Data Tables**: Responsive tables with hover effects, proper alignment, and truncated content with tooltips
+- ג… **Excel Export Functionality**: Full .xlsx export with auto-sized columns, proper formatting, and date-stamped filenames
+- ג… **Error Handling**: Comprehensive error states and loading indicators
+- ג… **Data Validation**: Reports use real database queries with proper joins and filtering
+- ג… **Fixed Date Range Logic**: Default range now 24th of previous month to 24th of current month for proper monthly reporting
+- ג… **Fixed Filter Logic**: Reports load all lessons when no specific filters selected instead of empty results
+- ג… **Enhanced Hours Report**: Shows past/future lesson breakdown with color-coded statistics and cancelled lesson tracking
+- ג… **Working Excel Export**: Confirmed downloading proper .xlsx files with correct MIME types and formatting
+- ג… **ENHANCED: Academic Hour Counting**: Implemented 30-60min=1h, 61-110min=2h, 111-180min=3h calculation system
+- ג… **ENHANCED: Date-wise Hour Breakdown**: Interactive expandable rows showing hours by individual dates
+- ג… **ENHANCED: Simplified Excel Export**: Clean 3-column format (School, Lesson Date, Hours) with date-by-date breakdown and totals
+- ג… **ENHANCED: Working Excel Downloads**: Fixed all Excel export issues - now generates proper .xlsx files that open correctly in Excel
 
-M9.7 — Israeli Calendar Data Integration ✅ COMPLETE
+M9.7 ג€” Israeli Calendar Data Integration ג… COMPLETE
 
 Integrate Israeli school calendar with holiday and vacation schedules for accurate lesson planning.
 
@@ -473,17 +474,17 @@ Integrate Israeli school calendar with holiday and vacation schedules for accura
 
 Acceptance: Calendar service correctly identifies Israeli holidays and school vacation periods for current academic year.
 
-**✅ VERIFIED COMPLETE:**
-- ✅ **Israeli Vacation Data**: Complete 2025-2026 school year data in DD/MM/YYYY format with all major holidays
-- ✅ **Calendar Service**: Full IsraeliCalendarService with vacation day detection, school day validation, and update prompting
-- ✅ **Update Management**: July 10th trigger system with template generation for new school years
-- ✅ **Recurring Lesson Integration**: Vacation-aware lesson generation that automatically skips vacation periods
-- ✅ **Existing Lesson Cleanup**: Automatic deletion of lessons scheduled on vacation days during app load
-- ✅ **User Confirmation**: Warning system when manually creating lessons on vacation days with vacation period name display
-- ✅ **Data Structure**: JSON-based vacation periods with school year organization and proper date parsing
-- ✅ **Test Verification**: Complete test suite confirming vacation day detection accuracy
+**ג… VERIFIED COMPLETE:**
+- ג… **Israeli Vacation Data**: Complete 2025-2026 school year data in DD/MM/YYYY format with all major holidays
+- ג… **Calendar Service**: Full IsraeliCalendarService with vacation day detection, school day validation, and update prompting
+- ג… **Update Management**: July 10th trigger system with template generation for new school years
+- ג… **Recurring Lesson Integration**: Vacation-aware lesson generation that automatically skips vacation periods
+- ג… **Existing Lesson Cleanup**: Automatic deletion of lessons scheduled on vacation days during app load
+- ג… **User Confirmation**: Warning system when manually creating lessons on vacation days with vacation period name display
+- ג… **Data Structure**: JSON-based vacation periods with school year organization and proper date parsing
+- ג… **Test Verification**: Complete test suite confirming vacation day detection accuracy
 
-M9.8 — Calendar Interface Foundation ✅ COMPLETE
+M9.8 ג€” Calendar Interface Foundation ג… COMPLETE
 
 Transform lesson management from list-based to interactive calendar grid layout with drag-and-drop functionality.
 
@@ -500,14 +501,14 @@ Transform lesson management from list-based to interactive calendar grid layout 
 
 Acceptance: Lessons display in calendar grid format; vacation days clearly marked; week navigation functional on desktop and mobile.
 
-**✅ VERIFIED COMPLETE:**
-- ✅ **Weekly Calendar Grid**: Implemented using react-big-calendar with weekly view and proper time slots
-- ✅ **Visual Lesson Blocks**: Color-coded lesson events with group, school, and subject information
-- ✅ **Israeli Calendar Integration**: Vacation days integration with calendar interface
-- ✅ **Week Navigation**: Full week navigation with back/forward controls
-- ✅ **Mobile-Responsive**: Touch-friendly calendar interface optimized for mobile devices
+**ג… VERIFIED COMPLETE:**
+- ג… **Weekly Calendar Grid**: Implemented using react-big-calendar with weekly view and proper time slots
+- ג… **Visual Lesson Blocks**: Color-coded lesson events with group, school, and subject information
+- ג… **Israeli Calendar Integration**: Vacation days integration with calendar interface
+- ג… **Week Navigation**: Full week navigation with back/forward controls
+- ג… **Mobile-Responsive**: Touch-friendly calendar interface optimized for mobile devices
 
-M9.9 — Drag-Drop Lesson Editing & Recurring Management ✅ COMPLETE
+M9.9 ג€” Drag-Drop Lesson Editing & Recurring Management ג… COMPLETE
 
 Enable intuitive lesson manipulation with drag-drop, resize, and centralized recurring lesson management.
 
@@ -525,18 +526,18 @@ Enable intuitive lesson manipulation with drag-drop, resize, and centralized rec
 
 Acceptance: Lessons can be dragged between time slots; duration adjustable via edge dragging; all recurring lesson management centralized in single interface; mobile touch interactions work similarly to app rearrangement.
 
-**✅ VERIFIED COMPLETE:**
-- ✅ **Drag-and-Drop with dnd-kit**: Full integration with react-big-calendar using custom draggable lesson events and droppable time slots
-- ✅ **Touch Support**: Mobile-friendly long-press drag initiation with visual feedback via DragOverlay
-- ✅ **Resize Functionality**: Top and bottom resize handles on lesson events for duration adjustment with 15-minute snap granularity
-- ✅ **Vacation Day Protection**: Prevents dragging/resizing lessons into Israeli vacation periods with user warnings
-- ✅ **Visual Drop Zones**: Time slots highlight on hover during drag operations for clear drop feedback
-- ✅ **Unified Recurring Modal**: Single "Manage Recurring Lessons" button replaces scattered individual group buttons
-- ✅ **Template System**: Quick templates (Semester: 16 weeks, Full Year: 32 weeks, Custom) with date picker
-- ✅ **Database Integration**: Real-time lesson updates with proper error handling and state synchronization
-- ✅ **Mobile-Responsive**: Touch-friendly resize handles and drag interactions optimized for mobile devices
+**ג… VERIFIED COMPLETE:**
+- ג… **Drag-and-Drop with dnd-kit**: Full integration with react-big-calendar using custom draggable lesson events and droppable time slots
+- ג… **Touch Support**: Mobile-friendly long-press drag initiation with visual feedback via DragOverlay
+- ג… **Resize Functionality**: Top and bottom resize handles on lesson events for duration adjustment with 15-minute snap granularity
+- ג… **Vacation Day Protection**: Prevents dragging/resizing lessons into Israeli vacation periods with user warnings
+- ג… **Visual Drop Zones**: Time slots highlight on hover during drag operations for clear drop feedback
+- ג… **Unified Recurring Modal**: Single "Manage Recurring Lessons" button replaces scattered individual group buttons
+- ג… **Template System**: Quick templates (Semester: 16 weeks, Full Year: 32 weeks, Custom) with date picker
+- ג… **Database Integration**: Real-time lesson updates with proper error handling and state synchronization
+- ג… **Mobile-Responsive**: Touch-friendly resize handles and drag interactions optimized for mobile devices
 
-M9.10 — Advanced Recurring Lesson Management ✅ COMPLETE
+M9.10 ג€” Advanced Recurring Lesson Management ג… COMPLETE
 
 Enhance recurring lesson management with editing capabilities and recurring pattern modifications.
 
@@ -554,18 +555,18 @@ Enhance recurring lesson management with editing capabilities and recurring patt
 
 Acceptance: Users can modify existing recurring lesson timeslots; bulk edit entire recurring patterns; manage complex recurring schedules with visual feedback and conflict detection.
 
-**✅ VERIFIED COMPLETE:**
-- ✅ **Enhanced Recurring Modal**: Complete UI restructure with clear separation between edit and create modes
-- ✅ **Smart Pattern Detection**: Algorithm enhancement to distinguish separate recurring series with same day/time but different date ranges
-- ✅ **End Date Editing**: Added end date field for better lesson series management
-- ✅ **Group Timeslot Editing**: Inline editing of day/time for existing recurring patterns with real-time updates
-- ✅ **Pattern Deletion**: Full recurring pattern deletion with confirmation and lesson count display
-- ✅ **Fixed Time Updates**: Resolved PM/AM conversion bugs in bulk timeslot modification
-- ✅ **Always-Visible Creation**: "Add New Pattern" section visible by default for better UX
-- ✅ **Improved Cancel Behavior**: Proper expand/collapse functionality for edit sections
-- ✅ **Unique Pattern IDs**: Pattern identification system that properly separates multiple recurring series per group
+**ג… VERIFIED COMPLETE:**
+- ג… **Enhanced Recurring Modal**: Complete UI restructure with clear separation between edit and create modes
+- ג… **Smart Pattern Detection**: Algorithm enhancement to distinguish separate recurring series with same day/time but different date ranges
+- ג… **End Date Editing**: Added end date field for better lesson series management
+- ג… **Group Timeslot Editing**: Inline editing of day/time for existing recurring patterns with real-time updates
+- ג… **Pattern Deletion**: Full recurring pattern deletion with confirmation and lesson count display
+- ג… **Fixed Time Updates**: Resolved PM/AM conversion bugs in bulk timeslot modification
+- ג… **Always-Visible Creation**: "Add New Pattern" section visible by default for better UX
+- ג… **Improved Cancel Behavior**: Proper expand/collapse functionality for edit sections
+- ג… **Unique Pattern IDs**: Pattern identification system that properly separates multiple recurring series per group
 
-M9.11 — Drag-and-Drop Mechanics Enhancement
+M9.11 ג€” Drag-and-Drop Mechanics Enhancement
 
 Refine drag-and-drop calendar interface to provide clear interaction boundaries and intuitive lesson manipulation.
 
@@ -588,32 +589,32 @@ Refine drag-and-drop calendar interface to provide clear interaction boundaries 
 
 Acceptance: Drag-and-drop operations work predictably with clear visual boundaries; resize handles only appear where functional; lessons move cleanly without unexpected overlapping behavior.
 
-**✅ VERIFIED COMPLETE:**
-- ✅ **Phase 1**: Replaced custom dnd-kit with react-big-calendar built-in DnD
-- ✅ **Phase 2**: Implemented smart scheduling with conflict resolution and automatic rescheduling
-- ✅ **Phase 3**: Added manual time editing capability in lesson record modal
-- ✅ **Drag Functionality**: Lessons can be moved via clean drag-and-drop interface
-- ✅ **Conflict Resolution**: Overlapping lessons automatically prompt user for rescheduling
-- ✅ **Time Editing**: Manual time adjustment available in lesson record modal with calendar sync
+**ג… VERIFIED COMPLETE:**
+- ג… **Phase 1**: Replaced custom dnd-kit with react-big-calendar built-in DnD
+- ג… **Phase 2**: Implemented smart scheduling with conflict resolution and automatic rescheduling
+- ג… **Phase 3**: Added manual time editing capability in lesson record modal
+- ג… **Drag Functionality**: Lessons can be moved via clean drag-and-drop interface
+- ג… **Conflict Resolution**: Overlapping lessons automatically prompt user for rescheduling
+- ג… **Time Editing**: Manual time adjustment available in lesson record modal with calendar sync
 
-M11 — Smart Schedule Builder Wizard ✅ COMPLETE
+M11 ג€” Smart Schedule Builder Wizard ג… COMPLETE
 
 Interactive wizard that guides users through complete schedule setup with intelligent defaults and customization options.
 
-**✅ COMPLETED IMPLEMENTATION:**
-- ✅ Professional UI using Headless UI with 8-step wizard modal
-- ✅ School-by-school configuration flow (fixed from initial copying bug)
-- ✅ Dynamic form generation based on user input
-- ✅ Smart existing data detection and user choice
-- ✅ Group naming strategy selection (individual vs default)
-- ✅ Complete database integration with proper RLS compliance
-- ✅ Current school year calculation (fixed from hardcoded 2024-2025)
-- ✅ Schedule generation creates schools, subjects, groups, and recurring lessons
-- ✅ Proper wizard step navigation and validation
-- ✅ Database schema compatibility fixes (removed invalid user_id fields)
-- ✅ **SMART PERIOD ALLOCATION**: Enhanced algorithm that maps user time windows to Israeli school periods instead of defaulting to 8:00 AM
-- ✅ **PROGRESSIVE CHECKBOX SYSTEM**: Advanced customization options that only appear when needed for edge cases
-- ✅ **FIXED ACADEMIC HOUR CALCULATION**: Now correctly counts actual periods within time window (excludes breaks) - e.g., 8:00-13:30 = 6 academic hours, not 7
+**ג… COMPLETED IMPLEMENTATION:**
+- ג… Professional UI using Headless UI with 8-step wizard modal
+- ג… School-by-school configuration flow (fixed from initial copying bug)
+- ג… Dynamic form generation based on user input
+- ג… Smart existing data detection and user choice
+- ג… Group naming strategy selection (individual vs default)
+- ג… Complete database integration with proper RLS compliance
+- ג… Current school year calculation (fixed from hardcoded 2024-2025)
+- ג… Schedule generation creates schools, subjects, groups, and recurring lessons
+- ג… Proper wizard step navigation and validation
+- ג… Database schema compatibility fixes (removed invalid user_id fields)
+- ג… **SMART PERIOD ALLOCATION**: Enhanced algorithm that maps user time windows to Israeli school periods instead of defaulting to 8:00 AM
+- ג… **PROGRESSIVE CHECKBOX SYSTEM**: Advanced customization options that only appear when needed for edge cases
+- ג… **FIXED ACADEMIC HOUR CALCULATION**: Now correctly counts actual periods within time window (excludes breaks) - e.g., 8:00-13:30 = 6 academic hours, not 7
 
 **Advanced Features Implemented:**
 - **Smart Analysis Panel**: Real-time analysis showing time window strategy (perfect-match, partial-match, custom-times)
@@ -635,14 +636,14 @@ Interactive wizard that guides users through complete schedule setup with intell
 - Bulk import for roster plus initial period preferences
 - Schedule audit log or undo support for generated lessons
 
-Acceptance: ✅ FULLY COMPLETE - Wizard creates complete schedules with smart period allocation, handles edge cases with progressive customization, and maps user time windows correctly to Israeli school periods.
+Acceptance: ג… FULLY COMPLETE - Wizard creates complete schedules with smart period allocation, handles edge cases with progressive customization, and maps user time windows correctly to Israeli school periods.
 
 
-Acceptance checklist (MVP “Done”)
+Acceptance checklist (MVP ג€Doneג€)
 
 Multi-school, multi-subject per school; groups bound to both
 
-Create/show lessons (overlaps allowed); open lesson → record; “Copy Planned → Covered”
+Create/show lessons (overlaps allowed); open lesson ג†’ record; ג€Copy Planned ג†’ Coveredג€
 
 Roster + attendance (bulk + per-student) works online/offline
 
