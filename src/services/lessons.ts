@@ -1,4 +1,5 @@
 import { supabase } from '../lib/supabase'
+import type { Lesson } from '../types/database'
 
 export interface LessonInsert {
   groupId: string
@@ -36,6 +37,32 @@ export async function insertLessons(lessons: LessonInsert[]): Promise<void> {
   const { error } = await supabase
     .from('lessons')
     .insert(payload)
+
+  if (error) {
+    throw error
+  }
+}
+
+export async function updateLessonCancellation(lessonId: string, isCancelled: boolean) {
+  const { data, error } = await supabase
+    .from('lessons')
+    .update({ is_cancelled: isCancelled })
+    .eq('id', lessonId)
+    .select()
+    .single()
+
+  if (error || !data) {
+    throw error ?? new Error('Failed to update lesson')
+  }
+
+  return data as Lesson
+}
+
+export async function deleteLessonById(lessonId: string): Promise<void> {
+  const { error } = await supabase
+    .from('lessons')
+    .delete()
+    .eq('id', lessonId)
 
   if (error) {
     throw error

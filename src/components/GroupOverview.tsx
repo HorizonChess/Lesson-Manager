@@ -1,11 +1,17 @@
 import { useState, useEffect } from 'react'
-import type { Group, School, Subject, RosterItem, Lesson, LessonRecord, Attendance } from '../types/database'
-import { supabase } from '../lib/supabase'
-
-// Extended Attendance type with student name
-interface AttendanceWithStudent extends Attendance {
-  student_name?: string
-}
+import type { Group, School, Subject, RosterItem, Lesson, LessonRecord } from '../types/database'
+import { addRosterStudent, updateRosterStudent, deleteRosterStudent } from '../services/roster'
+import { updateGroup, deleteGroupById } from '../services/groups'
+import { ensureLessonRecord, updateLessonRecord } from '../services/lessonRecords'
+import { updateLessonCancellation, deleteLessonById } from '../services/lessons'
+import {
+  fetchGroupAttendance,
+  fetchGroupLessons,
+  fetchAttendanceForRecord,
+  updateAttendanceRecord,
+  createAttendanceRecord,
+  type AttendanceWithStudent
+} from '../services/groups.view'
 
 interface GroupOverviewProps {
   group: Group
@@ -92,62 +98,13 @@ export function GroupOverview({
     try {
       setAttendanceLoading(true)
 
-      // Fetch lessons for this group within date range
-      const { data: lessonsData, error: lessonsError } = await supabase
-        .from('lessons')
-        .select('*')
-        .eq('group_id', group.id)
-        .gte('start_time', `${dateFilter.start}T00:00:00.000Z`)
-        .lte('start_time', `${dateFilter.end}T23:59:59.999Z`)
-        .order('start_time', { ascending: false })
+      const startIso = `${dateFilter.start}T00:00:00.000Z`
+      const endIso = `${dateFilter.end}T23:59:59.999Z`
+      const { lessons: lessonsData, lessonRecords, attendanceByRecord } = await fetchGroupAttendance(group.id, startIso, endIso)
 
-      if (lessonsError) throw lessonsError
-
-      setLessons(lessonsData || [])
-
-      // Fetch lesson records for these lessons
-      if (lessonsData && lessonsData.length > 0) {
-        const { data: recordsData, error: recordsError } = await supabase
-          .from('lesson_records')
-          .select('*')
-          .in('lesson_id', lessonsData.map(l => l.id))
-
-        if (recordsError) throw recordsError
-
-        const recordsByLesson = (recordsData || []).reduce((acc, record) => {
-          acc[record.lesson_id] = record
-          return acc
-        }, {} as Record<string, LessonRecord>)
-
-        setLessonRecords(recordsByLesson)
-
-        // Fetch attendance data for these lesson records
-        if (recordsData && recordsData.length > 0) {
-          const { data: attendanceRecords, error: attendanceError } = await supabase
-            .from('attendance')
-            .select(`
-              *,
-              roster_item:roster_items(student_name)
-            `)
-            .in('lesson_record_id', recordsData.map(r => r.id))
-
-          if (attendanceError) throw attendanceError
-
-          // Group attendance by lesson record id
-          const attendanceByRecord: Record<string, AttendanceWithStudent[]> = {}
-          attendanceRecords?.forEach((attendance: any) => {
-            if (!attendanceByRecord[attendance.lesson_record_id]) {
-              attendanceByRecord[attendance.lesson_record_id] = []
-            }
-            attendanceByRecord[attendance.lesson_record_id].push({
-              ...attendance,
-              student_name: attendance.roster_item?.student_name
-            })
-          })
-
-          setAttendanceData(attendanceByRecord)
-        }
-      }
+      setLessons(lessonsData)
+      setLessonRecords(lessonRecords)
+      setAttendanceData(attendanceByRecord)
     } catch (err: any) {
       setError(err.message)
     } finally {
@@ -157,35 +114,11 @@ export function GroupOverview({
 
   const fetchLessonsData = async () => {
     try {
-      setAttendanceLoading(true) // Reuse the loading state for lessons
+      setAttendanceLoading(true)
 
-      // Fetch lessons for this group
-      const { data: lessonsData, error: lessonsError } = await supabase
-        .from('lessons')
-        .select('*')
-        .eq('group_id', group.id)
-        .order('start_time', { ascending: false })
-
-      if (lessonsError) throw lessonsError
-
-      setLessons(lessonsData || [])
-
-      // Fetch lesson records for these lessons
-      if (lessonsData && lessonsData.length > 0) {
-        const { data: recordsData, error: recordsError } = await supabase
-          .from('lesson_records')
-          .select('*')
-          .in('lesson_id', lessonsData.map(l => l.id))
-
-        if (recordsError) throw recordsError
-
-        const recordsByLesson = (recordsData || []).reduce((acc, record) => {
-          acc[record.lesson_id] = record
-          return acc
-        }, {} as Record<string, LessonRecord>)
-
-        setLessonRecords(recordsByLesson)
-      }
+      const { lessons: lessonsData, lessonRecords } = await fetchGroupLessons(group.id)
+      setLessons(lessonsData)
+      setLessonRecords(lessonRecords)
     } catch (err: any) {
       setError(err.message)
     } finally {
@@ -200,18 +133,8 @@ export function GroupOverview({
 
     try {
       setError(null)
-      const { data, error } = await supabase
-        .from('roster_items')
-        .insert({
-          group_id: group.id,
-          student_name: newStudentName.trim(),
-        })
-        .select()
-        .single()
-
-      if (error) throw error
-
-      const updatedRoster = [...roster, data]
+      const newStudent = await addRosterStudent(group.id, newStudentName)
+      const updatedRoster = [...roster, newStudent]
       onRosterUpdate?.(updatedRoster)
       setNewStudentName('')
       setShowAddStudent(false)
@@ -225,16 +148,8 @@ export function GroupOverview({
 
     try {
       setError(null)
-      const { data, error } = await supabase
-        .from('roster_items')
-        .update({ student_name: newName.trim() })
-        .eq('id', studentId)
-        .select()
-        .single()
-
-      if (error) throw error
-
-      const updatedRoster = roster.map(s => s.id === studentId ? data : s)
+      const updatedStudent = await updateRosterStudent(studentId, newName)
+      const updatedRoster = roster.map(s => s.id === studentId ? updatedStudent : s)
       onRosterUpdate?.(updatedRoster)
       setEditingStudent(null)
       setEditStudentName('')
@@ -248,13 +163,7 @@ export function GroupOverview({
 
     try {
       setError(null)
-      const { error } = await supabase
-        .from('roster_items')
-        .delete()
-        .eq('id', studentId)
-
-      if (error) throw error
-
+      await deleteRosterStudent(studentId)
       const updatedRoster = roster.filter(s => s.id !== studentId)
       onRosterUpdate?.(updatedRoster)
     } catch (err: any) {
@@ -266,19 +175,12 @@ export function GroupOverview({
   const updateGroupSettings = async () => {
     try {
       setError(null)
-      const { data, error } = await supabase
-        .from('groups')
-        .update({
-          name: editGroupName.trim(),
-          timeslots: editGroupTimeslots.filter(slot => slot.day && slot.startTime && slot.endTime)
-        })
-        .eq('id', group.id)
-        .select()
-        .single()
-
-      if (error) throw error
-
-      onGroupUpdate?.(data)
+      const updatedGroup = await updateGroup({
+        groupId: group.id,
+        name: editGroupName.trim(),
+        timeslots: editGroupTimeslots.filter(slot => slot.day && slot.startTime && slot.endTime)
+      })
+      onGroupUpdate?.(updatedGroup)
       setEditingGroup(false)
     } catch (err: any) {
       setError(err.message)
@@ -290,15 +192,9 @@ export function GroupOverview({
 
     try {
       setError(null)
-      const { error } = await supabase
-        .from('groups')
-        .delete()
-        .eq('id', group.id)
-
-      if (error) throw error
-
-      onGroupDelete?.(group.id) // Notify parent to update UI
-      onClose() // Close modal after successful deletion
+      await deleteGroupById(group.id)
+      onGroupDelete?.(group.id)
+      onClose()
     } catch (err: any) {
       setError(err.message)
     }
@@ -325,32 +221,16 @@ export function GroupOverview({
     try {
       setError(null)
 
-      // Check if lesson record exists, create if not
       let record = lessonRecords[lessonId]
 
       if (!record) {
-        const { data, error } = await supabase
-          .from('lesson_records')
-          .insert({
-            lesson_id: lessonId,
-            covered: '',
-            planned: '',
-            homework: '',
-            notes: ''
-          })
-          .select()
-          .single()
-
-        if (error) throw error
-
-        record = data
+        record = await ensureLessonRecord(lessonId)
         setLessonRecords({
           ...lessonRecords,
           [lessonId]: record
         })
       }
 
-      // Load existing data into form
       setRecordData({
         covered: record.covered || '',
         planned: record.planned || '',
@@ -358,27 +238,11 @@ export function GroupOverview({
         notes: record.notes || ''
       })
 
-      // Ensure attendance data is loaded for this lesson record
       if (record.id && !attendanceData[record.id]) {
-        const { data: attendanceRecords, error: attendanceError } = await supabase
-          .from('attendance')
-          .select(`
-            *,
-            roster_item:roster_items(student_name)
-          `)
-          .eq('lesson_record_id', record.id)
-
-        if (attendanceError) throw attendanceError
-
-        // Add to shared attendance data state
-        const attendanceArray: AttendanceWithStudent[] = attendanceRecords?.map((attendance: any) => ({
-          ...attendance,
-          student_name: attendance.roster_item?.student_name
-        })) || []
-
+        const attendanceRecords = await fetchAttendanceForRecord(record.id)
         setAttendanceData({
           ...attendanceData,
-          [record.id]: attendanceArray
+          [record.id]: attendanceRecords
         })
       }
 
@@ -393,23 +257,16 @@ export function GroupOverview({
 
     try {
       setError(null)
-      const { data, error } = await supabase
-        .from('lesson_records')
-        .update({
-          covered: recordData.covered,
-          planned: recordData.planned,
-          homework: recordData.homework,
-          notes: recordData.notes
-        })
-        .eq('lesson_id', openLessonRecord)
-        .select()
-        .single()
-
-      if (error) throw error
+      const updatedRecord = await updateLessonRecord(openLessonRecord, {
+        covered: recordData.covered,
+        planned: recordData.planned,
+        homework: recordData.homework,
+        notes: recordData.notes
+      })
 
       setLessonRecords({
         ...lessonRecords,
-        [openLessonRecord]: data
+        [openLessonRecord]: updatedRecord
       })
 
       setOpenLessonRecord(null)
@@ -435,20 +292,10 @@ export function GroupOverview({
       const existingAttendance = currentAttendanceArray.find(a => a.roster_item_id === studentId)
 
       if (existingAttendance) {
-        // Update existing attendance
-        const { data, error } = await supabase
-          .from('attendance')
-          .update({ status, note: note || null })
-          .eq('id', existingAttendance.id)
-          .select()
-          .single()
-
-        if (error) throw error
-
-        // Update the shared attendance data
+        const updated = await updateAttendanceRecord(existingAttendance.id, status, note)
         const updatedAttendanceArray = currentAttendanceArray.map(a =>
           a.roster_item_id === studentId
-            ? { ...data, student_name: existingAttendance.student_name }
+            ? { ...updated, student_name: updated.student_name ?? existingAttendance.student_name }
             : a
         )
         setAttendanceData({
@@ -456,24 +303,12 @@ export function GroupOverview({
           [currentRecord.id]: updatedAttendanceArray
         })
       } else {
-        // Create new attendance record
-        const { data, error } = await supabase
-          .from('attendance')
-          .insert({
-            lesson_record_id: currentRecord.id,
-            roster_item_id: studentId,
-            status,
-            note: note || null
-          })
-          .select()
-          .single()
-
-        if (error) throw error
-
+        const created = await createAttendanceRecord(currentRecord.id, studentId, status, note)
         const student = roster.find(s => s.id === studentId)
-        const newAttendanceRecord = { ...data, student_name: student?.student_name }
-
-        // Add to shared attendance data
+        const newAttendanceRecord = {
+          ...created,
+          student_name: created.student_name ?? student?.student_name
+        }
         setAttendanceData({
           ...attendanceData,
           [currentRecord.id]: [...currentAttendanceArray, newAttendanceRecord]
@@ -488,17 +323,9 @@ export function GroupOverview({
   const toggleLessonCancellation = async (lessonId: string, currentStatus: boolean) => {
     try {
       setError(null)
-      const { data, error } = await supabase
-        .from('lessons')
-        .update({ is_cancelled: !currentStatus })
-        .eq('id', lessonId)
-        .select()
-        .single()
-
-      if (error) throw error
-
+      const updatedLesson = await updateLessonCancellation(lessonId, !currentStatus)
       setLessons(lessons.map(lesson =>
-        lesson.id === lessonId ? data : lesson
+        lesson.id === lessonId ? updatedLesson : lesson
       ))
     } catch (err: any) {
       setError(err.message)
@@ -510,15 +337,8 @@ export function GroupOverview({
 
     try {
       setError(null)
-      const { error } = await supabase
-        .from('lessons')
-        .delete()
-        .eq('id', lessonId)
-
-      if (error) throw error
-
+      await deleteLessonById(lessonId)
       setLessons(lessons.filter(lesson => lesson.id !== lessonId))
-      // Remove lesson record if it exists
       const newRecords = { ...lessonRecords }
       delete newRecords[lessonId]
       setLessonRecords(newRecords)

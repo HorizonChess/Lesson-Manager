@@ -1,10 +1,16 @@
 import { useAuth } from '../contexts/AuthContext'
 import { useEffect, useState } from 'react'
-import { supabase } from '../lib/supabase'
 import { Link } from 'react-router-dom'
 import { israeliCalendar } from '../services/israeliCalendar'
 import { ScheduleWizard } from '../components/ScheduleWizard'
-import type { School, Subject, Group, Lesson, Task, Material } from '../types/database'
+import type { Task, Material } from '../types/database'
+import {
+  fetchDashboardCounts,
+  fetchLessonsBetween,
+  fetchLessonsForDay,
+  fetchOpenTasks,
+  fetchRecentMaterials as fetchRecentMaterialsService
+} from '../services/dashboard'
 
 interface DashboardStats {
   schools: number
@@ -83,48 +89,36 @@ export function Dashboard() {
   }
 
   const fetchStats = async () => {
-    const { data: schools } = await supabase.from('schools').select('id')
-    const { data: subjects } = await supabase.from('subjects').select('id')
-    const { data: groups } = await supabase.from('groups').select('id')
-    const { data: lessons } = await supabase.from('lessons').select('id, created_at')
-    const { data: lessonRecords } = await supabase.from('lesson_records').select('id')
-    const { data: tasks } = await supabase.from('tasks').select('id, is_completed')
+    if (!user) return
 
     const today = new Date()
     const startOfWeek = new Date(today)
     const dayOfWeek = today.getDay()
 
-    // If today is Saturday (6), look at next week's Sunday-Friday
-    // Otherwise, look at current week's Sunday-Friday
-    if (dayOfWeek === 6) { // Saturday
-      // Next Sunday
+    if (dayOfWeek === 6) {
       startOfWeek.setDate(today.getDate() + 1)
     } else {
-      // Current week's Sunday
       startOfWeek.setDate(today.getDate() - dayOfWeek)
     }
     startOfWeek.setHours(0, 0, 0, 0)
 
     const endOfWeek = new Date(startOfWeek)
-    endOfWeek.setDate(startOfWeek.getDate() + 5) // Sunday + 5 days = Friday
+    endOfWeek.setDate(startOfWeek.getDate() + 5)
     endOfWeek.setHours(23, 59, 59, 999)
 
-    const { data: thisWeekLessons } = await supabase
-      .from('lessons')
-      .select('id, start_time')
-      .gte('start_time', startOfWeek.toISOString())
-      .lte('start_time', endOfWeek.toISOString())
-
-    const pendingTasks = tasks?.filter(task => !task.is_completed) || []
+    const [counts, weekLessons] = await Promise.all([
+      fetchDashboardCounts(user.id),
+      fetchLessonsBetween(startOfWeek.toISOString(), endOfWeek.toISOString())
+    ])
 
     setStats({
-      schools: schools?.length || 0,
-      subjects: subjects?.length || 0,
-      groups: groups?.length || 0,
-      totalLessons: lessons?.length || 0,
-      completedLessons: lessonRecords?.length || 0,
-      pendingTasks: pendingTasks.length,
-      thisWeekLessons: thisWeekLessons?.length || 0
+      schools: counts.schools,
+      subjects: counts.subjects,
+      groups: counts.groups,
+      totalLessons: counts.lessons,
+      completedLessons: counts.lessonRecords,
+      pendingTasks: counts.openTasks,
+      thisWeekLessons: weekLessons.length
     })
   }
 
@@ -134,55 +128,29 @@ export function Dashboard() {
     const endOfDay = new Date(startOfDay)
     endOfDay.setDate(startOfDay.getDate() + 1)
 
-    const { data } = await supabase
-      .from('lessons')
-      .select(`
-        id,
-        start_time,
-        end_time,
-        is_cancelled,
-        groups (
-          name,
-          schools (name),
-          subjects (name)
-        )
-      `)
-      .gte('start_time', startOfDay.toISOString())
-      .lt('start_time', endOfDay.toISOString())
-      .order('start_time')
+    const lessons = await fetchLessonsForDay(startOfDay.toISOString(), endOfDay.toISOString())
 
-    setTodayLessons(data?.map(lesson => ({
+    setTodayLessons(lessons.map(lesson => ({
       id: lesson.id,
       start_time: lesson.start_time,
       end_time: lesson.end_time,
       is_cancelled: lesson.is_cancelled,
       group: {
-        name: lesson.groups?.name || 'Unknown Group',
-        school: { name: lesson.groups?.schools?.name || 'Unknown School' },
-        subject: { name: lesson.groups?.subjects?.name || 'Unknown Subject' }
+        name: lesson.group_name,
+        school: { name: lesson.school_name },
+        subject: { name: lesson.subject_name }
       }
-    })) || [])
+    })))
   }
 
   const fetchRecentTasks = async () => {
-    const { data } = await supabase
-      .from('tasks')
-      .select('*')
-      .eq('is_completed', false)
-      .order('created_at', { ascending: false })
-      .limit(3)
-
-    setRecentTasks(data || [])
+    const tasks = await fetchOpenTasks(3)
+    setRecentTasks(tasks)
   }
 
   const fetchRecentMaterials = async () => {
-    const { data } = await supabase
-      .from('materials')
-      .select('*')
-      .order('updated_at', { ascending: false })
-      .limit(3)
-
-    setRecentMaterials(data || [])
+    const materials = await fetchRecentMaterialsService(3)
+    setRecentMaterials(materials)
   }
 
   if (loading) {
