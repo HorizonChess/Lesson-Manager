@@ -39,6 +39,7 @@ Scheduling unit tests (tsconfig.scheduling.json) passing as of 2025-09-18 17:10.
 - Lessons data load now uses src/services/lessonsPage.ts (groups/lessons/materials fetch clean-up); remaining mutations still inline pending migration.
 - Materials library now reads/writes via src/services/materials.ts (material/tag CRUD centralized); TODO: move upload/deletion side-effects if added later.
 - Groups page now relies on src/services/groupsPage.ts for schools/subjects/groups/roster fetch + CRUD; wizard cleanup next.
+- Tasks board now uses src/services/tasksPage.ts for task/group/lesson data; remaining UI logic handles filtering only.
 - Setup wizard now backed by src/services/setupPage.ts, moving nested school/subject/group CRUD out of UI; roster actions reuse shared helpers.
   (Legacy onboarding page; retained for now as a prototype predecessor to the current Schedule Wizard.)
 - `npx tsc --noEmit` and scheduling CLI checks remain green (npx tsc -p tsconfig.scheduling.json + node .tmp/scheduling-tests/tests/scheduling.test.js).

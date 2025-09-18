@@ -1,29 +1,23 @@
 import { useState, useEffect } from 'react'
 import { useAuth } from '../contexts/AuthContext'
-import { supabase } from '../lib/supabase'
-import type { Task, Group, Lesson } from '../types/database'
 
-interface TaskWithRelations extends Task {
-  group?: {
-    name: string
-    school: { name: string }
-    subject: { name: string }
-  }
-  lesson?: {
-    start_time: string
-    group: {
-      name: string
-      school: { name: string }
-      subject: { name: string }
-    }
-  }
-}
+import {
+  fetchTasks,
+  fetchGroups,
+  fetchLessons,
+  createTask as createTaskService,
+  updateTask as updateTaskService,
+  deleteTaskById,
+  type TaskWithLinks,
+  type GroupWithMeta,
+  type LessonWithMeta
+} from '../services/tasksPage'
 
 export function Tasks() {
   const { user } = useAuth()
-  const [tasks, setTasks] = useState<TaskWithRelations[]>([])
-  const [groups, setGroups] = useState<Group[]>([])
-  const [lessons, setLessons] = useState<Lesson[]>([])
+  const [tasks, setTasks] = useState<TaskWithLinks[]>([])
+  const [groups, setGroups] = useState<GroupWithMeta[]>([])
+  const [lessons, setLessons] = useState<LessonWithMeta[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
 
@@ -56,60 +50,18 @@ export function Tasks() {
     try {
       setLoading(true)
 
-      // Fetch groups
-      const { data: groupsData, error: groupsError } = await supabase
-        .from('groups')
-        .select(`
-          *,
-          school:schools(name),
-          subject:subjects(name)
-        `)
-        .order('name')
+      const [groupsData, lessonsData, tasksData] = await Promise.all([
+        fetchGroups(),
+        fetchLessons(),
+        fetchTasks()
+      ])
 
-      if (groupsError) throw groupsError
+      const lessonCutoff = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000)
+      const limitedLessons = lessonsData.filter(lesson => new Date(lesson.start_time) >= lessonCutoff)
 
-      // Fetch lessons
-      const { data: lessonsData, error: lessonsError } = await supabase
-        .from('lessons')
-        .select(`
-          *,
-          group:groups(
-            name,
-            school:schools(name),
-            subject:subjects(name)
-          )
-        `)
-        .gte('start_time', new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString()) // Last 7 days and future
-        .order('start_time')
-
-      if (lessonsError) throw lessonsError
-
-      // Fetch tasks with relations
-      const { data: tasksData, error: tasksError } = await supabase
-        .from('tasks')
-        .select(`
-          *,
-          group:groups(
-            name,
-            school:schools(name),
-            subject:subjects(name)
-          ),
-          lesson:lessons(
-            start_time,
-            group:groups(
-              name,
-              school:schools(name),
-              subject:subjects(name)
-            )
-          )
-        `)
-        .order('created_at', { ascending: false })
-
-      if (tasksError) throw tasksError
-
-      setGroups(groupsData || [])
-      setLessons(lessonsData || [])
-      setTasks(tasksData || [])
+      setGroups(groupsData)
+      setLessons(limitedLessons)
+      setTasks(tasksData)
     } catch (err: any) {
       setError(err.message)
     } finally {
@@ -122,37 +74,15 @@ export function Tasks() {
     if (!newTask.title.trim() || !user) return
 
     try {
-      const { data, error } = await supabase
-        .from('tasks')
-        .insert({
-          user_id: user.id,
-          title: newTask.title.trim(),
-          description: newTask.description.trim() || null,
-          group_id: newTask.group_id || null,
-          lesson_id: newTask.lesson_id || null,
-          is_completed: false,
-        })
-        .select(`
-          *,
-          group:groups(
-            name,
-            school:schools(name),
-            subject:subjects(name)
-          ),
-          lesson:lessons(
-            start_time,
-            group:groups(
-              name,
-              school:schools(name),
-              subject:subjects(name)
-            )
-          )
-        `)
-        .single()
+      const created = await createTaskService({
+        userId: user.id,
+        title: newTask.title,
+        description: newTask.description,
+        groupId: newTask.group_id || undefined,
+        lessonId: newTask.lesson_id || undefined
+      })
 
-      if (error) throw error
-
-      setTasks([data, ...tasks])
+      setTasks([created, ...tasks])
       setNewTask({ title: '', description: '', group_id: '', lesson_id: '' })
       setShowAddTask(false)
     } catch (err: any) {
@@ -164,36 +94,14 @@ export function Tasks() {
     if (!editTask.title.trim()) return
 
     try {
-      const { data, error } = await supabase
-        .from('tasks')
-        .update({
-          title: editTask.title.trim(),
-          description: editTask.description.trim() || null,
-          group_id: editTask.group_id || null,
-          lesson_id: editTask.lesson_id || null,
-        })
-        .eq('id', taskId)
-        .select(`
-          *,
-          group:groups(
-            name,
-            school:schools(name),
-            subject:subjects(name)
-          ),
-          lesson:lessons(
-            start_time,
-            group:groups(
-              name,
-              school:schools(name),
-              subject:subjects(name)
-            )
-          )
-        `)
-        .single()
+      const updated = await updateTaskService(taskId, {
+        title: editTask.title,
+        description: editTask.description,
+        groupId: editTask.group_id || undefined,
+        lessonId: editTask.lesson_id || undefined
+      })
 
-      if (error) throw error
-
-      setTasks(tasks.map(t => t.id === taskId ? data : t))
+      setTasks(tasks.map(t => t.id === taskId ? updated : t))
       setEditingTask(null)
       setEditTask({ title: '', description: '', group_id: '', lesson_id: '' })
     } catch (err: any) {
@@ -203,31 +111,9 @@ export function Tasks() {
 
   const toggleTaskCompletion = async (taskId: string, currentStatus: boolean) => {
     try {
-      const { data, error } = await supabase
-        .from('tasks')
-        .update({ is_completed: !currentStatus })
-        .eq('id', taskId)
-        .select(`
-          *,
-          group:groups(
-            name,
-            school:schools(name),
-            subject:subjects(name)
-          ),
-          lesson:lessons(
-            start_time,
-            group:groups(
-              name,
-              school:schools(name),
-              subject:subjects(name)
-            )
-          )
-        `)
-        .single()
+      const updated = await updateTaskService(taskId, { isCompleted: !currentStatus })
 
-      if (error) throw error
-
-      setTasks(tasks.map(t => t.id === taskId ? data : t))
+      setTasks(tasks.map(t => t.id === taskId ? updated : t))
     } catch (err: any) {
       setError(err.message)
     }
@@ -237,12 +123,7 @@ export function Tasks() {
     if (!confirm('Are you sure you want to delete this task?')) return
 
     try {
-      const { error } = await supabase
-        .from('tasks')
-        .delete()
-        .eq('id', taskId)
-
-      if (error) throw error
+      await deleteTaskById(taskId)
 
       setTasks(tasks.filter(t => t.id !== taskId))
     } catch (err: any) {
@@ -384,7 +265,7 @@ export function Tasks() {
                   <option value="">No group</option>
                   {groups.map(group => (
                     <option key={group.id} value={group.id}>
-                      {group.name} ({(group as any).school?.name} • {(group as any).subject?.name})
+                      {group.name} ({group.school?.name ?? 'Unknown school'} • {group.subject?.name ?? 'No subject'})
                     </option>
                   ))}
                 </select>
@@ -406,7 +287,7 @@ export function Tasks() {
                   <option value="">No lesson</option>
                   {lessons.map(lesson => (
                     <option key={lesson.id} value={lesson.id}>
-                      {(lesson as any).group?.name} - {new Date(lesson.start_time).toLocaleDateString()} {new Date(lesson.start_time).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                      {lesson.group?.name ?? 'Unknown group'} - {new Date(lesson.start_time).toLocaleDateString()} {new Date(lesson.start_time).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                     </option>
                   ))}
                 </select>
@@ -484,7 +365,7 @@ export function Tasks() {
                       <option value="">No group</option>
                       {groups.map(group => (
                         <option key={group.id} value={group.id}>
-                          {group.name} ({(group as any).school?.name})
+                          {group.name} ({group.school?.name ?? 'Unknown school'})
                         </option>
                       ))}
                     </select>
@@ -503,7 +384,7 @@ export function Tasks() {
                       <option value="">No lesson</option>
                       {lessons.map(lesson => (
                         <option key={lesson.id} value={lesson.id}>
-                          {(lesson as any).group?.name} - {new Date(lesson.start_time).toLocaleDateString()}
+                          {lesson.group?.name ?? 'Unknown group'} - {new Date(lesson.start_time).toLocaleDateString()}
                         </option>
                       ))}
                     </select>
