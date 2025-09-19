@@ -12,7 +12,13 @@ interface RecurringLessonsModalProps {
   onShowCreateFormChange: (value: boolean) => void
   patterns: RecurringPattern[]
   onClose: () => void
-  onGenerateLessons: (groupId: string, weeks: number) => Promise<void> | void
+  onGenerateLessons: (payload: {
+    groupId: string
+    weeks: number
+    day: string
+    startTime: string
+    endTime: string
+  }) => Promise<void> | void
   onUpdatePattern: (payload: {
     lessonIds: string[]
     newDay: string
@@ -284,7 +290,13 @@ export function RecurringLessonsModal({
                           type="button"
                           onClick={async () => {
                             if (!formData.groupId) return
-                            await onGenerateLessons(formData.groupId, formData.weeks)
+                            await onGenerateLessons({
+                              groupId: formData.groupId,
+                              weeks: formData.weeks,
+                              day: formData.newDay,
+                              startTime: formData.newStartTime,
+                              endTime: formData.newEndTime
+                            })
                             onShowCreateFormChange(false)
                           }}
                           disabled={!formData.groupId}

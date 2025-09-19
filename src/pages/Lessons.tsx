@@ -220,43 +220,55 @@ export function Lessons() {
     }
   }
 
-  const generateRecurringLessons = async (groupId: string, weeks: number = 12) => {
+  const generateRecurringLessons = async (payload: {
+    groupId: string
+    weeks: number
+    day: string
+    startTime: string
+    endTime: string
+  }) => {
+    console.log('🔄 generateRecurringLessons called with:', payload)
+    const { groupId, weeks, day, startTime, endTime } = payload
     const group = groups.find(g => g.id === groupId)
-    if (!group || !group.timeslots || group.timeslots.length === 0) return
+    console.log('📋 Found group:', group)
+    console.log('⏰ Using provided timeslot:', { day, startTime, endTime })
+
+    if (!group) {
+      console.error('❌ No group found with id:', groupId)
+      return
+    }
 
     const lessonsToCreate = []
     const today = new Date()
     let skippedVacationDays = 0
 
     for (let week = 0; week < weeks; week++) {
-      for (const timeslot of group.timeslots) {
-        const lessonDate = getNextDateForDay(timeslot.day, week)
-        if (lessonDate < today && week === 0) continue // Skip past dates in first week
+      const lessonDate = getNextDateForDay(day, week)
+      if (lessonDate < today && week === 0) continue // Skip past dates in first week
 
-        // Check if the lesson date falls on a vacation day
-        if (israeliCalendar.isVacationDay(lessonDate)) {
-          skippedVacationDays++
-          console.log(`Skipping lesson on ${lessonDate.toLocaleDateString()} - vacation day: ${israeliCalendar.getVacationPeriod(lessonDate)?.name}`)
-          continue // Skip this lesson - it's during vacation
-        }
-
-        // Check if it's during summer break or outside school year
-        if (!israeliCalendar.isSchoolDay(lessonDate)) {
-          skippedVacationDays++
-          console.log(`Skipping lesson on ${lessonDate.toLocaleDateString()} - not a school day`)
-          continue
-        }
-
-        const startDateTime = new Date(`${lessonDate.toISOString().split('T')[0]}T${timeslot.startTime}`)
-        const endDateTime = new Date(`${lessonDate.toISOString().split('T')[0]}T${timeslot.endTime}`)
-
-        lessonsToCreate.push({
-          group_id: groupId,
-          start_time: startDateTime.toISOString(),
-          end_time: endDateTime.toISOString(),
-          is_cancelled: false,
-        })
+      // Check if the lesson date falls on a vacation day
+      if (israeliCalendar.isVacationDay(lessonDate)) {
+        skippedVacationDays++
+        console.log(`Skipping lesson on ${lessonDate.toLocaleDateString()} - vacation day: ${israeliCalendar.getVacationPeriod(lessonDate)?.name}`)
+        continue // Skip this lesson - it's during vacation
       }
+
+      // Check if it's during summer break or outside school year
+      if (!israeliCalendar.isSchoolDay(lessonDate)) {
+        skippedVacationDays++
+        console.log(`Skipping lesson on ${lessonDate.toLocaleDateString()} - not a school day`)
+        continue
+      }
+
+      const startDateTime = new Date(`${lessonDate.toISOString().split('T')[0]}T${startTime}`)
+      const endDateTime = new Date(`${lessonDate.toISOString().split('T')[0]}T${endTime}`)
+
+      lessonsToCreate.push({
+        group_id: groupId,
+        start_time: startDateTime.toISOString(),
+        end_time: endDateTime.toISOString(),
+        is_cancelled: false,
+      })
     }
 
     // Show user how many vacation days were automatically skipped
@@ -280,9 +292,14 @@ export function Lessons() {
       if (error) throw error
 
       const normalizedNewLessons = (data ?? []).map(normalizeLesson)
+      console.log('📅 Created lessons:', normalizedNewLessons.length)
+      console.log('🔄 Updating lessons state with new lessons')
       setLessons([...lessons, ...normalizedNewLessons])
+      alert(`Successfully created ${normalizedNewLessons.length} lessons!`)
     } catch (err: any) {
+      console.error('❌ Database error:', err)
       setError(err.message)
+      alert('Database error: ' + err.message)
     }
   }
 
@@ -1049,8 +1066,21 @@ export function Lessons() {
     setRecurringFormData(createInitialRecurringFormData())
   }
 
-  const handleGenerateRecurringLessons = async (groupId: string, weeks: number) => {
-    await generateRecurringLessons(groupId, weeks)
+  const handleGenerateRecurringLessons = async (payload: {
+    groupId: string
+    weeks: number
+    day: string
+    startTime: string
+    endTime: string
+  }) => {
+    console.log('🚀 handleGenerateRecurringLessons called with:', payload)
+    try {
+      await generateRecurringLessons(payload)
+      console.log('✅ generateRecurringLessons completed successfully')
+    } catch (error) {
+      console.error('❌ Error in generateRecurringLessons:', error)
+      alert('Error generating lessons: ' + (error as Error).message)
+    }
   }
 
   const handleUpdateRecurringPattern = async ({

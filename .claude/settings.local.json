@@ -14,7 +14,8 @@
       "mcp__context7__resolve-library-id",
       "mcp__playwright__browser_snapshot",
       "mcp__playwright__browser_press_key",
-      "Read(//c/Users/ASUS/**)"
+      "Read(//c/Users/ASUS/**)",
+      "mcp__playwright__browser_select_option"
     ],
     "deny": [],
     "ask": []

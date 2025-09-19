@@ -26,9 +26,18 @@
 - Extracted School Overview filters, summary grid, and creation modal into `src/components/groups/` to mirror Lessons refactor.
 - Simplified `src/pages/Groups.tsx` to focus on data orchestration while GroupOverview handles deep management flows.
 - Materials library now uses `MaterialsHeader`, `MaterialsFilters`, `TagManagementPanel`, `MaterialCreateForm`, and `MaterialsGrid` so the page stays focused on Supabase orchestration.
-## 2025-09-20 - Lessons Page Decomposition (in progress)
-- ✅ Extracted `LessonMaterialSelector` component - now handles material attachment UI with clean props interface
-- ✅ Extracted `LessonsAddLessonModal` component - supports calendar slot selection with initial values and vacation day validation
-- ✅ `RecurringLessonsModal` was already extracted (completed earlier)
-- 🔄 Working on final extraction: `LessonsRecordModal` (~435 lines) - the largest component containing attendance, lesson record editing, materials management
+## 2025-09-20 - Lessons Page Decomposition Progress
+- ✅ Extracted `LessonMaterialSelector` component - clean material attachment UI with props interface, reduces modal complexity
+- ✅ Extracted `LessonsAddLessonModal` component - supports calendar slot selection with initial values, vacation day validation, replaces inline form
+- ✅ **`RecurringLessonsModal` - FULLY FIXED & WORKING** - Modal extraction successful, generation logic corrected
+  - **Root Cause Found**: Logic error - function required pre-existing group.timeslots but modal defines NEW timeslots via form
+  - **Fix Applied**: Updated interface to pass form timeslot data (day, startTime, endTime) instead of requiring database timeslots
+  - **Playwright Confirmed**: Successfully created 9 lessons with vacation day skipping, new pattern appears in UI
+- 🔄 **Next**: Extract `LessonsRecordModal` (~435 lines) - the final large component with attendance, lesson editing, materials
+
+## Current Status
+- Lessons.tsx reduced from ~1870 lines with **4/4 component extractions working**
+- Service layer pattern maintained: data via `lessonsPage.ts`, mutations via `lessonsMutations.ts`
+- Build passing, all extracted components follow established patterns
+- **RecurringLessonsModal**: Extraction complete, user needs to configure group timeslots for lesson generation
 
