@@ -13,6 +13,7 @@
 ## 2025-09-19 (afternoon) - Wizard View Split & TypeScript Cleanup
 - Extracted the schedule wizard UI into `ScheduleWizardStepContent` plus view-specific panels under `src/components/schedule-wizard/`, keeping the hook + services pattern intact.
 - Lifted the Lessons calendar view into `src/components/lessons/LessonsCalendarView.tsx`, leaving the page to orchestrate data while the new component handles presentation.
+- Extracted the Lessons list view into `src/components/lessons/LessonsListView.tsx`, so list rendering now lives alongside the calendar component.
 - Normalized lesson data handling and resolved all outstanding TypeScript errors (Lessons, Schools, Setup, Tasks, dashboard services), restoring a clean `npm run build`.
 - Added normalization helpers so calendar views receive consistent lesson/group metadata after service refactors.
 
