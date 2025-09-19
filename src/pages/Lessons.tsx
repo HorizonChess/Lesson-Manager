@@ -13,6 +13,18 @@ import {
   fetchMaterialsList,
   fetchLessonMaterialsMap
 } from '../services/lessonsPage'
+import {
+  createLesson as createLessonMutation,
+  updateLesson as updateLessonMutation,
+  deleteLessonById,
+  ensureLessonRecord,
+  updateLessonRecord as updateLessonRecordMutation,
+  upsertAttendance,
+  deleteAttendance,
+  replaceAttendance,
+  attachMaterial as attachLessonMaterial,
+  detachMaterial as detachLessonMaterial
+} from '../services/lessonsMutations'
 import { israeliCalendar } from '../services/israeliCalendar'
 import type { Lesson, Group, LessonRecord, RosterItem, Attendance, Material } from '../types/database'
 import 'react-big-calendar/lib/css/react-big-calendar.css'
@@ -195,27 +207,13 @@ export function Lessons() {
     }
 
     try {
-      const { data, error } = await supabase
-        .from('lessons')
-        .insert({
-          group_id: selectedGroup,
-          start_time: startDateTime.toISOString(),
-          end_time: endDateTime.toISOString(),
-          is_cancelled: false,
-        })
-        .select(`
-          *,
-          group:groups(
-            name,
-            school:schools(name),
-            subject:subjects(name)
-          )
-        `)
-        .single()
+      const created = await createLessonMutation({
+        groupId: selectedGroup,
+        startTime: startDateTime.toISOString(),
+        endTime: endDateTime.toISOString()
+      })
 
-      if (error) throw error
-
-      setLessons([...lessons, data])
+      setLessons([...lessons, created])
       setSelectedGroup('')
       setLessonDate('')
       setStartTime('')
@@ -307,24 +305,13 @@ export function Lessons() {
 
   const toggleLessonCancellation = async (lessonId: string, currentStatus: boolean) => {
     try {
-      const { data, error } = await supabase
-        .from('lessons')
-        .update({ is_cancelled: !currentStatus })
-        .eq('id', lessonId)
-        .select(`
-          *,
-          group:groups(
-            name,
-            school:schools(name),
-            subject:subjects(name)
-          )
-        `)
-        .single()
-
-      if (error) throw error
+      const updated = await updateLessonMutation({
+        lessonId,
+        isCancelled: !currentStatus
+      })
 
       setLessons(lessons.map(lesson =>
-        lesson.id === lessonId ? data : lesson
+        lesson.id === lessonId ? updated : lesson
       ))
     } catch (err: any) {
       setError(err.message)
@@ -335,12 +322,7 @@ export function Lessons() {
     if (!confirm('Are you sure you want to delete this lesson?')) return
 
     try {
-      const { error } = await supabase
-        .from('lessons')
-        .delete()
-        .eq('id', lessonId)
-
-      if (error) throw error
+      await deleteLessonById(lessonId)
 
       setLessons(lessons.filter(lesson => lesson.id !== lessonId))
       // Remove lesson record if it exists
@@ -358,21 +340,7 @@ export function Lessons() {
       let record = lessonRecords[lessonId]
 
       if (!record) {
-        const { data, error } = await supabase
-          .from('lesson_records')
-          .insert({
-            lesson_id: lessonId,
-            covered: '',
-            planned: '',
-            homework: '',
-            notes: ''
-          })
-          .select()
-          .single()
-
-        if (error) throw error
-
-        record = data
+        record = await ensureLessonRecord(lessonId)
         setLessonRecords({
           ...lessonRecords,
           [lessonId]: record
@@ -454,23 +422,17 @@ export function Lessons() {
     if (!openLessonRecord) return
 
     try {
-      const { data, error } = await supabase
-        .from('lesson_records')
-        .update({
-          covered: recordData.covered,
-          planned: recordData.planned,
-          homework: recordData.homework,
-          notes: recordData.notes
-        })
-        .eq('lesson_id', openLessonRecord)
-        .select()
-        .single()
-
-      if (error) throw error
+      const updatedRecord = await updateLessonRecordMutation({
+        lessonId: openLessonRecord,
+        covered: recordData.covered,
+        planned: recordData.planned,
+        homework: recordData.homework,
+        notes: recordData.notes
+      })
 
       setLessonRecords({
         ...lessonRecords,
-        [openLessonRecord]: data
+        [openLessonRecord]: updatedRecord
       })
 
       setOpenLessonRecord(null)
@@ -503,30 +465,22 @@ export function Lessons() {
     if (!currentRecord) return
 
     try {
-      const attendanceRecords = groupRoster.map(student => ({
-        lesson_record_id: currentRecord.id,
-        roster_item_id: student.id,
-        status: status,
-        note: null
-      }))
+      await replaceAttendance({
+        lessonRecordId: currentRecord.id,
+        records: groupRoster.map(student => ({
+          rosterItemId: student.id,
+          status,
+          note: null
+        }))
+      })
 
-      // Delete existing attendance for this lesson record
-      await supabase
-        .from('attendance')
-        .delete()
-        .eq('lesson_record_id', currentRecord.id)
-
-      // Insert new attendance records
-      const { data, error } = await supabase
-        .from('attendance')
-        .insert(attendanceRecords)
-        .select()
-
-      if (error) throw error
-
-      // Update local state
-      const newAttendance = (data || []).reduce((acc, att) => {
-        acc[att.roster_item_id] = att
+      const newAttendance = groupRoster.reduce((acc, student) => {
+        acc[student.id] = {
+          lesson_record_id: currentRecord.id,
+          roster_item_id: student.id,
+          status,
+          note: null
+        } as Attendance
         return acc
       }, {} as Record<string, Attendance>)
 
@@ -547,43 +501,17 @@ export function Lessons() {
     if (!currentRecord) return
 
     try {
-      const existingAttendance = attendance[studentId]
+      const record = await upsertAttendance({
+        lessonRecordId: currentRecord.id,
+        rosterItemId: studentId,
+        status,
+        note: note || null
+      })
 
-      if (existingAttendance) {
-        // Update existing attendance
-        const { data, error } = await supabase
-          .from('attendance')
-          .update({ status, note: note || null })
-          .eq('id', existingAttendance.id)
-          .select()
-          .single()
-
-        if (error) throw error
-
-        setAttendance({
-          ...attendance,
-          [studentId]: data
-        })
-      } else {
-        // Create new attendance record
-        const { data, error } = await supabase
-          .from('attendance')
-          .insert({
-            lesson_record_id: currentRecord.id,
-            roster_item_id: studentId,
-            status,
-            note: note || null
-          })
-          .select()
-          .single()
-
-        if (error) throw error
-
-        setAttendance({
-          ...attendance,
-          [studentId]: data
-        })
-      }
+      setAttendance({
+        ...attendance,
+        [studentId]: record as Attendance
+      })
     } catch (err: any) {
       setError(err.message)
     }
@@ -599,41 +527,17 @@ export function Lessons() {
       const existingAttendance = attendance[studentId]
       const currentStatus = existingAttendance?.status || 'present'
 
-      if (existingAttendance) {
-        // Update existing attendance note
-        const { data, error } = await supabase
-          .from('attendance')
-          .update({ note: attendanceNoteText || null })
-          .eq('id', existingAttendance.id)
-          .select()
-          .single()
+      const updated = await upsertAttendance({
+        lessonRecordId: currentRecord.id,
+        rosterItemId: studentId,
+        status: currentStatus,
+        note: attendanceNoteText || null
+      })
 
-        if (error) throw error
-
-        setAttendance({
-          ...attendance,
-          [studentId]: data
-        })
-      } else {
-        // Create new attendance record with note
-        const { data, error } = await supabase
-          .from('attendance')
-          .insert({
-            lesson_record_id: currentRecord.id,
-            roster_item_id: studentId,
-            status: currentStatus,
-            note: attendanceNoteText || null
-          })
-          .select()
-          .single()
-
-        if (error) throw error
-
-        setAttendance({
-          ...attendance,
-          [studentId]: data
-        })
-      }
+      setAttendance({
+        ...attendance,
+        [studentId]: updated as Attendance
+      })
 
       setEditingAttendanceNote(null)
       setAttendanceNoteText('')
@@ -656,28 +560,24 @@ export function Lessons() {
     if (!currentRecord) return
 
     try {
-      // Remove existing materials
-      await supabase
-        .from('lesson_materials')
-        .delete()
-        .eq('lesson_record_id', currentRecord.id)
+      const previousMaterials = lessonMaterials[currentRecord.id] || []
+      const previousIds = new Set(previousMaterials.map(m => m.id))
+      const nextIds = new Set(selectedMaterials)
 
-      // Add new materials
-      if (selectedMaterials.length > 0) {
-        const materialInserts = selectedMaterials.map(materialId => ({
-          lesson_record_id: currentRecord.id,
-          material_id: materialId
-        }))
+      const detachIds = previousMaterials.filter(m => !nextIds.has(m.id))
+      const attachIds = selectedMaterials.filter(id => !previousIds.has(id))
 
-        const { error } = await supabase
-          .from('lesson_materials')
-          .insert(materialInserts)
+      await Promise.all(detachIds.map(material => detachLessonMaterial({
+        lessonRecordId: currentRecord.id,
+        materialId: material.id
+      })))
 
-        if (error) throw error
-      }
+      await Promise.all(attachIds.map(materialId => attachLessonMaterial({
+        lessonRecordId: currentRecord.id,
+        materialId
+      })))
 
-      // Update local state
-      const attachedMaterials = materials.filter(m => selectedMaterials.includes(m.id))
+      const attachedMaterials = materials.filter(m => nextIds.has(m.id))
       setLessonMaterials({
         ...lessonMaterials,
         [currentRecord.id]: attachedMaterials
