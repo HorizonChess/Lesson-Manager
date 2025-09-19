@@ -24,6 +24,8 @@ import {
   attachMaterial as attachLessonMaterial,
   detachMaterial as detachLessonMaterial
 } from '../services/lessonsMutations'
+import { fetchRosters } from '../services/groupsPage'
+import { fetchAttendanceForRecord } from '../services/groups.view'
 import { israeliCalendar } from '../services/israeliCalendar'
 import type { Lesson, LessonRecord, RosterItem, Attendance, Material } from '../types/database'
 import { LessonsCalendarView, type LessonsCalendarEvent } from '../components/lessons/LessonsCalendarView'
@@ -345,37 +347,17 @@ export function Lessons() {
 
   const openLessonRecordForm = async (lessonId: string) => {
     try {
-      // Check if lesson record exists, create if not
-      let record = lessonRecords[lessonId]
+      const currentLesson = lessons.find(l => l.id === lessonId)
+      if (!currentLesson) return
 
+      // 1. Get or create lesson record (essential for modal to open)
+      let record = lessonRecords[lessonId]
       if (!record) {
         record = await ensureLessonRecord(lessonId)
-        setLessonRecords({
-          ...lessonRecords,
-          [lessonId]: record
-        })
+        setLessonRecords(prev => ({ ...prev, [lessonId]: record }))
       }
 
-      // Find previous lesson for the same group
-      const currentLesson = lessons.find(l => l.id === lessonId)
-      if (currentLesson) {
-        const groupLessons = lessons
-          .filter(l => l.group_id === currentLesson.group_id && l.id !== lessonId)
-          .sort((a, b) => new Date(a.start_time).getTime() - new Date(b.start_time).getTime())
-
-        const currentLessonTime = new Date(currentLesson.start_time).getTime()
-        const previousLesson = groupLessons
-          .filter(l => new Date(l.start_time).getTime() < currentLessonTime)
-          .pop() // Get the most recent previous lesson
-
-        if (previousLesson && lessonRecords[previousLesson.id]) {
-          setPreviousLessonData(lessonRecords[previousLesson.id])
-        } else {
-          setPreviousLessonData(null)
-        }
-      }
-
-      // Load existing data into form
+      // 2. Load basic form data immediately
       setRecordData({
         covered: record.covered || '',
         planned: record.planned || '',
@@ -383,47 +365,58 @@ export function Lessons() {
         notes: record.notes || ''
       })
 
-      // Fetch group roster and attendance
-      if (currentLesson) {
-        // Get roster for this group
-        const { data: rosterData, error: rosterError } = await supabase
-          .from('roster_items')
-          .select('*')
-          .eq('group_id', currentLesson.group_id)
-          .order('student_name')
-
-        if (rosterError) throw rosterError
-
-        setGroupRoster(rosterData || [])
-
-        // Get existing attendance for this lesson
-        if (record.id) {
-          const { data: attendanceData, error: attendanceError } = await supabase
-            .from('attendance')
-            .select('*')
-            .eq('lesson_record_id', record.id)
-
-          if (attendanceError) throw attendanceError
-
-          // Index attendance by roster_item_id
-          const attendanceByStudent = (attendanceData || []).reduce((acc, att) => {
-            acc[att.roster_item_id] = att
-            return acc
-          }, {} as Record<string, Attendance>)
-
-          setAttendance(attendanceByStudent)
-        } else {
-          setAttendance({})
-        }
-      }
-
-      // Set mobile-first default (simple view on mobile, advanced on desktop)
+      // 3. Set mobile-first default and open modal immediately
       const isMobile = window.innerWidth < 768
       setLessonViewMode(isMobile ? 'simple' : 'advanced')
-
       setOpenLessonRecord(lessonId)
+
+      // 4. Load advanced data in background (don't block modal opening)
+      loadAdvancedModalData(currentLesson, record)
+
     } catch (err: any) {
       setError(err.message)
+    }
+  }
+
+  const loadAdvancedModalData = async (currentLesson: NormalizedLesson, record: LessonRecord) => {
+    try {
+      // Load advanced data in parallel without blocking modal
+      const [rostersData, attendanceData] = await Promise.all([
+        fetchRosters(), // Gets all rosters, we'll filter for this group
+        record.id ? fetchAttendanceForRecord(record.id) : Promise.resolve([])
+      ])
+
+      // Filter roster data for current group
+      const groupRosterData = rostersData[currentLesson.group_id] || []
+
+      // Convert attendance array to map by roster_item_id
+      const attendanceMap = (attendanceData as any[]).reduce<Record<string, Attendance>>((acc, att) => {
+        acc[att.roster_item_id] = att
+        return acc
+      }, {})
+
+      // Find previous lesson record (inline logic)
+      const groupLessons = lessons
+        .filter(l => l.group_id === currentLesson.group_id && l.id !== currentLesson.id)
+        .sort((a, b) => new Date(a.start_time).getTime() - new Date(b.start_time).getTime())
+
+      const currentLessonTime = new Date(currentLesson.start_time).getTime()
+      const previousLesson = groupLessons
+        .filter(l => new Date(l.start_time).getTime() < currentLessonTime)
+        .pop() // Get the most recent previous lesson
+
+      const previousRecord = (previousLesson && lessonRecords[previousLesson.id])
+        ? lessonRecords[previousLesson.id]
+        : null
+
+      // Update state with loaded data
+      setGroupRoster(groupRosterData)
+      setAttendance(attendanceMap)
+      setPreviousLessonData(previousRecord)
+
+    } catch (err: any) {
+      console.error('Error loading advanced modal data:', err)
+      // Don't set error state here as modal is already open and functional
     }
   }
 
@@ -1338,6 +1331,7 @@ export function Lessons() {
         onClose={() => {
           setOpenLessonRecord(null)
           setRecordData({ covered: '', planned: '', homework: '', notes: '' })
+          // Reset advanced data state
           setPreviousLessonData(null)
           setGroupRoster([])
           setAttendance({})
