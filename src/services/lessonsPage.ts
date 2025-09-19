@@ -14,6 +14,14 @@ export interface LessonWithGroup extends Lesson {
   } | null
 }
 
+export type NormalizedLesson = LessonWithGroup & {
+  group: {
+    name: string
+    school: { name: string }
+    subject: { name: string }
+  }
+}
+
 export async function fetchGroupsWithDetails(): Promise<GroupWithDetails[]> {
   const { data, error } = await supabase
     .from('groups')

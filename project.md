@@ -36,12 +36,12 @@
 ## Active Refactor Checklist (Phase A)
 - [done] Schedule wizard UI renders through `ScheduleWizardStepContent` plus panels in `src/components/schedule-wizard/`, while `useScheduleWizard` keeps the business logic (complete).
 - [done] School Overview and Materials pages now delegate view rendering to components in `src/components/`, leaving pages focused on data orchestration.
-- [near-complete] Lessons page decomposition progress:
+- [COMPLETE] Lessons page decomposition progress:
   - ✅ `LessonMaterialSelector` - extracted and working
   - ✅ `LessonsAddLessonModal` - extracted and working (calendar slot selection, vacation validation)
   - ✅ `RecurringLessonsModal` - **FULLY FIXED & WORKING** (Logic corrected: uses form timeslots instead of requiring database timeslots, Playwright confirmed lesson creation)
-  - 🔄 `LessonsRecordModal` - pending extraction (~435 lines, attendance/editing/materials)
-- **Next Priority**: Complete final `LessonsRecordModal` extraction to finish Lessons page decomposition.
+  - ✅ `LessonsRecordModal` - **FULLY EXTRACTED & WORKING** (~435 lines extracted, attendance/editing/materials functionality maintained)
+- **Phase A Complete**: All Lessons page components successfully extracted with proper TypeScript interfaces and service integration.
 - Remove the legacy schedule wizard implementation once the new component boundaries are verified throughout the app.
 - Keep the build green by maintaining the lesson normalization helpers and watching for TypeScript regressions as we continue refactors.
 - Subjects overhaul: subjects should be reusable across schools with checkbox selection in School Overview; picking a school applies the subject to all of its groups with optional per-group overrides. Document UI and data changes before implementation.

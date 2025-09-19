@@ -23,3 +23,16 @@ export interface RecurringPattern {
   startDate: string
   endDate: string
 }
+
+export interface LessonRecordData {
+  covered: string
+  planned: string
+  homework: string
+  notes: string
+}
+
+export interface EditTimeData {
+  date: string
+  startTime: string
+  endTime: string
+}

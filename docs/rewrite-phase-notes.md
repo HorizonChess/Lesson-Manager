@@ -36,8 +36,12 @@
 - 🔄 **Next**: Extract `LessonsRecordModal` (~435 lines) - the final large component with attendance, lesson editing, materials
 
 ## Current Status
-- Lessons.tsx reduced from ~1870 lines with **4/4 component extractions working**
+- Lessons.tsx reduced from ~1870 lines with **5/5 component extractions COMPLETE**
 - Service layer pattern maintained: data via `lessonsPage.ts`, mutations via `lessonsMutations.ts`
 - Build passing, all extracted components follow established patterns
-- **RecurringLessonsModal**: Extraction complete, user needs to configure group timeslots for lesson generation
+- **All Component Extractions Complete**:
+  - ✅ `LessonMaterialSelector` - extracted and working
+  - ✅ `LessonsAddLessonModal` - extracted and working
+  - ✅ `RecurringLessonsModal` - extracted, fully fixed and working
+  - ✅ `LessonsRecordModal` - **FULLY EXTRACTED & WORKING** (~435 lines extracted, attendance/editing/materials functionality maintained)
 
