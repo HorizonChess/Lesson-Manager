@@ -1,5 +1,19 @@
 import { useState, useEffect } from 'react'
 import { useAuth } from '../contexts/AuthContext'
+import type { School, Subject, RosterItem } from '../types/database'
+import {
+  fetchSchools,
+  fetchSubjects,
+  fetchGroupsWithRelations,
+  fetchRosters,
+  createGroupWithRelations,
+  updateGroupWithRelations,
+  deleteGroupById,
+  addStudentToGroup,
+  updateStudentName,
+  deleteStudentById,
+  type GroupWithRelations
+} from '../services/groupsPage'
 
 interface Timeslot {
   day: string
@@ -9,7 +23,7 @@ interface Timeslot {
 
 export function Groups() {
   const { user } = useAuth()
-  const [groups, setGroups] = useState<Group[]>([])
+  const [groups, setGroups] = useState<GroupWithRelations[]>([])
   const [schools, setSchools] = useState<School[]>([])
   const [subjects, setSubjects] = useState<Subject[]>([])
   const [rosters, setRosters] = useState<Record<string, RosterItem[]>>({})

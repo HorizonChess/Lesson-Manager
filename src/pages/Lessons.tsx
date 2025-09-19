@@ -1,4 +1,5 @@
 import { useState, useEffect, useMemo } from 'react'
+import type { ComponentType } from 'react'
 import { Calendar, momentLocalizer } from 'react-big-calendar'
 import moment from 'moment'
 import withDragAndDrop from 'react-big-calendar/lib/addons/dragAndDrop'
@@ -11,7 +12,9 @@ import {
   deleteLessonsByIds,
   fetchLessonRecordsMap,
   fetchMaterialsList,
-  fetchLessonMaterialsMap
+  fetchLessonMaterialsMap,
+  type GroupWithDetails,
+  type LessonWithGroup
 } from '../services/lessonsPage'
 import {
   createLesson as createLessonMutation,
@@ -20,24 +23,37 @@ import {
   ensureLessonRecord,
   updateLessonRecord as updateLessonRecordMutation,
   upsertAttendance,
-  deleteAttendance,
   replaceAttendance,
   attachMaterial as attachLessonMaterial,
   detachMaterial as detachLessonMaterial
 } from '../services/lessonsMutations'
 import { israeliCalendar } from '../services/israeliCalendar'
-import type { Lesson, Group, LessonRecord, RosterItem, Attendance, Material } from '../types/database'
+import type { Lesson, LessonRecord, RosterItem, Attendance, Material } from '../types/database'
 import 'react-big-calendar/lib/css/react-big-calendar.css'
 
 const localizer = momentLocalizer(moment)
-const DnDCalendar = withDragAndDrop(Calendar)
+const DnDCalendar = withDragAndDrop(Calendar as any)
+const DraggableCalendar = DnDCalendar as unknown as ComponentType<any>
 
-interface LessonWithGroup extends Lesson {
+type NormalizedLesson = LessonWithGroup & {
   group: {
     name: string
     school: { name: string }
     subject: { name: string }
   }
+}
+
+const normalizeLesson = (lesson: Lesson | LessonWithGroup): NormalizedLesson => {
+  const candidate = lesson as LessonWithGroup
+  const group = candidate.group ?? {}
+  return {
+    ...candidate,
+    group: {
+      name: group.name ?? 'Unknown Group',
+      school: { name: group.school?.name ?? 'Unknown School' },
+      subject: { name: group.subject?.name ?? 'Unknown Subject' }
+    }
+  } as NormalizedLesson
 }
 
 interface CalendarEvent {
@@ -49,14 +65,14 @@ interface CalendarEvent {
 
 interface LessonEvent extends CalendarEvent {
   id: string
-  lesson: LessonWithGroup
+  lesson: NormalizedLesson
   isVacationDay: boolean
 }
 
 export function Lessons() {
   const { user } = useAuth()
-  const [lessons, setLessons] = useState<LessonWithGroup[]>([])
-  const [groups, setGroups] = useState<Group[]>([])
+  const [lessons, setLessons] = useState<NormalizedLesson[]>([])
+  const [groups, setGroups] = useState<GroupWithDetails[]>([])
   const [lessonRecords, setLessonRecords] = useState<Record<string, LessonRecord>>({})
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
@@ -152,14 +168,7 @@ export function Lessons() {
         return !onVacation
       })
 
-      const normalizedLessons: LessonWithGroup[] = filteredLessons.map(lesson => ({
-        ...lesson,
-        group: {
-          name: lesson.group?.name ?? 'Unknown Group',
-          school: { name: lesson.group?.school?.name ?? 'Unknown School' },
-          subject: { name: lesson.group?.subject?.name ?? 'Unknown Subject' }
-        }
-      }))
+      const normalizedLessons = filteredLessons.map(normalizeLesson)
 
       if (lessonsToDelete.length > 0) {
         console.log(`Deleting ${lessonsToDelete.length} lessons scheduled on vacation days`)
@@ -213,7 +222,7 @@ export function Lessons() {
         endTime: endDateTime.toISOString()
       })
 
-      setLessons([...lessons, created])
+      setLessons([...lessons, normalizeLesson(created)])
       setSelectedGroup('')
       setLessonDate('')
       setStartTime('')
@@ -283,7 +292,8 @@ export function Lessons() {
 
       if (error) throw error
 
-      setLessons([...lessons, ...data])
+      const normalizedNewLessons = (data ?? []).map(normalizeLesson)
+      setLessons([...lessons, ...normalizedNewLessons])
     } catch (err: any) {
       setError(err.message)
     }
@@ -310,8 +320,9 @@ export function Lessons() {
         isCancelled: !currentStatus
       })
 
+      const normalized = normalizeLesson(updated)
       setLessons(lessons.map(lesson =>
-        lesson.id === lessonId ? updated : lesson
+        lesson.id === lessonId ? normalized : lesson
       ))
     } catch (err: any) {
       setError(err.message)
@@ -628,7 +639,7 @@ export function Lessons() {
     if (!acc[dateKey]) acc[dateKey] = []
     acc[dateKey].push(lesson)
     return acc
-  }, {} as Record<string, LessonWithGroup[]>)
+  }, {} as Record<string, NormalizedLesson[]>)
 
   // Convert lessons to calendar events
   const calendarEvents: LessonEvent[] = useMemo(() => {
@@ -743,7 +754,10 @@ export function Lessons() {
 
     // Calculate the duration to maintain it
     const originalDuration = moment(lesson.end_time).diff(moment(lesson.start_time), 'minutes')
-    const finalEndTime = moment(newStart).add(originalDuration, 'minutes').toDate()
+    const dropDuration = moment(newEnd).diff(moment(newStart), 'minutes')
+    const finalEndTime = Math.abs(dropDuration - originalDuration) <= 1
+      ? newEnd
+      : moment(newStart).add(originalDuration, 'minutes').toDate()
 
     // Find overlapping lessons
     const overlappingLessons = lessons.filter(otherLesson => {
@@ -938,8 +952,9 @@ export function Lessons() {
       if (error) throw error
 
       // Update local state
-      setLessons(lessons.map(lesson =>
-        lesson.id === lessonId ? data : lesson
+      const normalized = normalizeLesson(data)
+      setLessons(prev => prev.map(lesson =>
+        lesson.id === lessonId ? normalized : lesson
       ))
 
     } catch (err: any) {
@@ -949,7 +964,7 @@ export function Lessons() {
 
   // Function to identify recurring patterns with better separation logic
   const getRecurringPatterns = () => {
-    const groupedLessons: Record<string, LessonWithGroup[]> = {}
+    const groupedLessons: Record<string, NormalizedLesson[]> = {}
 
     // First, group lessons by group_id, day, and time
     lessons.forEach(lesson => {
@@ -971,7 +986,7 @@ export function Lessons() {
       subjectName: string
       day: string
       time: string
-      lessons: LessonWithGroup[]
+      lessons: NormalizedLesson[]
       startDate: string
       endDate: string
     }[] = []
@@ -986,8 +1001,8 @@ export function Lessons() {
       )
 
       // Identify separate recurring series by analyzing gaps between lessons
-      const series: LessonWithGroup[][] = []
-      let currentSeries: LessonWithGroup[] = [sortedLessons[0]]
+      const series: NormalizedLesson[][] = []
+      let currentSeries: NormalizedLesson[] = [sortedLessons[0]]
 
       for (let i = 1; i < sortedLessons.length; i++) {
         const prevLesson = sortedLessons[i - 1]
@@ -996,8 +1011,6 @@ export function Lessons() {
         const prevDate = moment(prevLesson.start_time)
         const currentDate = moment(currentLesson.start_time)
 
-        // Calculate expected next date (7 days later)
-        const expectedNextDate = prevDate.clone().add(7, 'days')
         const daysDiff = currentDate.diff(prevDate, 'days')
 
         // If the gap is more than 3 weeks (21 days), start a new series
@@ -1090,7 +1103,7 @@ export function Lessons() {
           start_time: newStartDateTime.toISOString(),
           end_time: newEndDateTime.toISOString()
         }
-      }).filter(Boolean)
+      }).filter((update): update is { id: string; start_time: string; end_time: string } => Boolean(update))
 
       if (updates.length === 0) {
         throw new Error('No valid lessons to update')
@@ -1694,7 +1707,7 @@ export function Lessons() {
               `
             }} />
 
-            <DnDCalendar
+            <DraggableCalendar
               localizer={localizer}
               events={calendarEvents}
               startAccessor="start"

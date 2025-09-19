@@ -85,7 +85,21 @@ export async function fetchLessonsForDay(start: string, end: string): Promise<Le
     throw error
   }
 
-  return (data ?? []).map(lesson => ({
+  type LessonRow = {
+    id: string
+    start_time: string
+    end_time: string
+    is_cancelled: boolean
+    groups?: {
+      name?: string | null
+      schools?: { name?: string | null } | null
+      subjects?: { name?: string | null } | null
+    } | null
+  }
+
+  const rows = (data ?? []) as LessonRow[]
+
+  return rows.map(lesson => ({
     id: lesson.id,
     start_time: lesson.start_time,
     end_time: lesson.end_time,

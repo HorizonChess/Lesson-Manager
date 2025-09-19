@@ -13,9 +13,7 @@ import {
   deleteGroupById,
   addStudent as addStudentService,
   deleteStudent as deleteStudentService,
-  type SchoolWithStructure,
-  type SubjectWithGroups,
-  type GroupWithRoster
+  type SchoolWithStructure
 } from '../services/setupPage'
 
 export function Setup() {
@@ -103,7 +101,7 @@ export function Setup() {
       setNewSchoolName('')
       setShowAddSchool(false)
       // Auto-expand new school
-      setExpandedSchools(new Set([...expandedSchools, data.id]))
+      setExpandedSchools(new Set([...expandedSchools, newSchool.id]))
     } catch (err: any) {
       setError(err.message)
     }

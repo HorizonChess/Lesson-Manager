@@ -433,7 +433,7 @@ export function Tasks() {
                     <div className="flex items-center gap-4 mt-2 text-xs text-gray-500">
                       <span>Created: {new Date(task.created_at).toLocaleDateString()}</span>
 
-                      {task.group && (
+                      {task.group && task.group_id && (
                         <button
                           onClick={() => navigateToGroup(task.group_id!)}
                           className="bg-blue-100 dark:bg-blue-900 text-blue-800 dark:text-blue-200 px-2 py-1 rounded hover:bg-blue-200 dark:hover:bg-blue-800"
@@ -442,7 +442,7 @@ export function Tasks() {
                         </button>
                       )}
 
-                      {task.lesson && (
+                      {task.lesson && task.lesson.group && task.lesson_id && (
                         <button
                           onClick={() => navigateToLesson(task.lesson_id!)}
                           className="bg-green-100 dark:bg-green-900 text-green-800 dark:text-green-200 px-2 py-1 rounded hover:bg-green-200 dark:hover:bg-green-800"

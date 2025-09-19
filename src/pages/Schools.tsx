@@ -113,22 +113,22 @@ export function Schools() {
         if (rosterError) throw rosterError
 
         // Group subjects by school_id
-        const subjectsBySchool = (subjectsData || []).reduce((acc, subject) => {
+        const subjectsBySchool = (subjectsData || []).reduce<Record<string, Subject[]>>((acc, subject) => {
           if (!acc[subject.school_id]) {
             acc[subject.school_id] = []
           }
           acc[subject.school_id].push(subject)
           return acc
-        }, {} as Record<string, Subject[]>)
+        }, {})
 
         // Group groups by subject_id
-        const groupsBySubject = (groupsData || []).reduce((acc, group) => {
+        const groupsBySubject = (groupsData || []).reduce<Record<string, Group[]>>((acc, group) => {
           if (!acc[group.subject_id]) {
             acc[group.subject_id] = []
           }
           acc[group.subject_id].push(group)
           return acc
-        }, {} as Record<string, Group[]>)
+        }, {})
 
         // Group roster items by group_id
         const rostersByGroup = (rosterData || []).reduce((acc, item) => {
@@ -149,7 +149,7 @@ export function Schools() {
 
         schoolsData.forEach(school => {
           const schoolSubjects = subjectsBySchool[school.id] || []
-          const totalGroups = schoolSubjects.reduce((sum, subject) => {
+          const totalGroups = schoolSubjects.reduce<number>((sum, subject) => {
             return sum + (groupsBySubject[subject.id]?.length || 0)
           }, 0)
 

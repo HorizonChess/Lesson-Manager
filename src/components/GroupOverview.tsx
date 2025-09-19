@@ -76,8 +76,6 @@ export function GroupOverview({
     homework: '',
     notes: ''
   })
-  const [editingAttendanceNote, setEditingAttendanceNote] = useState<string | null>(null)
-  const [attendanceNoteText, setAttendanceNoteText] = useState('')
 
   interface Timeslot {
     day: string
@@ -1099,9 +1097,7 @@ export function GroupOverview({
                 onClick={() => {
                   setOpenLessonRecord(null)
                   setRecordData({ covered: '', planned: '', homework: '', notes: '' })
-                  setAttendance({})
-                  setEditingAttendanceNote(null)
-                  setAttendanceNoteText('')
+                  setAttendanceData({})
                 }}
                 className="text-gray-500 hover:text-gray-700 text-xl min-w-[44px] min-h-[44px] flex items-center justify-center"
               >
@@ -1248,8 +1244,6 @@ export function GroupOverview({
                   onClick={() => {
                     setOpenLessonRecord(null)
                     setRecordData({ covered: '', planned: '', homework: '', notes: '' })
-                    setEditingAttendanceNote(null)
-                    setAttendanceNoteText('')
                   }}
                   className="bg-gray-300 dark:bg-gray-600 text-gray-700 dark:text-gray-300 px-6 py-3 rounded hover:bg-gray-400 dark:hover:bg-gray-500 min-h-[44px]"
                 >

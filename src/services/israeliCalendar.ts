@@ -33,16 +33,6 @@ export class IsraeliCalendarService {
   }
 
   /**
-   * Format Date object to DD/MM/YYYY string (currently unused but kept for future use)
-   */
-  private formatDate(date: Date): string {
-    const day = date.getDate().toString().padStart(2, '0')
-    const month = (date.getMonth() + 1).toString().padStart(2, '0')
-    const year = date.getFullYear().toString()
-    return `${day}/${month}/${year}`
-  }
-
-  /**
    * Get current school year string (e.g., "2025-2026")
    */
   getCurrentSchoolYear(date: Date = new Date()): string {
