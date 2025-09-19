@@ -1,4 +1,4 @@
-# Rewrite & Feature Rollout Plan
+﻿# Rewrite & Feature Rollout Plan
 
 Each phase ends with a checkpoint that references the evolving [Manual Test Plan](manual-test-plan.md). Stick to the order unless blockers arise.
 
@@ -9,7 +9,7 @@ Each phase ends with a checkpoint that references the evolving [Manual Test Plan
 2. **Extract Scheduling Utilities** *(status: complete - 2025-09-18)*
    - Scheduling math moved into `src/lib/scheduling/index.ts` (time analysis, distribution helpers).
    - Wizard business logic now resides in `src/hooks/useScheduleWizard.tsx`, reducing component state sprawl.
-3. **Component Decomposition** *(status: in progress)*
+3. **Component Decomposition** *(status: complete - 2025-09-19)*
    - Schedule wizard UI split into `ScheduleWizardStepContent` plus step/preview panels under `src/components/schedule-wizard` (complete - 2025-09-20).
    - School Overview (`src/pages/Groups.tsx`), Lessons (`src/pages/Lessons.tsx`), and Materials (`src/pages/Materials.tsx`) pages are next for view-layer splits now that services and TypeScript cleanup are in place.
    - Retire the legacy schedule wizard once the new structure is fully verified across the app.
@@ -54,3 +54,4 @@ Each phase ends with a checkpoint that references the evolving [Manual Test Plan
 - Update `docs/manual-test-plan.md` at the end of each milestone.
 - Log new findings and adjustments in `PROJECT.md` under Progress or Backlog as needed.
 - Keep commits scoped per step; run automated checks before handoff.
+

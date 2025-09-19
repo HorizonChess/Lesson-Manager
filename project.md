@@ -1,4 +1,4 @@
-# Teacher Scheduler Project
+﻿# Teacher Scheduler Project
 
 ## Product Brief
 - **Goal:** Single-teacher scheduler that manages schools, subjects, groups, lessons, lesson records, materials, attendance, tasks, and reports. Mobile-friendly, offline aware, RTL-ready. No calendar conflict detection in scope.
@@ -34,8 +34,8 @@
 - Manual test plan (`docs/manual-test-plan.md`) covers baseline flows. Attendance, reports, and offline smoke items remain to be re-checked after page decomposition.
 
 ## Active Refactor Checklist (Phase A)
-- ✅ Schedule wizard UI renders through `ScheduleWizardStepContent` and dedicated panels in `src/components/schedule-wizard/`, while `useScheduleWizard` continues to own the business logic.
-- Decompose School Overview (`src/pages/Groups.tsx`), Lessons (`src/pages/Lessons.tsx`), and Materials (`src/pages/Materials.tsx`) into smaller view components that consume the new services.
+- [done] Schedule wizard UI renders through `ScheduleWizardStepContent` plus panels in `src/components/schedule-wizard/`, while `useScheduleWizard` keeps the business logic (complete).
+- [done] Lessons, School Overview, and Materials pages now delegate view rendering to components in `src/components/`, leaving pages focused on data orchestration.
 - Remove the legacy schedule wizard implementation once the new component boundaries are verified throughout the app.
 - Keep the build green by maintaining the lesson normalization helpers and watching for TypeScript regressions as we continue refactors.
 - Subjects overhaul: subjects should be reusable across schools with checkbox selection in School Overview; picking a school applies the subject to all of its groups with optional per-group overrides. Document UI and data changes before implementation.
@@ -59,3 +59,4 @@
 ## Historical Snapshot
 - Milestones M0 through M11 delivered (project skeleton, auth, schools and subjects CRUD, groups and roster, lessons and scheduling, lesson records, attendance, lesson plans, tasks, dashboard/reports upgrades, Israeli calendar, drag-and-drop enhancements, schedule wizard).
 - Detailed play-by-play for earlier milestones remains available in repository history if needed.
+

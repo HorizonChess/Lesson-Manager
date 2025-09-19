@@ -21,3 +21,8 @@
 - Continue decomposing `src/pages/Lessons.tsx`, `src/pages/Groups.tsx` (School Overview), and `src/pages/Materials.tsx` into view components now that services own the data layer.
 - Remove the legacy schedule wizard implementation once the new flow is fully exercised across the app.
 - Add unit coverage for `src/lib/scheduling/index.ts` edge cases and begin smoke tests for the new service modules (mocks for Supabase operations).
+
+## 2025-09-19 (evening) - School Overview Decomposition
+- Extracted School Overview filters, summary grid, and creation modal into `src/components/groups/` to mirror Lessons refactor.
+- Simplified `src/pages/Groups.tsx` to focus on data orchestration while GroupOverview handles deep management flows.
+- Materials library now uses `MaterialsHeader`, `MaterialsFilters`, `TagManagementPanel`, `MaterialCreateForm`, and `MaterialsGrid` so the page stays focused on Supabase orchestration.
