@@ -1,9 +1,5 @@
-import { useState, useEffect, useMemo } from 'react'
-import type { ComponentType } from 'react'
-import { Calendar, momentLocalizer } from 'react-big-calendar'
+﻿import { useState, useEffect, useMemo } from 'react'
 import moment from 'moment'
-import withDragAndDrop from 'react-big-calendar/lib/addons/dragAndDrop'
-import 'react-big-calendar/lib/addons/dragAndDrop/styles.css'
 import { useAuth } from '../contexts/AuthContext'
 import { supabase } from '../lib/supabase'
 import {
@@ -29,11 +25,7 @@ import {
 } from '../services/lessonsMutations'
 import { israeliCalendar } from '../services/israeliCalendar'
 import type { Lesson, LessonRecord, RosterItem, Attendance, Material } from '../types/database'
-import 'react-big-calendar/lib/css/react-big-calendar.css'
-
-const localizer = momentLocalizer(moment)
-const DnDCalendar = withDragAndDrop(Calendar as any)
-const DraggableCalendar = DnDCalendar as unknown as ComponentType<any>
+import { LessonsCalendarView, type LessonsCalendarEvent } from '../components/lessons/LessonsCalendarView'
 
 type NormalizedLesson = LessonWithGroup & {
   group: {
@@ -56,18 +48,7 @@ const normalizeLesson = (lesson: Lesson | LessonWithGroup): NormalizedLesson => 
   } as NormalizedLesson
 }
 
-interface CalendarEvent {
-  title: string
-  start: Date
-  end: Date
-  resource?: any
-}
-
-interface LessonEvent extends CalendarEvent {
-  id: string
-  lesson: NormalizedLesson
-  isVacationDay: boolean
-}
+type LessonEvent = LessonsCalendarEvent<NormalizedLesson>
 
 export function Lessons() {
   const { user } = useAuth()
@@ -640,6 +621,10 @@ export function Lessons() {
     acc[dateKey].push(lesson)
     return acc
   }, {} as Record<string, NormalizedLesson[]>)
+
+  const goToPreviousWeek = () => setCurrentDate(moment(currentDate).subtract(1, 'week').toDate())
+  const goToNextWeek = () => setCurrentDate(moment(currentDate).add(1, 'week').toDate())
+  const goToToday = () => setCurrentDate(new Date())
 
   // Convert lessons to calendar events
   const calendarEvents: LessonEvent[] = useMemo(() => {
@@ -1611,133 +1596,21 @@ export function Lessons() {
 
       {/* Calendar and List Views */}
       {calendarView === 'calendar' ? (
-        <div className="bg-white dark:bg-gray-800 rounded-lg border overflow-hidden">
-          {/* Calendar Toolbar */}
-          <div className="flex justify-between items-center p-3 bg-gray-50 dark:bg-gray-700 border-b">
-            <div className="flex items-center gap-2">
-              <button
-                onClick={() => setCurrentDate(moment(currentDate).subtract(1, 'week').toDate())}
-                className="p-2 hover:bg-gray-100 dark:hover:bg-gray-600 rounded transition-colors"
-                title="Previous week"
-              >
-                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
-                </svg>
-              </button>
-
-              <button
-                onClick={() => setCurrentDate(new Date())}
-                className="px-3 py-1 bg-blue-600 text-white rounded text-sm hover:bg-blue-700 transition-colors"
-              >
-                Today
-              </button>
-
-              <button
-                onClick={() => setCurrentDate(moment(currentDate).add(1, 'week').toDate())}
-                className="p-2 hover:bg-gray-100 dark:hover:bg-gray-600 rounded transition-colors"
-                title="Next week"
-              >
-                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-                </svg>
-              </button>
-            </div>
-
-            <h3 className="text-lg font-semibold">
-              {moment(currentDate).startOf('week').format('MMM D')} - {moment(currentDate).endOf('week').format('MMM D, YYYY')}
-            </h3>
-
-            <div className="flex items-center gap-2 text-xs text-gray-600 dark:text-gray-400">
-              <div className="flex items-center gap-1">
-                <div className="w-3 h-3 rounded" style={{ backgroundColor: '#fef3c7', backgroundImage: 'repeating-linear-gradient(45deg, transparent, transparent 4px, rgba(0,0,0,.1) 4px, rgba(0,0,0,.1) 8px)' }}></div>
-                <span>Vacation</span>
-              </div>
-            </div>
-          </div>
-
-          {/* Calendar Component */}
-          <div className="h-[600px]">
-            <style dangerouslySetInnerHTML={{
-              __html: `
-                .rbc-calendar {
-                  font-family: inherit;
-                }
-                .rbc-toolbar {
-                  display: none; /* Hide default toolbar, we use custom one */
-                }
-                .rbc-time-view {
-                  min-height: 600px;
-                }
-                .rbc-time-slot {
-                  border-top: 1px solid #e5e7eb;
-                }
-                .rbc-time-slot:nth-child(even) {
-                  border-top: 1px dashed #e5e7eb;
-                }
-                .rbc-timeslot-group {
-                  min-height: 40px;
-                }
-                .rbc-event {
-                  border-radius: 4px;
-                  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.12);
-                }
-                .rbc-event:hover {
-                  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
-                }
-                .rbc-header {
-                  font-weight: 600;
-                  padding: 12px 8px;
-                  background: #f9fafb;
-                  border-bottom: 2px solid #e5e7eb;
-                }
-                .dark .rbc-header {
-                  background: #374151;
-                  color: #f3f4f6;
-                }
-                .rbc-time-header-gutter,
-                .rbc-time-gutter {
-                  background: #f9fafb;
-                  border-right: 2px solid #e5e7eb;
-                }
-                .dark .rbc-time-header-gutter,
-                .dark .rbc-time-gutter {
-                  background: #374151;
-                  color: #f3f4f6;
-                }
-              `
-            }} />
-
-            <DraggableCalendar
-              localizer={localizer}
-              events={calendarEvents}
-              startAccessor="start"
-              endAccessor="end"
-              date={currentDate}
-              onNavigate={setCurrentDate}
-              view="week"
-              views={['week']}
-              step={15}
-              timeslots={2}
-              min={new Date(0, 0, 0, 7, 0)}
-              max={new Date(0, 0, 0, 22, 0)}
-              onSelectEvent={handleSelectEvent}
-              onSelectSlot={handleSelectSlot}
-              onEventDrop={handleEventDrop}
-              resizable={false}
-              selectable
-              eventPropGetter={eventStyleGetter}
-              dayPropGetter={dayStyleGetter}
-              components={{
-                event: SimpleEventComponent,
-              }}
-              formats={{
-                timeGutterFormat: 'HH:mm',
-                eventTimeRangeFormat: ({ start, end }: { start: Date, end: Date }) =>
-                  `${moment(start).format('HH:mm')} - ${moment(end).format('HH:mm')}`
-              }}
-            />
-          </div>
-        </div>
+        <LessonsCalendarView
+          currentDate={currentDate}
+          onPreviousWeek={goToPreviousWeek}
+          onToday={goToToday}
+          onNextWeek={goToNextWeek}
+          onNavigate={setCurrentDate}
+          events={calendarEvents}
+          onSelectEvent={handleSelectEvent}
+          onSelectSlot={handleSelectSlot}
+          onEventDrop={handleEventDrop}
+          eventPropGetter={eventStyleGetter}
+          dayPropGetter={dayStyleGetter}
+          eventComponent={SimpleEventComponent}
+          timeRangeFormatter={({ start, end }) => `${moment(start).format('HH:mm')} - ${moment(end).format('HH:mm')}`}
+        />
       ) : (
         /* List View */
         <div className="space-y-4">
