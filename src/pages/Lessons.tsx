@@ -27,6 +27,10 @@ import { israeliCalendar } from '../services/israeliCalendar'
 import type { Lesson, LessonRecord, RosterItem, Attendance, Material } from '../types/database'
 import { LessonsCalendarView, type LessonsCalendarEvent } from '../components/lessons/LessonsCalendarView'
 import { LessonsListView } from '../components/lessons/LessonsListView'
+import { RecurringLessonsModal } from '../components/lessons/RecurringLessonsModal'
+import { LessonMaterialSelector } from '../components/lessons/LessonMaterialSelector'
+import { LessonsAddLessonModal } from '../components/lessons/LessonsAddLessonModal'
+import type { RecurringLessonsFormState, RecurringPattern } from '../components/lessons/types'
 
 type NormalizedLesson = LessonWithGroup & {
   group: {
@@ -51,6 +55,18 @@ const normalizeLesson = (lesson: Lesson | LessonWithGroup): NormalizedLesson => 
 
 type LessonEvent = LessonsCalendarEvent<NormalizedLesson>
 
+const createInitialRecurringFormData = (): RecurringLessonsFormState => ({
+  groupId: '',
+  weeks: 12,
+  startDate: moment().format('YYYY-MM-DD'),
+  endDate: '',
+  template: 'custom',
+  editingPatternId: '',
+  newDay: 'Monday',
+  newStartTime: '09:00',
+  newEndTime: '10:00'
+})
+
 export function Lessons() {
   const { user } = useAuth()
   const [lessons, setLessons] = useState<NormalizedLesson[]>([])
@@ -61,10 +77,12 @@ export function Lessons() {
 
   // Form states
   const [showAddLesson, setShowAddLesson] = useState(false)
-  const [selectedGroup, setSelectedGroup] = useState('')
-  const [lessonDate, setLessonDate] = useState('')
-  const [startTime, setStartTime] = useState('')
-  const [endTime, setEndTime] = useState('')
+  const [addLessonInitialValues, setAddLessonInitialValues] = useState<{
+    groupId?: string
+    date?: string
+    startTime?: string
+    endTime?: string
+  } | undefined>()
 
   // View states
   const [lessonFilter, setLessonFilter] = useState<'upcoming' | 'all'>('upcoming')
@@ -75,18 +93,7 @@ export function Lessons() {
 
   // Recurring lessons modal states
   const [showRecurringModal, setShowRecurringModal] = useState(false)
-  const [recurringFormData, setRecurringFormData] = useState({
-    groupId: '',
-    weeks: 12,
-    startDate: moment().format('YYYY-MM-DD'),
-    endDate: '',
-    template: 'custom' as 'semester' | 'year' | 'custom',
-    // For editing existing patterns
-    editingPatternId: '',
-    newDay: 'Monday',
-    newStartTime: '09:00',
-    newEndTime: '10:00'
-  })
+  const [recurringFormData, setRecurringFormData] = useState<RecurringLessonsFormState>(() => createInitialRecurringFormData())
   const [showCreateNew, setShowCreateNew] = useState(false)
 
   // Lesson record states
@@ -176,12 +183,14 @@ export function Lessons() {
     }
   }
 
-  const addLesson = async (e: React.FormEvent) => {
-    e.preventDefault()
-    if (!selectedGroup || !lessonDate || !startTime || !endTime) return
-
-    const startDateTime = new Date(`${lessonDate}T${startTime}`)
-    const endDateTime = new Date(`${lessonDate}T${endTime}`)
+  const addLesson = async (formData: {
+    groupId: string
+    date: string
+    startTime: string
+    endTime: string
+  }) => {
+    const startDateTime = new Date(`${formData.date}T${formData.startTime}`)
+    const endDateTime = new Date(`${formData.date}T${formData.endTime}`)
 
     // Check if the lesson is on a vacation day
     if (israeliCalendar.isVacationDay(startDateTime)) {
@@ -199,16 +208,12 @@ export function Lessons() {
 
     try {
       const created = await createLessonMutation({
-        groupId: selectedGroup,
+        groupId: formData.groupId,
         startTime: startDateTime.toISOString(),
         endTime: endDateTime.toISOString()
       })
 
       setLessons([...lessons, normalizeLesson(created)])
-      setSelectedGroup('')
-      setLessonDate('')
-      setStartTime('')
-      setEndTime('')
       setShowAddLesson(false)
     } catch (err: any) {
       setError(err.message)
@@ -546,7 +551,7 @@ export function Lessons() {
     setShowMaterialSelector(true)
   }
 
-  const attachMaterials = async () => {
+  const attachMaterials = async (materialIds: string[]) => {
     if (!openLessonRecord) return
 
     const currentRecord = lessonRecords[openLessonRecord]
@@ -555,10 +560,10 @@ export function Lessons() {
     try {
       const previousMaterials = lessonMaterials[currentRecord.id] || []
       const previousIds = new Set(previousMaterials.map(m => m.id))
-      const nextIds = new Set(selectedMaterials)
+      const nextIds = new Set(materialIds)
 
       const detachIds = previousMaterials.filter(m => !nextIds.has(m.id))
-      const attachIds = selectedMaterials.filter(id => !previousIds.has(id))
+      const attachIds = materialIds.filter(id => !previousIds.has(id))
 
       await Promise.all(detachIds.map(material => detachLessonMaterial({
         lessonRecordId: currentRecord.id,
@@ -577,7 +582,6 @@ export function Lessons() {
       })
 
       setShowMaterialSelector(false)
-      setSelectedMaterials([])
     } catch (err: any) {
       setError(err.message)
     }
@@ -664,9 +668,11 @@ export function Lessons() {
     }
 
     // Set up form for new lesson creation
-    setLessonDate(start.toISOString().split('T')[0])
-    setStartTime(moment(start).format('HH:mm'))
-    setEndTime(moment(end).format('HH:mm'))
+    setAddLessonInitialValues({
+      date: start.toISOString().split('T')[0],
+      startTime: moment(start).format('HH:mm'),
+      endTime: moment(end).format('HH:mm')
+    })
     setShowAddLesson(true)
   }
 
@@ -949,7 +955,7 @@ export function Lessons() {
   }
 
   // Function to identify recurring patterns with better separation logic
-  const getRecurringPatterns = () => {
+  const getRecurringPatterns = (): RecurringPattern[] => {
     const groupedLessons: Record<string, NormalizedLesson[]> = {}
 
     // First, group lessons by group_id, day, and time
@@ -964,18 +970,7 @@ export function Lessons() {
       groupedLessons[key].push(lesson)
     })
 
-    const patterns: {
-      id: string
-      groupId: string
-      groupName: string
-      schoolName: string
-      subjectName: string
-      day: string
-      time: string
-      lessons: NormalizedLesson[]
-      startDate: string
-      endDate: string
-    }[] = []
+    const patterns: RecurringPattern[] = []
 
     // For each group of lessons with same day/time, identify separate recurring series
     Object.entries(groupedLessons).forEach(([baseKey, lessonsGroup]) => {
@@ -1029,11 +1024,12 @@ export function Lessons() {
             id: patternId,
             groupId: firstLesson.group_id,
             groupName: firstLesson.group.name,
-            schoolName: firstLesson.group.school.name,
-            subjectName: firstLesson.group.subject.name,
+            schoolName: firstLesson.group.school?.name ?? 'Unknown School',
+            subjectName: firstLesson.group.subject?.name ?? 'Unknown Subject',
             day,
             time,
-            lessons: seriesLessons,
+            lessonIds: seriesLessons.map((lesson) => lesson.id),
+            lessonsCount: seriesLessons.length,
             startDate: moment(firstLesson.start_time).format('YYYY-MM-DD'),
             endDate: moment(lastLesson.start_time).format('YYYY-MM-DD')
           })
@@ -1045,6 +1041,44 @@ export function Lessons() {
       moment(a.startDate).diff(moment(b.startDate))
     )
   }
+  const recurringPatterns = useMemo<RecurringPattern[]>(() => getRecurringPatterns(), [lessons])
+
+  const handleCloseRecurringModal = () => {
+    setShowRecurringModal(false)
+    setShowCreateNew(false)
+    setRecurringFormData(createInitialRecurringFormData())
+  }
+
+  const handleGenerateRecurringLessons = async (groupId: string, weeks: number) => {
+    await generateRecurringLessons(groupId, weeks)
+  }
+
+  const handleUpdateRecurringPattern = async ({
+    lessonIds,
+    newDay,
+    newStartTime,
+    newEndTime
+  }: { lessonIds: string[]; newDay: string; newStartTime: string; newEndTime: string }) => {
+    await bulkUpdateRecurringLessons(lessonIds, newDay, newStartTime, newEndTime)
+  }
+
+  const handleDeleteRecurringPattern = async (pattern: RecurringPattern) => {
+    try {
+      const { error } = await supabase
+        .from('lessons')
+        .delete()
+        .in('id', pattern.lessonIds)
+
+      if (error) {
+        throw error
+      }
+
+      await fetchData()
+    } catch (err: any) {
+      setError(`Failed to delete pattern: ${err.message}`)
+    }
+  }
+
 
   // Function to bulk update recurring lesson timeslots
   const bulkUpdateRecurringLessons = async (
@@ -1200,400 +1234,31 @@ export function Lessons() {
         </div>
       )}
 
-      {/* Recurring Lessons Management Modal */}
-      {showRecurringModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white dark:bg-gray-800 rounded-lg w-full max-w-2xl max-h-[80vh] overflow-hidden flex flex-col">
-            <div className="flex justify-between items-center p-4 border-b">
-              <h3 className="text-lg font-bold">Manage Recurring Lessons</h3>
-              <button
-                onClick={() => setShowRecurringModal(false)}
-                className="text-gray-500 hover:text-gray-700 text-xl"
-              >
-                ×
-              </button>
-            </div>
+      <RecurringLessonsModal
+        isOpen={showRecurringModal}
+        groups={groups}
+        formData={recurringFormData}
+        setFormData={setRecurringFormData}
+        showCreateForm={showCreateNew}
+        onShowCreateFormChange={setShowCreateNew}
+        patterns={recurringPatterns}
+        onClose={handleCloseRecurringModal}
+        onGenerateLessons={handleGenerateRecurringLessons}
+        onUpdatePattern={handleUpdateRecurringPattern}
+        onDeletePattern={handleDeleteRecurringPattern}
+      />
 
-            <div className="flex-1 overflow-y-auto p-4">
-              <div className="space-y-6">
-                {/* Group Selection */}
-                <div>
-                  <label className="block text-sm font-medium mb-2">Select Group</label>
-                  <select
-                    value={recurringFormData.groupId}
-                    onChange={(e) => setRecurringFormData({ ...recurringFormData, groupId: e.target.value })}
-                    className="w-full px-3 py-2 border border-gray-300 rounded focus:outline-none focus:border-blue-500"
-                    required
-                  >
-                    <option value="">Choose a group...</option>
-                    {groups.map(group => (
-                      <option key={group.id} value={group.id}>
-                        {group.name} ({(group as any).school?.name} • {(group as any).subject?.name})
-                      </option>
-                    ))}
-                  </select>
-                </div>
 
-                {/* Existing Recurring Patterns */}
-                {recurringFormData.groupId && (() => {
-                  const selectedGroup = groups.find(g => g.id === recurringFormData.groupId)
-                  const recurringPatterns = getRecurringPatterns().filter(p => p.groupId === recurringFormData.groupId)
-
-                  return (
-                    <div className="space-y-4">
-                      {/* Group Info */}
-                      <div className="bg-gray-50 dark:bg-gray-700 p-3 rounded">
-                        <div className="font-medium">{selectedGroup?.name}</div>
-                        <div className="text-sm text-gray-600 dark:text-gray-400">
-                          {(selectedGroup as any)?.school?.name} • {(selectedGroup as any)?.subject?.name}
-                        </div>
-                      </div>
-
-                      {/* Existing Patterns */}
-                      {recurringPatterns.length > 0 && (
-                        <div>
-                          <h4 className="font-semibold mb-3 text-blue-700 dark:text-blue-300">📅 Existing Recurring Lessons</h4>
-                          <div className="space-y-3">
-                            {recurringPatterns.map((pattern) => (
-                              <div key={pattern.id} className="bg-blue-50 dark:bg-blue-900/20 p-3 rounded border border-blue-200">
-                                <div className="flex justify-between items-start mb-2">
-                                  <div>
-                                    <div className="font-medium text-blue-900 dark:text-blue-100">
-                                      {pattern.day} {pattern.time}
-                                    </div>
-                                    <div className="text-xs text-blue-600 dark:text-blue-400">
-                                      {pattern.lessons.length} lessons • {moment(pattern.startDate).format('MMM D')} - {moment(pattern.endDate).format('MMM D, YYYY')}
-                                    </div>
-                                  </div>
-                                  <button
-                                    onClick={() => {
-                                      if (recurringFormData.editingPatternId === pattern.id) {
-                                        // Cancel editing - collapse the section
-                                        setRecurringFormData({ ...recurringFormData, editingPatternId: '' })
-                                      } else {
-                                        // Start editing - expand the section
-                                        setRecurringFormData({
-                                          ...recurringFormData,
-                                          editingPatternId: pattern.id,
-                                          newDay: pattern.day,
-                                          newStartTime: pattern.time.split('-')[0],
-                                          newEndTime: pattern.time.split('-')[1]
-                                        })
-                                      }
-                                    }}
-                                    className="bg-blue-600 text-white px-3 py-1 rounded text-sm hover:bg-blue-700"
-                                  >
-                                    {recurringFormData.editingPatternId === pattern.id ? 'Cancel' : 'Edit'}
-                                  </button>
-                                </div>
-
-                                {recurringFormData.editingPatternId === pattern.id && (
-                                  <div className="bg-white dark:bg-gray-800 p-3 rounded border">
-                                    <h5 className="font-medium mb-2 text-sm">Update Timeslot</h5>
-                                    <div className="grid grid-cols-3 gap-2 mb-3">
-                                      <div>
-                                        <label className="block text-xs font-medium mb-1">Day</label>
-                                        <select
-                                          value={recurringFormData.newDay}
-                                          onChange={(e) => setRecurringFormData({ ...recurringFormData, newDay: e.target.value })}
-                                          className="w-full px-2 py-1 text-sm border rounded focus:outline-none focus:border-blue-500"
-                                        >
-                                          <option value="Sunday">Sunday</option>
-                                          <option value="Monday">Monday</option>
-                                          <option value="Tuesday">Tuesday</option>
-                                          <option value="Wednesday">Wednesday</option>
-                                          <option value="Thursday">Thursday</option>
-                                          <option value="Friday">Friday</option>
-                                          <option value="Saturday">Saturday</option>
-                                        </select>
-                                      </div>
-                                      <div>
-                                        <label className="block text-xs font-medium mb-1">Start Time</label>
-                                        <input
-                                          type="time"
-                                          value={recurringFormData.newStartTime}
-                                          onChange={(e) => setRecurringFormData({ ...recurringFormData, newStartTime: e.target.value })}
-                                          className="w-full px-2 py-1 text-sm border rounded focus:outline-none focus:border-blue-500"
-                                        />
-                                      </div>
-                                      <div>
-                                        <label className="block text-xs font-medium mb-1">End Time</label>
-                                        <input
-                                          type="time"
-                                          value={recurringFormData.newEndTime}
-                                          onChange={(e) => setRecurringFormData({ ...recurringFormData, newEndTime: e.target.value })}
-                                          className="w-full px-2 py-1 text-sm border rounded focus:outline-none focus:border-blue-500"
-                                        />
-                                      </div>
-                                    </div>
-                                    <div className="flex gap-2">
-                                      <button
-                                        onClick={async () => {
-                                          await bulkUpdateRecurringLessons(
-                                            pattern.lessons.map(l => l.id),
-                                            recurringFormData.newDay,
-                                            recurringFormData.newStartTime,
-                                            recurringFormData.newEndTime
-                                          )
-                                          setRecurringFormData({ ...recurringFormData, editingPatternId: '' })
-                                        }}
-                                        className="bg-green-600 text-white px-3 py-1 rounded text-sm hover:bg-green-700"
-                                      >
-                                        ✓ Update All {pattern.lessons.length} Lessons
-                                      </button>
-                                      <button
-                                        onClick={async () => {
-                                          if (confirm(`Are you sure you want to delete this recurring pattern?\n\nThis will permanently delete all ${pattern.lessons.length} lessons from ${moment(pattern.startDate).format('MMM D')} to ${moment(pattern.endDate).format('MMM D, YYYY')}.`)) {
-                                            // Delete all lessons in this pattern
-                                            const { error } = await supabase
-                                              .from('lessons')
-                                              .delete()
-                                              .in('id', pattern.lessons.map(l => l.id))
-
-                                            if (error) {
-                                              setError(`Failed to delete pattern: ${error.message}`)
-                                            } else {
-                                              // Refresh data and close editing
-                                              await fetchData()
-                                              setRecurringFormData({ ...recurringFormData, editingPatternId: '' })
-                                            }
-                                          }
-                                        }}
-                                        className="bg-red-600 text-white px-3 py-1 rounded text-sm hover:bg-red-700"
-                                      >
-                                        🗑️ Delete Pattern
-                                      </button>
-                                      <button
-                                        onClick={() => setRecurringFormData({ ...recurringFormData, editingPatternId: '' })}
-                                        className="bg-gray-300 text-gray-700 px-3 py-1 rounded text-sm hover:bg-gray-400"
-                                      >
-                                        Cancel
-                                      </button>
-                                    </div>
-                                  </div>
-                                )}
-                              </div>
-                            ))}
-                          </div>
-                        </div>
-                      )}
-                    </div>
-                  )
-                })()}
-
-                {/* Add New Pattern - Always Visible */}
-                <div className="border-t pt-4">
-                  <button
-                    onClick={() => setShowCreateNew(!showCreateNew)}
-                    className="w-full bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-700 p-3 rounded text-green-700 dark:text-green-300 hover:bg-green-100 dark:hover:bg-green-900/40 transition-colors"
-                  >
-                    <div className="flex items-center justify-center gap-2">
-                      <span className="text-lg">➕</span>
-                      <span className="font-medium">Add New Recurring Pattern</span>
-                    </div>
-                  </button>
-
-                  {showCreateNew && (
-                    <div className="mt-3 bg-green-50 dark:bg-green-900/20 p-4 rounded border border-green-200">
-                      <h4 className="font-semibold mb-3 text-green-700 dark:text-green-300">✨ Create New Recurring Lessons</h4>
-
-                      {/* Quick Templates */}
-                      <div className="mb-4">
-                        <label className="block text-sm font-medium mb-2">Quick Templates</label>
-                        <div className="grid grid-cols-3 gap-2">
-                          <button
-                            onClick={() => setRecurringFormData({ ...recurringFormData, template: 'semester', weeks: 16 })}
-                            className={`p-3 rounded border text-sm ${
-                              recurringFormData.template === 'semester'
-                                ? 'bg-green-100 border-green-500 text-green-700'
-                                : 'bg-white border-gray-300 hover:bg-gray-50'
-                            }`}
-                          >
-                            Semester<br/><span className="text-xs text-gray-500">16 weeks</span>
-                          </button>
-                          <button
-                            onClick={() => setRecurringFormData({ ...recurringFormData, template: 'year', weeks: 40 })}
-                            className={`p-3 rounded border text-sm ${
-                              recurringFormData.template === 'year'
-                                ? 'bg-green-100 border-green-500 text-green-700'
-                                : 'bg-white border-gray-300 hover:bg-gray-50'
-                            }`}
-                          >
-                            Full Year<br/><span className="text-xs text-gray-500">40 weeks</span>
-                          </button>
-                          <button
-                            onClick={() => setRecurringFormData({ ...recurringFormData, template: 'custom', weeks: 12 })}
-                            className={`p-3 rounded border text-sm ${
-                              recurringFormData.template === 'custom'
-                                ? 'bg-green-100 border-green-500 text-green-700'
-                                : 'bg-white border-gray-300 hover:bg-gray-50'
-                            }`}
-                          >
-                            Custom<br/><span className="text-xs text-gray-500">Set manually</span>
-                          </button>
-                        </div>
-                      </div>
-
-                      {/* Date Settings */}
-                      <div className="grid grid-cols-2 gap-3 mb-3">
-                        <div>
-                          <label className="block text-sm font-medium mb-1">Start Date</label>
-                          <input
-                            type="date"
-                            value={recurringFormData.startDate}
-                            onChange={(e) => setRecurringFormData({ ...recurringFormData, startDate: e.target.value })}
-                            className="w-full px-3 py-2 border border-gray-300 rounded focus:outline-none focus:border-blue-500 text-sm"
-                          />
-                        </div>
-                        <div>
-                          <label className="block text-sm font-medium mb-1">End Date</label>
-                          <input
-                            type="date"
-                            value={recurringFormData.endDate}
-                            onChange={(e) => setRecurringFormData({ ...recurringFormData, endDate: e.target.value })}
-                            className="w-full px-3 py-2 border border-gray-300 rounded focus:outline-none focus:border-blue-500 text-sm"
-                            placeholder="Optional"
-                          />
-                        </div>
-                      </div>
-
-                      {/* Custom Weeks */}
-                      {recurringFormData.template === 'custom' && (
-                        <div className="mb-3">
-                          <label className="block text-sm font-medium mb-1">Number of Weeks</label>
-                          <input
-                            type="number"
-                            min="1"
-                            max="52"
-                            value={recurringFormData.weeks}
-                            onChange={(e) => setRecurringFormData({ ...recurringFormData, weeks: parseInt(e.target.value) || 1 })}
-                            className="w-full px-3 py-2 border border-gray-300 rounded focus:outline-none focus:border-blue-500 text-sm"
-                          />
-                        </div>
-                      )}
-
-                      <div className="flex gap-2 pt-2">
-                        <button
-                          onClick={() => {
-                            if (recurringFormData.groupId) {
-                              generateRecurringLessons(recurringFormData.groupId, recurringFormData.weeks)
-                              setShowCreateNew(false)
-                            }
-                          }}
-                          className="bg-green-600 text-white px-4 py-2 rounded text-sm hover:bg-green-700"
-                          disabled={!recurringFormData.groupId}
-                        >
-                          ✓ Create {recurringFormData.weeks} Week{recurringFormData.weeks !== 1 ? 's' : ''}
-                        </button>
-                        <button
-                          onClick={() => setShowCreateNew(false)}
-                          className="bg-gray-300 text-gray-700 px-4 py-2 rounded text-sm hover:bg-gray-400"
-                        >
-                          Cancel
-                        </button>
-                      </div>
-                    </div>
-                  )}
-                </div>
-              </div>
-            </div>
-
-            <div className="flex justify-end p-4 border-t">
-              <button
-                onClick={() => {
-                  setShowRecurringModal(false)
-                  setShowCreateNew(false)
-                  setRecurringFormData({
-                    ...recurringFormData,
-                    editingPatternId: '',
-                    groupId: ''
-                  })
-                }}
-                className="bg-gray-500 text-white px-6 py-2 rounded hover:bg-gray-600"
-              >
-                Close
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {showAddLesson && (
-        <div className="bg-gray-50 dark:bg-gray-800 p-6 rounded-lg">
-          <form onSubmit={addLesson} className="space-y-4">
-            <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-              <div>
-                <label className="block text-sm font-medium mb-2">Group</label>
-                <select
-                  value={selectedGroup}
-                  onChange={(e) => setSelectedGroup(e.target.value)}
-                  className="w-full px-3 py-2 border border-gray-300 rounded focus:outline-none focus:border-blue-500"
-                  required
-                >
-                  <option value="">Select Group</option>
-                  {groups.map(group => (
-                    <option key={group.id} value={group.id}>
-                      {group.name} ({(group as any).school?.name})
-                    </option>
-                  ))}
-                </select>
-              </div>
-              <div>
-                <label className="block text-sm font-medium mb-2">Date</label>
-                <input
-                  type="date"
-                  value={lessonDate}
-                  onChange={(e) => setLessonDate(e.target.value)}
-                  className="w-full px-3 py-2 border border-gray-300 rounded focus:outline-none focus:border-blue-500"
-                  required
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium mb-2">Start Time</label>
-                <input
-                  type="time"
-                  value={startTime}
-                  onChange={(e) => setStartTime(e.target.value)}
-                  className="w-full px-3 py-2 border border-gray-300 rounded focus:outline-none focus:border-blue-500"
-                  required
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium mb-2">End Time</label>
-                <input
-                  type="time"
-                  value={endTime}
-                  onChange={(e) => setEndTime(e.target.value)}
-                  className="w-full px-3 py-2 border border-gray-300 rounded focus:outline-none focus:border-blue-500"
-                  required
-                />
-              </div>
-            </div>
-
-            <div className="flex gap-2">
-              <button
-                type="submit"
-                className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700"
-              >
-                Add Lesson
-              </button>
-              <button
-                type="button"
-                onClick={() => {
-                  setShowAddLesson(false)
-                  setSelectedGroup('')
-                  setLessonDate('')
-                  setStartTime('')
-                  setEndTime('')
-                }}
-                className="bg-gray-300 text-gray-700 px-4 py-2 rounded hover:bg-gray-400"
-              >
-                Cancel
-              </button>
-            </div>
-          </form>
-        </div>
-      )}
+      <LessonsAddLessonModal
+        isOpen={showAddLesson}
+        groups={groups}
+        initialValues={addLessonInitialValues}
+        onClose={() => {
+          setShowAddLesson(false)
+          setAddLessonInitialValues(undefined)
+        }}
+        onSubmit={addLesson}
+      />
 
       {/* Calendar and List Views */}
       {calendarView === 'calendar' ? (
@@ -2060,83 +1725,16 @@ export function Lessons() {
       )}
 
       {/* Material Selector Modal */}
-      {showMaterialSelector && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white dark:bg-gray-800 rounded-lg w-full max-w-2xl max-h-[70vh] overflow-hidden flex flex-col">
-            <div className="flex justify-between items-center p-4 border-b">
-              <h3 className="text-lg font-bold">Select Lesson Plans to Attach</h3>
-              <button
-                onClick={() => {
-                  setShowMaterialSelector(false)
-                  setSelectedMaterials([])
-                }}
-                className="text-gray-500 hover:text-gray-700 text-xl"
-              >
-                ×
-              </button>
-            </div>
-
-            <div className="flex-1 overflow-y-auto p-4">
-              {materials.length === 0 ? (
-                <div className="text-center py-8 text-gray-500">
-                  <p>No lesson plans found in your library.</p>
-                  <p className="text-sm mt-2">Visit the Lesson Plans page to create lesson plans first.</p>
-                </div>
-              ) : (
-                <div className="space-y-2">
-                  {materials.map((material) => (
-                    <label
-                      key={material.id}
-                      className="flex items-start gap-3 p-3 border border-gray-200 dark:border-gray-600 rounded hover:bg-gray-50 dark:hover:bg-gray-700 cursor-pointer"
-                    >
-                      <input
-                        type="checkbox"
-                        checked={selectedMaterials.includes(material.id)}
-                        onChange={(e) => {
-                          if (e.target.checked) {
-                            setSelectedMaterials([...selectedMaterials, material.id])
-                          } else {
-                            setSelectedMaterials(selectedMaterials.filter(id => id !== material.id))
-                          }
-                        }}
-                        className="mt-1 h-4 w-4"
-                      />
-                      <div className="flex-1 min-w-0">
-                        <div className="font-medium">{material.title}</div>
-                        {material.description && (
-                          <div className="text-sm text-gray-500 mt-1">{material.description}</div>
-                        )}
-                        {material.file_url && (
-                          <div className="text-xs text-blue-600 mt-1">Has attached file</div>
-                        )}
-                      </div>
-                    </label>
-                  ))}
-                </div>
-              )}
-            </div>
-
-            <div className="flex justify-end gap-2 p-4 border-t">
-              <button
-                onClick={() => {
-                  setShowMaterialSelector(false)
-                  setSelectedMaterials([])
-                }}
-                className="bg-gray-300 dark:bg-gray-600 text-gray-700 dark:text-gray-300 px-4 py-2 rounded hover:bg-gray-400 dark:hover:bg-gray-500"
-              >
-                Cancel
-              </button>
-              <button
-                onClick={attachMaterials}
-                className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700"
-                disabled={materials.length === 0}
-              >
-                Attach {selectedMaterials.length} Plan{selectedMaterials.length !== 1 ? 's' : ''}
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
+      <LessonMaterialSelector
+        isOpen={showMaterialSelector}
+        materials={materials}
+        selectedMaterialIds={selectedMaterials}
+        onClose={() => {
+          setShowMaterialSelector(false)
+          setSelectedMaterials([])
+        }}
+        onAttach={attachMaterials}
+      />
     </div>
   )
 }

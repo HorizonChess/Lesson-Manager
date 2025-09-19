@@ -35,7 +35,8 @@
 
 ## Active Refactor Checklist (Phase A)
 - [done] Schedule wizard UI renders through `ScheduleWizardStepContent` plus panels in `src/components/schedule-wizard/`, while `useScheduleWizard` keeps the business logic (complete).
-- [done] Lessons, School Overview, and Materials pages now delegate view rendering to components in `src/components/`, leaving pages focused on data orchestration.
+- [done] School Overview and Materials pages now delegate view rendering to components in `src/components/`, leaving pages focused on data orchestration.
+- [wip] Lessons page: scheduled to extract recurring builder, add-lesson form, lesson record modal, and material selector into `src/components/lessons/` before marking decomposition complete.
 - Remove the legacy schedule wizard implementation once the new component boundaries are verified throughout the app.
 - Keep the build green by maintaining the lesson normalization helpers and watching for TypeScript regressions as we continue refactors.
 - Subjects overhaul: subjects should be reusable across schools with checkbox selection in School Overview; picking a school applies the subject to all of its groups with optional per-group overrides. Document UI and data changes before implementation.
@@ -59,4 +60,5 @@
 ## Historical Snapshot
 - Milestones M0 through M11 delivered (project skeleton, auth, schools and subjects CRUD, groups and roster, lessons and scheduling, lesson records, attendance, lesson plans, tasks, dashboard/reports upgrades, Israeli calendar, drag-and-drop enhancements, schedule wizard).
 - Detailed play-by-play for earlier milestones remains available in repository history if needed.
+
 

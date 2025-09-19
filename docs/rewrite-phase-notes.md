@@ -1,4 +1,4 @@
-# Phase Notes
+﻿# Phase Notes
 
 ## 2025-09-18 - Service Layer Sweep
 - Centralized Supabase access for dashboard (`src/services/dashboard.ts`), groups (`src/services/groups.ts`, `src/services/groups.view.ts`), roster (`src/services/roster.ts`), lessons (`src/services/lessons.ts`, `src/services/lessonRecords.ts`), and subjects/schools (`src/services/subjects.ts`, `src/services/schools.ts`).
@@ -26,3 +26,9 @@
 - Extracted School Overview filters, summary grid, and creation modal into `src/components/groups/` to mirror Lessons refactor.
 - Simplified `src/pages/Groups.tsx` to focus on data orchestration while GroupOverview handles deep management flows.
 - Materials library now uses `MaterialsHeader`, `MaterialsFilters`, `TagManagementPanel`, `MaterialCreateForm`, and `MaterialsGrid` so the page stays focused on Supabase orchestration.
+## 2025-09-20 - Lessons Page Decomposition (in progress)
+- ✅ Extracted `LessonMaterialSelector` component - now handles material attachment UI with clean props interface
+- ✅ Extracted `LessonsAddLessonModal` component - supports calendar slot selection with initial values and vacation day validation
+- ✅ `RecurringLessonsModal` was already extracted (completed earlier)
+- 🔄 Working on final extraction: `LessonsRecordModal` (~435 lines) - the largest component containing attendance, lesson record editing, materials management
+

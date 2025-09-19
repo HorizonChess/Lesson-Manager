@@ -13,7 +13,8 @@
       "mcp__playwright__browser_navigate",
       "mcp__context7__resolve-library-id",
       "mcp__playwright__browser_snapshot",
-      "mcp__playwright__browser_press_key"
+      "mcp__playwright__browser_press_key",
+      "Read(//c/Users/ASUS/**)"
     ],
     "deny": [],
     "ask": []
