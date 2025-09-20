@@ -1,7 +1,7 @@
 ﻿# Teacher Scheduler Project
 
 ## Product Brief
-- **Goal:** Single-teacher scheduler that manages schools, subjects, groups, lessons, lesson records, materials, attendance, tasks, and reports. Mobile-friendly, offline aware, RTL-ready. No calendar conflict detection in scope.
+- **Goal:** Single-teacher scheduler that manages schools, subjects, groups, lessons, schedule, lesson records, materials, attendance, tasks, and reports. Mobile-friendly, offline aware, RTL-ready. No calendar conflict detection in scope.
 - **Out of scope (MVP):** Calendar conflict detection, external calendar sync, multi-user collaboration.
 - **Tech stack:** React + TypeScript + Vite, TanStack Query, light client state (Zustand or RTK), Tailwind. Backend via Supabase (Auth, Postgres, Storage, RLS). Offline cache through IndexedDB. All dates stored in UTC and rendered local.
 - **Core entities:** user, school, subject, group, lesson, lesson record, roster item, attendance, material, lesson material join, tag, material tag join, task.
@@ -21,10 +21,53 @@
 - **Non-functional:** Offline-first for 14 days with resilient write-behind sync, RTL support, accessible touch targets, RLS per user, optional device lock.
 
 ## Terminology
-- **School Overview:** UI tab that lets teachers manage groups, schedules, and roster data. Lives at `src/pages/Groups.tsx` and uses `src/components/GroupOverview.tsx` for the modal view.
+- **School Overview:** UI tab that lets teachers manage groups, schedules, and roster data. Lives at `src/pages/Schools.tsx` and uses `src/components/GroupOverview.tsx` for the modal view.
 - **Lesson Plans:** UI label for the Materials page (`src/pages/Materials.tsx`). Backed by `src/services/materials.ts`.
 - **Schedule Wizard:** Entry point at `src/components/ScheduleWizard.tsx`, state handled by `src/hooks/useScheduleWizard.tsx`, scheduling math in `src/lib/scheduling/index.ts`.
 - **Service layer:** Data access modules in `src/services/`. Shared CRUD (for example `groups.ts`, `lessons.ts`) power multiple flows. Page orchestrators (`groupsPage.ts`, `lessonsPage.ts`, `materials.ts`, `tasksPage.ts`, `setupPage.ts`) gather the joined data each screen needs. Mutation bundles (for example `lessonsMutations.ts`) centralize write logic for complex flows.
+
+## Architecture Rules & Patterns
+
+### Component Architecture
+Following our refactoring project, the application follows strict component separation patterns:
+
+#### Pages Layer (`src/pages/`)
+- **Data Orchestration Only**: Pages should only handle data fetching, state management, and error handling
+- **No Direct UI Logic**: Pages pass data down to components and handle callbacks
+- **Service Layer Usage**: ALWAYS use service functions instead of direct Supabase calls
+- **Example**: `Schools.tsx` fetches global subjects, school data, and orchestrates the data flow to `GlobalSubjectsSection` and `SchoolSubjectAssignment` components
+
+#### Components Layer (`src/components/`)
+- **UI Logic & Rendering**: Components handle all presentation logic and user interactions
+- **Props-Based Architecture**: Receive data and callbacks through props, no direct data fetching
+- **Single Responsibility**: Each component has one clear purpose (e.g., `GlobalSubjectsSection` only handles global subject CRUD UI)
+- **Reusable**: Components should be reusable across different pages when possible
+
+#### Services Layer (`src/services/`)
+- **All Supabase Calls**: Only service functions should make direct database calls
+- **Type Safety**: Functions should have proper TypeScript return types matching database schemas
+- **Error Handling**: Services throw errors that pages can catch and display appropriately
+- **Separation**:
+  - CRUD services (e.g., `globalSubjects.ts`) for basic operations
+  - Page orchestrators (e.g., `groupsPage.ts`) for complex joined data
+  - Mutation bundles (e.g., `lessonsMutations.ts`) for complex write operations
+
+### When to Create New Components
+Create a new component when:
+1. **File Size**: A page/component exceeds ~200-300 lines
+2. **Repeated UI Patterns**: The same UI pattern appears in multiple places
+3. **Clear Responsibility**: You can identify a distinct UI responsibility (forms, lists, modals, etc.)
+4. **Testing**: The functionality would benefit from isolated testing
+
+### Anti-Patterns to Avoid
+- **No Direct Supabase in Pages**: Pages should never import `supabase` directly
+- **No Bloated Components**: Avoid creating massive components with multiple responsibilities
+- **No Props Drilling**: Use context or component composition instead of passing props through many levels
+- **No Mixed Concerns**: Don't mix data fetching with presentation logic in the same component
+
+### Migration Examples
+- **Before**: 800-line `Lessons.tsx` with embedded modals and direct Supabase calls
+- **After**: Clean `Lessons.tsx` orchestrator + extracted `LessonsRecordModal`, `RecurringLessonsModal` components using service layer
 
 ## Current Status (September 2025)
 - MVP flows from schools through reports are complete and verified on sample data.
