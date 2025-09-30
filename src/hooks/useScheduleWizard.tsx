@@ -198,7 +198,12 @@ export function useScheduleWizard(): UseScheduleWizardState {
           const group = await createGroup({
             name: groupName,
             schoolId: school.id,
-            subjectId: subject.id
+            subjectId: subject.id,
+            timeslots: [{
+              day: schoolConfig.dayOfWeek,
+              startTime: period.start,
+              endTime: period.end
+            }]
           })
 
           const now = moment()

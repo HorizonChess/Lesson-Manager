@@ -47,9 +47,10 @@ export async function fetchTagsWithSubjects(): Promise<TagWithSubject[]> {
 }
 
 export async function fetchSubjectsWithSchools(): Promise<Subject[]> {
+  // Subjects are now global, no need to join with schools
   const { data, error } = await supabase
     .from('subjects')
-    .select(`*, school:schools(name)`) 
+    .select('*')
     .order('name')
   if (error) throw error
   return (data || []) as Subject[]

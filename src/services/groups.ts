@@ -5,12 +5,18 @@ export interface CreateGroupParams {
   name: string
   schoolId: string
   subjectId: string
+  timeslots?: unknown[]
 }
 
 export async function createGroup(params: CreateGroupParams): Promise<Group> {
   const { data, error } = await supabase
     .from('groups')
-    .insert([{ name: params.name, school_id: params.schoolId, subject_id: params.subjectId }])
+    .insert([{
+      name: params.name,
+      school_id: params.schoolId,
+      subject_id: params.subjectId,
+      timeslots: params.timeslots || []
+    }])
     .select()
     .single()
 

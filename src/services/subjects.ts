@@ -7,16 +7,28 @@ export interface CreateSubjectParams {
 }
 
 export async function createSubject(params: CreateSubjectParams): Promise<Subject> {
-  const { data, error } = await supabase
+  // Step 1: Create the global subject
+  const { data: subject, error: subjectError } = await supabase
     .from('subjects')
-    .insert([{ name: params.name, school_id: params.schoolId }])
+    .insert([{ name: params.name }])
     .select()
     .single()
 
-  if (error || !data) {
-    throw error ?? new Error('Failed to create subject')
+  if (subjectError || !subject) {
+    throw subjectError ?? new Error('Failed to create subject')
   }
 
-  return data as Subject
+  // Step 2: Assign the subject to the school
+  const { error: assignError } = await supabase
+    .from('school_subjects')
+    .insert({ school_id: params.schoolId, subject_id: subject.id })
+
+  if (assignError) {
+    // Rollback: delete the subject if assignment fails
+    await supabase.from('subjects').delete().eq('id', subject.id)
+    throw assignError
+  }
+
+  return subject as Subject
 }
 

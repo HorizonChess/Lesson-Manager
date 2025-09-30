@@ -26,6 +26,34 @@ export async function fetchSubjects(): Promise<Subject[]> {
   return data ?? []
 }
 
+export async function fetchSchoolSubjectAssignments(schoolId: string): Promise<Subject[]> {
+  const { data, error } = await supabase
+    .from('school_subjects')
+    .select('subject_id, subjects(*)')
+    .eq('school_id', schoolId)
+
+  if (error) throw error
+  return (data ?? []).map((item: any) => item.subjects).filter(Boolean)
+}
+
+export async function assignSubjectToSchool(schoolId: string, subjectId: string): Promise<void> {
+  const { error } = await supabase
+    .from('school_subjects')
+    .insert({ school_id: schoolId, subject_id: subjectId })
+
+  if (error) throw error
+}
+
+export async function removeSubjectFromSchool(schoolId: string, subjectId: string): Promise<void> {
+  const { error } = await supabase
+    .from('school_subjects')
+    .delete()
+    .eq('school_id', schoolId)
+    .eq('subject_id', subjectId)
+
+  if (error) throw error
+}
+
 export async function fetchGroupsWithRelations(): Promise<GroupWithRelations[]> {
   const { data, error } = await supabase
     .from('groups')

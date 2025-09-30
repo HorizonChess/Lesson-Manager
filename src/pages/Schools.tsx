@@ -15,6 +15,7 @@ export function Schools() {
   const { user } = useAuth()
   const [schools, setSchools] = useState<School[]>([])
   const [subjects, setSubjects] = useState<Record<string, Subject[]>>({})
+  const [allSubjects, setAllSubjects] = useState<Subject[]>([]) // All global subjects
   const [groups, setGroups] = useState<Record<string, Group[]>>({}) // groups by subject_id
   const [rosters, setRosters] = useState<Record<string, RosterItem[]>>({}) // roster by group_id
   const [loading, setLoading] = useState(true)
@@ -30,12 +31,15 @@ export function Schools() {
   const [newSchoolName, setNewSchoolName] = useState('')
   const [selectedSchool, setSelectedSchool] = useState<string | null>(null)
   const [showAddSubject, setShowAddSubject] = useState(false)
+  const [subjectSelectionMode, setSubjectSelectionMode] = useState<'existing' | 'new'>('existing')
+  const [selectedSubjectId, setSelectedSubjectId] = useState<string>('')
   const [newSubjectName, setNewSubjectName] = useState('')
   const [showAddGroup, setShowAddGroup] = useState<string | null>(null) // subjectId
   const [newGroupName, setNewGroupName] = useState('')
   const [timeslots, setTimeslots] = useState<Timeslot[]>([])
   const [showAddStudent, setShowAddStudent] = useState<string | null>(null) // groupId
   const [newStudentName, setNewStudentName] = useState('')
+  const [showManageSubjects, setShowManageSubjects] = useState(false)
 
   // Edit states
   const [editingSchool, setEditingSchool] = useState<string | null>(null)
@@ -80,17 +84,31 @@ export function Schools() {
 
       setSchools(schoolsData || [])
 
-      // Fetch subjects for each school
+      // Fetch all global subjects
+      const { data: allSubjectsData, error: allSubjectsError } = await supabase
+        .from('subjects')
+        .select('*')
+        .order('name')
+
+      if (allSubjectsError) throw allSubjectsError
+      setAllSubjects(allSubjectsData || [])
+
+      // Fetch subjects for each school via school_subjects junction
       if (schoolsData && schoolsData.length > 0) {
-        const { data: subjectsData, error: subjectsError } = await supabase
-          .from('subjects')
-          .select('*')
+        const { data: schoolSubjectsData, error: schoolSubjectsError } = await supabase
+          .from('school_subjects')
+          .select('school_id, subject_id, subjects(*)')
           .in('school_id', schoolsData.map(s => s.id))
-          .order('name')
 
-        console.log('Subjects query result:', { subjectsData, subjectsError })
+        console.log('School subjects query result:', { schoolSubjectsData, schoolSubjectsError })
 
-        if (subjectsError) throw subjectsError
+        if (schoolSubjectsError) throw schoolSubjectsError
+
+        // Extract subjects and add school_id for compatibility with UI
+        const subjectsData = (schoolSubjectsData || []).map((ss: any) => ({
+          ...ss.subjects,
+          school_id: ss.school_id // Add school_id for UI grouping
+        }))
 
         // Fetch groups for each subject
         const { data: groupsData, error: groupsError } = await supabase
@@ -113,7 +131,7 @@ export function Schools() {
         if (rosterError) throw rosterError
 
         // Group subjects by school_id
-        const subjectsBySchool = (subjectsData || []).reduce<Record<string, Subject[]>>((acc, subject) => {
+        const subjectsBySchool = (subjectsData || []).reduce<Record<string, Subject[]>>((acc, subject: any) => {
           if (!acc[subject.school_id]) {
             acc[subject.school_id] = []
           }
@@ -352,28 +370,95 @@ export function Schools() {
 
   const addSubject = async (e: React.FormEvent) => {
     e.preventDefault()
-    if (!newSubjectName.trim() || !selectedSchool) return
+    if (!selectedSchool) return
 
     try {
-      const { data, error } = await supabase
-        .from('subjects')
-        .insert({
-          school_id: selectedSchool,
-          name: newSubjectName.trim(),
-        })
-        .select()
-        .single()
+      let subjectId: string
+      let subject: Subject
 
-      if (error) throw error
+      if (subjectSelectionMode === 'existing') {
+        // Assign existing subject
+        if (!selectedSubjectId) {
+          setError('Please select a subject')
+          return
+        }
 
-      // Add subject to local state
+        const { error: assignError } = await supabase
+          .from('school_subjects')
+          .insert({ school_id: selectedSchool, subject_id: selectedSubjectId })
+
+        if (assignError) throw assignError
+
+        // Find the subject in allSubjects
+        subject = allSubjects.find(s => s.id === selectedSubjectId)!
+        subjectId = selectedSubjectId
+      } else {
+        // Create new subject
+        if (!newSubjectName.trim()) {
+          setError('Please enter a subject name')
+          return
+        }
+
+        // Check if subject with this name already exists
+        const existingSubject = allSubjects.find(
+          s => s.name.toLowerCase() === newSubjectName.trim().toLowerCase()
+        )
+
+        if (existingSubject) {
+          if (!confirm(`A subject named "${existingSubject.name}" already exists. Do you want to use the existing subject instead of creating a duplicate?`)) {
+            return
+          }
+
+          // Use existing subject
+          const { error: assignError } = await supabase
+            .from('school_subjects')
+            .insert({ school_id: selectedSchool, subject_id: existingSubject.id })
+
+          if (assignError) throw assignError
+
+          subject = existingSubject
+          subjectId = existingSubject.id
+        } else {
+          // Create new subject
+          const { data: newSubject, error: subjectError } = await supabase
+            .from('subjects')
+            .insert({ name: newSubjectName.trim() })
+            .select()
+            .single()
+
+          if (subjectError) throw subjectError
+
+          // Assign the new subject to the school
+          const { error: assignError } = await supabase
+            .from('school_subjects')
+            .insert({ school_id: selectedSchool, subject_id: newSubject.id })
+
+          if (assignError) {
+            // Rollback: delete the subject if assignment fails
+            await supabase.from('subjects').delete().eq('id', newSubject.id)
+            throw assignError
+          }
+
+          subject = newSubject
+          subjectId = newSubject.id
+
+          // Add to allSubjects
+          setAllSubjects([...allSubjects, newSubject])
+        }
+      }
+
+      // Add subject to local state with school_id for UI compatibility
+      const subjectWithSchool = { ...subject, school_id: selectedSchool }
       setSubjects({
         ...subjects,
-        [selectedSchool]: [...(subjects[selectedSchool] || []), data]
+        [selectedSchool]: [...(subjects[selectedSchool] || []), subjectWithSchool as any]
       })
+
       setNewSubjectName('')
+      setSelectedSubjectId('')
       setShowAddSubject(false)
       setSelectedSchool(null)
+      setSubjectSelectionMode('existing')
     } catch (err: any) {
       setError(err.message)
     }
@@ -404,17 +489,19 @@ export function Schools() {
   }
 
   const deleteSubject = async (subjectId: string, schoolId: string) => {
-    if (!confirm('Are you sure you want to delete this subject? This will also delete all its groups and related data.')) return
+    if (!confirm('Remove this subject from the school? (Groups will remain but be unassigned)')) return
 
     try {
+      // Unassign subject from school
       const { error } = await supabase
-        .from('subjects')
+        .from('school_subjects')
         .delete()
-        .eq('id', subjectId)
+        .eq('school_id', schoolId)
+        .eq('subject_id', subjectId)
 
       if (error) throw error
 
-      // Remove subject from local state
+      // Remove subject from local state for this school
       setSubjects({
         ...subjects,
         [schoolId]: (subjects[schoolId] || []).filter(s => s.id !== subjectId)
@@ -601,12 +688,20 @@ export function Schools() {
     <div className="space-y-6">
       <div className="flex justify-between items-center">
         <h2 className="text-2xl font-bold">School Overview</h2>
-        <button
-          onClick={() => setShowAddSchool(true)}
-          className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700"
-        >
-          Add School
-        </button>
+        <div className="flex gap-2">
+          <button
+            onClick={() => setShowManageSubjects(true)}
+            className="bg-purple-600 text-white px-4 py-2 rounded hover:bg-purple-700"
+          >
+            Manage Subjects
+          </button>
+          <button
+            onClick={() => setShowAddSchool(true)}
+            className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700"
+          >
+            Add School
+          </button>
+        </div>
       </div>
 
       {schools.length > 1 && (
@@ -673,29 +768,74 @@ export function Schools() {
         <div className="bg-gray-50 dark:bg-gray-800 p-4 rounded-lg">
           <form onSubmit={addSubject} className="space-y-4">
             <div>
-              <label className="block text-sm font-medium mb-2">Subject Name</label>
-              <input
-                type="text"
-                value={newSubjectName}
-                onChange={(e) => setNewSubjectName(e.target.value)}
-                placeholder="Enter subject name"
-                className="w-full px-3 py-2 border border-gray-300 rounded focus:outline-none focus:border-blue-500"
-                required
-              />
+              <label className="block text-sm font-medium mb-2">Add Subject to School</label>
+              <div className="flex gap-2 mb-3">
+                <button
+                  type="button"
+                  onClick={() => setSubjectSelectionMode('existing')}
+                  className={`px-3 py-1 rounded text-sm ${
+                    subjectSelectionMode === 'existing'
+                      ? 'bg-blue-600 text-white'
+                      : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+                  }`}
+                >
+                  Select Existing
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setSubjectSelectionMode('new')}
+                  className={`px-3 py-1 rounded text-sm ${
+                    subjectSelectionMode === 'new'
+                      ? 'bg-blue-600 text-white'
+                      : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+                  }`}
+                >
+                  Create New
+                </button>
+              </div>
+
+              {subjectSelectionMode === 'existing' ? (
+                <select
+                  value={selectedSubjectId}
+                  onChange={(e) => setSelectedSubjectId(e.target.value)}
+                  className="w-full px-3 py-2 border border-gray-300 rounded focus:outline-none focus:border-blue-500"
+                  required
+                >
+                  <option value="">Select a subject...</option>
+                  {allSubjects
+                    .filter(s => !subjects[selectedSchool]?.some(ss => ss.id === s.id))
+                    .map(subject => (
+                      <option key={subject.id} value={subject.id}>
+                        {subject.name}
+                      </option>
+                    ))}
+                </select>
+              ) : (
+                <input
+                  type="text"
+                  value={newSubjectName}
+                  onChange={(e) => setNewSubjectName(e.target.value)}
+                  placeholder="Enter new subject name"
+                  className="w-full px-3 py-2 border border-gray-300 rounded focus:outline-none focus:border-blue-500"
+                  required
+                />
+              )}
             </div>
             <div className="flex gap-2">
               <button
                 type="submit"
                 className="bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700"
               >
-                Add Subject
+                {subjectSelectionMode === 'existing' ? 'Assign Subject' : 'Create & Assign'}
               </button>
               <button
                 type="button"
                 onClick={() => {
                   setShowAddSubject(false)
                   setNewSubjectName('')
+                  setSelectedSubjectId('')
                   setSelectedSchool(null)
+                  setSubjectSelectionMode('existing')
                 }}
                 className="bg-gray-300 text-gray-700 px-4 py-2 rounded hover:bg-gray-400"
               >
@@ -765,7 +905,7 @@ export function Schools() {
                       <div>
                         <h3 className="text-xl font-semibold">{school.name}</h3>
                         <p className="text-gray-500 text-sm">
-                          {subjects[school.id]?.length || 0} subjects, {subjects[school.id]?.reduce((sum, s) => sum + (groups[s.id]?.length || 0), 0) || 0} groups
+                          {subjects[school.id]?.length || 0} subjects, {subjects[school.id]?.reduce((sum, s) => sum + (groups[s.id]?.filter(g => g.school_id === school.id).length || 0), 0) || 0} groups
                         </p>
                       </div>
                     )}
@@ -892,7 +1032,7 @@ export function Schools() {
                                   <div>
                                     <h4 className="font-medium">{subject.name}</h4>
                                     <p className="text-sm text-gray-500">
-                                      {groups[subject.id]?.length || 0} groups
+                                      {groups[subject.id]?.filter(g => g.school_id === school.id).length || 0} groups
                                     </p>
                                   </div>
                                 )}
@@ -1022,7 +1162,9 @@ export function Schools() {
                               {/* Groups */}
                               <div className="space-y-2">
                                 {groups[subject.id] && groups[subject.id].length > 0 ? (
-                                  groups[subject.id].map((group) => (
+                                  groups[subject.id]
+                                    .filter((group) => group.school_id === school.id)
+                                    .map((group) => (
                                     <div key={group.id} className="bg-white dark:bg-gray-800 p-3 rounded border">
                                       <div className="flex justify-between items-start mb-2">
                                         {editingGroup === group.id ? (
@@ -1325,6 +1467,143 @@ export function Schools() {
           />
         </Modal>
       )}
+
+      {/* Manage Global Subjects Modal */}
+      <Modal
+        isOpen={showManageSubjects}
+        onClose={() => setShowManageSubjects(false)}
+        title="Manage Global Subjects"
+      >
+        <div className="space-y-4">
+          <p className="text-sm text-gray-600 dark:text-gray-400">
+            These subjects can be assigned to any school. Editing or deleting a subject affects all schools using it.
+          </p>
+
+          <div className="space-y-2">
+            {allSubjects.length === 0 ? (
+              <p className="text-gray-500 italic">No subjects created yet</p>
+            ) : (
+              allSubjects.map((subject) => (
+                <div key={subject.id} className="flex justify-between items-center bg-gray-50 dark:bg-gray-700 p-3 rounded">
+                  <span className="font-medium">{subject.name}</span>
+                  <div className="flex gap-2">
+                    <button
+                      onClick={async () => {
+                        const newName = prompt('Enter new subject name:', subject.name)
+                        if (newName && newName.trim() && newName !== subject.name) {
+                          try {
+                            const { error } = await supabase
+                              .from('subjects')
+                              .update({ name: newName.trim() })
+                              .eq('id', subject.id)
+
+                            if (error) throw error
+
+                            // Update allSubjects
+                            setAllSubjects(allSubjects.map(s =>
+                              s.id === subject.id ? { ...s, name: newName.trim() } : s
+                            ))
+
+                            // Refresh page data
+                            fetchSchools()
+                          } catch (err: any) {
+                            setError(err.message)
+                          }
+                        }
+                      }}
+                      className="text-blue-600 hover:text-blue-800 text-sm"
+                    >
+                      ✎ Edit
+                    </button>
+                    <button
+                      onClick={async () => {
+                        try {
+                          // Check if any groups use this subject
+                          const { data: groupsUsingSubject, error: checkError } = await supabase
+                            .from('groups')
+                            .select('id, name, school_id')
+                            .eq('subject_id', subject.id)
+
+                          if (checkError) throw checkError
+
+                          let confirmMessage = `Delete "${subject.name}"?`
+                          if (groupsUsingSubject && groupsUsingSubject.length > 0) {
+                            confirmMessage = `Delete "${subject.name}"?\n\n${groupsUsingSubject.length} group(s) are using it. They will be moved to "General Teaching" subject.`
+                          }
+
+                          if (!confirm(confirmMessage)) return
+
+                          // If groups use this subject, move them to "General Teaching"
+                          if (groupsUsingSubject && groupsUsingSubject.length > 0) {
+                            // Find or create "General Teaching" subject
+                            let { data: generalSubject } = await supabase
+                              .from('subjects')
+                              .select('id')
+                              .eq('name', 'General Teaching')
+                              .single()
+
+                            if (!generalSubject) {
+                              const { data: newGeneral, error: createError } = await supabase
+                                .from('subjects')
+                                .insert({ name: 'General Teaching' })
+                                .select()
+                                .single()
+
+                              if (createError) throw createError
+                              generalSubject = newGeneral
+                            }
+
+                            // Move all groups to General Teaching
+                            const { error: updateError } = await supabase
+                              .from('groups')
+                              .update({ subject_id: generalSubject.id })
+                              .eq('subject_id', subject.id)
+
+                            if (updateError) throw updateError
+
+                            // Ensure General Teaching is assigned to all affected schools
+                            const schoolIds = [...new Set(groupsUsingSubject.map(g => g.school_id))]
+                            for (const schoolId of schoolIds) {
+                              await supabase
+                                .from('school_subjects')
+                                .upsert({ school_id: schoolId, subject_id: generalSubject.id }, { onConflict: 'school_id,subject_id' })
+                            }
+                          }
+
+                          // Delete all school_subjects assignments for this subject
+                          await supabase
+                            .from('school_subjects')
+                            .delete()
+                            .eq('subject_id', subject.id)
+
+                          // Delete the subject
+                          const { error } = await supabase
+                            .from('subjects')
+                            .delete()
+                            .eq('id', subject.id)
+
+                          if (error) throw error
+
+                          // Update allSubjects
+                          setAllSubjects(allSubjects.filter(s => s.id !== subject.id))
+
+                          // Refresh page data
+                          fetchSchools()
+                        } catch (err: any) {
+                          setError(err.message)
+                        }
+                      }}
+                      className="text-red-600 hover:text-red-800 text-sm"
+                    >
+                      × Delete
+                    </button>
+                  </div>
+                </div>
+              ))
+            )}
+          </div>
+        </div>
+      </Modal>
     </div>
   )
 }

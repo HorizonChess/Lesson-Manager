@@ -1,0 +1,17 @@
+{
+  "timestamp": "2025-09-30T12-45-20",
+  "tables": {
+    "schools": 5,
+    "subjects": 6,
+    "groups": 23,
+    "roster_items": 0,
+    "lessons": 803,
+    "lesson_records": 12,
+    "attendance": 0,
+    "materials": 1,
+    "lesson_materials": 0,
+    "tags": 1,
+    "material_tags": 1,
+    "tasks": 1
+  }
+}

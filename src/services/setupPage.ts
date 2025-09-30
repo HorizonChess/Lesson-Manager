@@ -15,26 +15,59 @@ export interface GroupWithRoster extends Group {
 }
 
 export async function fetchSetupData(): Promise<SchoolWithStructure[]> {
-  const { data, error } = await supabase
+  // Fetch schools
+  const { data: schools, error: schoolsError } = await supabase
     .from('schools')
-    .select(`*, subjects:subjects(*, groups:groups(*, roster:roster_items(*)))`)
+    .select('*')
     .order('name')
 
-  if (error) throw error
+  if (schoolsError) throw schoolsError
 
-  const schools = (data ?? []).map((school: any) => ({
-    ...school,
-    subjects: (school.subjects || []).map((subject: any) => ({
-      ...subject,
-      groups: (subject.groups || []).map((group: any) => ({
+  // For each school, fetch its subjects via school_subjects junction
+  const schoolsWithStructure: SchoolWithStructure[] = []
+
+  for (const school of schools ?? []) {
+    // Get subjects assigned to this school
+    const { data: schoolSubjects, error: subjectsError } = await supabase
+      .from('school_subjects')
+      .select('subject_id, subjects(*)')
+      .eq('school_id', school.id)
+
+    if (subjectsError) throw subjectsError
+
+    const subjects = (schoolSubjects ?? []).map((ss: any) => ss.subjects).filter(Boolean)
+
+    // For each subject, get its groups for this school
+    const subjectsWithGroups: SubjectWithGroups[] = []
+
+    for (const subject of subjects) {
+      const { data: groups, error: groupsError } = await supabase
+        .from('groups')
+        .select('*, roster:roster_items(*)')
+        .eq('school_id', school.id)
+        .eq('subject_id', subject.id)
+
+      if (groupsError) throw groupsError
+
+      const groupsWithRoster: GroupWithRoster[] = (groups ?? []).map((group: any) => ({
         ...group,
         roster: group.roster || [],
         roster_count: (group.roster || []).length
       }))
-    }))
-  })) as SchoolWithStructure[]
 
-  return schools
+      subjectsWithGroups.push({
+        ...subject,
+        groups: groupsWithRoster
+      })
+    }
+
+    schoolsWithStructure.push({
+      ...school,
+      subjects: subjectsWithGroups
+    })
+  }
+
+  return schoolsWithStructure
 }
 
 export async function createSchool(userId: string, name: string): Promise<SchoolWithStructure> {
@@ -76,17 +109,29 @@ export async function deleteSchoolById(schoolId: string): Promise<void> {
 }
 
 export async function createSubject(schoolId: string, name: string): Promise<Subject> {
-  const { data, error } = await supabase
+  // Step 1: Create the global subject
+  const { data: subject, error: subjectError } = await supabase
     .from('subjects')
-    .insert({ school_id: schoolId, name: name.trim() })
+    .insert({ name: name.trim() })
     .select('*')
     .single()
 
-  if (error || !data) {
-    throw error ?? new Error('Failed to create subject')
+  if (subjectError || !subject) {
+    throw subjectError ?? new Error('Failed to create subject')
   }
 
-  return data as Subject
+  // Step 2: Assign the subject to the school
+  const { error: assignError } = await supabase
+    .from('school_subjects')
+    .insert({ school_id: schoolId, subject_id: subject.id })
+
+  if (assignError) {
+    // Rollback: delete the subject if assignment fails
+    await supabase.from('subjects').delete().eq('id', subject.id)
+    throw assignError
+  }
+
+  return subject as Subject
 }
 
 export async function updateSubjectName(subjectId: string, name: string): Promise<Subject> {
