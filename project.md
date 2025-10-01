@@ -75,6 +75,8 @@ Create a new component when:
 - Service layer refactor landed: dashboard, lessons, School Overview, materials, tasks, and setup screens now call Supabase through dedicated modules. Calendar mutations, attendance edits, and material attachments run through `lessonsMutations.ts`.
 - Scheduling utilities extracted to `src/lib/scheduling/index.ts`; wizard hook now orchestrates generation without inline Supabase calls.
 - Manual test plan (`docs/manual-test-plan.md`) covers baseline flows. Attendance, reports, and offline smoke items remain to be re-checked after page decomposition.
+- **Global Subjects Implementation (Sept 30, 2025)**: Subjects transformed from school-specific to global with `school_subjects` junction table. See `docs/subjects-overhaul.md` for details.
+- **Schools.tsx Refactor COMPLETE (Sept 30, 2025)**: Successfully refactored 1609-line Schools.tsx to follow architecture rules - all direct Supabase calls replaced with service layer functions. All CRUD operations (schools, subjects, groups, roster items) now use `groupsPage.ts` service functions. Backup saved as `Schools.tsx.backup` (can be removed after verification).
 
 ## Active Refactor Checklist (Phase A)
 - [done] Schedule wizard UI renders through `ScheduleWizardStepContent` plus panels in `src/components/schedule-wizard/`, while `useScheduleWizard` keeps the business logic (complete).

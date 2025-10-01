@@ -1,9 +1,9 @@
 import { useState, useEffect } from 'react'
 import { useAuth } from '../contexts/AuthContext'
+import { supabase } from '../lib/supabase'
 import type { School, Subject, Group, RosterItem } from '../types/database'
 import { Modal } from '../components/Modal'
 import { GroupOverview } from '../components/GroupOverview'
-import * as groupsPageService from '../services/groupsPage'
 
 interface Timeslot {
   day: string
@@ -44,7 +44,7 @@ export function Schools() {
   // Edit states
   const [editingSchool, setEditingSchool] = useState<string | null>(null)
   const [editSchoolName, setEditSchoolName] = useState('')
-  const [editingSubject, setEditingSubject] = useState<{ schoolId: string; subjectId: string } | null>(null)
+  const [editingSubject, setEditingSubject] = useState<string | null>(null)
   const [editSubjectName, setEditSubjectName] = useState('')
   const [editingGroup, setEditingGroup] = useState<string | null>(null)
   const [editGroupName, setEditGroupName] = useState('')
@@ -73,45 +73,123 @@ export function Schools() {
       setLoading(true)
       console.log('Fetching schools for user:', user?.id)
 
-      // Use service layer for all data fetching
-      const data = await groupsPageService.fetchSchoolsPageData()
+      const { data: schoolsData, error: schoolsError } = await supabase
+        .from('schools')
+        .select('*')
+        .order('name')
 
-      console.log('📥 Fetched data - allSubjects:', data.allSubjects.length, data.allSubjects.map(s => s.name))
+      console.log('Schools query result:', { schoolsData, schoolsError })
 
-      setSchools(data.schools)
-      setAllSubjects(data.allSubjects)
-      setSubjects(data.subjectsBySchool)
-      setGroups(data.groupsBySubject)
-      setRosters(data.rostersByGroup)
+      if (schoolsError) throw schoolsError
 
-      // Implement smart collapsing logic
-      const newCollapsedSubjects: Record<string, boolean> = {}
-      const newCollapsedGroups: Record<string, boolean> = {}
+      setSchools(schoolsData || [])
 
-      data.schools.forEach(school => {
-        const schoolSubjects = data.subjectsBySchool[school.id] || []
-        const totalGroups = schoolSubjects.reduce<number>((sum, subject) => {
-          return sum + (data.groupsBySubject[subject.id]?.length || 0)
-        }, 0)
+      // Fetch all global subjects
+      const { data: allSubjectsData, error: allSubjectsError } = await supabase
+        .from('subjects')
+        .select('*')
+        .order('name')
 
-        // Smart collapsing: if >6 total groups and multiple subjects, auto-collapse subjects
-        if (totalGroups > 6 && schoolSubjects.length > 1) {
+      if (allSubjectsError) throw allSubjectsError
+      setAllSubjects(allSubjectsData || [])
+
+      // Fetch subjects for each school via school_subjects junction
+      if (schoolsData && schoolsData.length > 0) {
+        const { data: schoolSubjectsData, error: schoolSubjectsError } = await supabase
+          .from('school_subjects')
+          .select('school_id, subject_id, subjects(*)')
+          .in('school_id', schoolsData.map(s => s.id))
+
+        console.log('School subjects query result:', { schoolSubjectsData, schoolSubjectsError })
+
+        if (schoolSubjectsError) throw schoolSubjectsError
+
+        // Extract subjects and add school_id for compatibility with UI
+        const subjectsData = (schoolSubjectsData || []).map((ss: any) => ({
+          ...ss.subjects,
+          school_id: ss.school_id // Add school_id for UI grouping
+        }))
+
+        // Fetch groups for each subject
+        const { data: groupsData, error: groupsError } = await supabase
+          .from('groups')
+          .select('*')
+          .order('name')
+
+        console.log('Groups query result:', { groupsData, groupsError })
+
+        if (groupsError) throw groupsError
+
+        // Fetch roster items for all groups
+        const { data: rosterData, error: rosterError } = await supabase
+          .from('roster_items')
+          .select('*')
+          .order('student_name')
+
+        console.log('Roster query result:', { rosterData, rosterError })
+
+        if (rosterError) throw rosterError
+
+        // Group subjects by school_id
+        const subjectsBySchool = (subjectsData || []).reduce<Record<string, Subject[]>>((acc, subject: any) => {
+          if (!acc[subject.school_id]) {
+            acc[subject.school_id] = []
+          }
+          acc[subject.school_id].push(subject)
+          return acc
+        }, {})
+
+        // Group groups by subject_id
+        const groupsBySubject = (groupsData || []).reduce<Record<string, Group[]>>((acc, group) => {
+          if (!acc[group.subject_id]) {
+            acc[group.subject_id] = []
+          }
+          acc[group.subject_id].push(group)
+          return acc
+        }, {})
+
+        // Group roster items by group_id
+        const rostersByGroup = (rosterData || []).reduce((acc, item) => {
+          if (!acc[item.group_id]) {
+            acc[item.group_id] = []
+          }
+          acc[item.group_id].push(item)
+          return acc
+        }, {} as Record<string, RosterItem[]>)
+
+        setSubjects(subjectsBySchool)
+        setGroups(groupsBySubject)
+        setRosters(rostersByGroup)
+
+        // Implement smart collapsing logic
+        const newCollapsedSubjects: Record<string, boolean> = {}
+        const newCollapsedGroups: Record<string, boolean> = {}
+
+        schoolsData.forEach(school => {
+          const schoolSubjects = subjectsBySchool[school.id] || []
+          const totalGroups = schoolSubjects.reduce<number>((sum, subject) => {
+            return sum + (groupsBySubject[subject.id]?.length || 0)
+          }, 0)
+
+          // Smart collapsing: if >6 total groups and multiple subjects, auto-collapse subjects
+          if (totalGroups > 6 && schoolSubjects.length > 1) {
+            schoolSubjects.forEach(subject => {
+              newCollapsedSubjects[subject.id] = true
+            })
+          }
+
+          // Initialize all groups as collapsed by default (student lists hidden)
           schoolSubjects.forEach(subject => {
-            newCollapsedSubjects[subject.id] = true
-          })
-        }
-
-        // Initialize all groups as collapsed by default (student lists hidden)
-        schoolSubjects.forEach(subject => {
-          const subjectGroups = data.groupsBySubject[subject.id] || []
-          subjectGroups.forEach(group => {
-            newCollapsedGroups[group.id] = true
+            const subjectGroups = groupsBySubject[subject.id] || []
+            subjectGroups.forEach(group => {
+              newCollapsedGroups[group.id] = true
+            })
           })
         })
-      })
 
-      setCollapsedSubjects(newCollapsedSubjects)
-      setCollapsedGroups(newCollapsedGroups)
+        setCollapsedSubjects(newCollapsedSubjects)
+        setCollapsedGroups(newCollapsedGroups)
+      }
     } catch (err: any) {
       setError(err.message)
     } finally {
@@ -229,10 +307,16 @@ export function Schools() {
     if (!newSchoolName.trim() || !user) return
 
     try {
-      const data = await groupsPageService.createSchoolWithUser({
-        name: newSchoolName.trim(),
-        userId: user.id
-      })
+      const { data, error } = await supabase
+        .from('schools')
+        .insert({
+          user_id: user.id,
+          name: newSchoolName.trim(),
+        })
+        .select()
+        .single()
+
+      if (error) throw error
 
       setSchools([...schools, data])
       setNewSchoolName('')
@@ -246,7 +330,14 @@ export function Schools() {
     if (!newName.trim()) return
 
     try {
-      const data = await groupsPageService.updateSchoolName(schoolId, newName.trim())
+      const { data, error } = await supabase
+        .from('schools')
+        .update({ name: newName.trim() })
+        .eq('id', schoolId)
+        .select()
+        .single()
+
+      if (error) throw error
 
       setSchools(schools.map(s => s.id === schoolId ? data : s))
       setEditingSchool(null)
@@ -260,7 +351,12 @@ export function Schools() {
     if (!confirm('Are you sure you want to delete this school? This will also delete all its subjects and related data.')) return
 
     try {
-      await groupsPageService.deleteSchoolById(schoolId)
+      const { error } = await supabase
+        .from('schools')
+        .delete()
+        .eq('id', schoolId)
+
+      if (error) throw error
 
       setSchools(schools.filter(s => s.id !== schoolId))
       // Remove subjects for this school
@@ -277,6 +373,7 @@ export function Schools() {
     if (!selectedSchool) return
 
     try {
+      let subjectId: string
       let subject: Subject
 
       if (subjectSelectionMode === 'existing') {
@@ -286,10 +383,15 @@ export function Schools() {
           return
         }
 
-        await groupsPageService.assignSubjectToSchool(selectedSchool, selectedSubjectId)
+        const { error: assignError } = await supabase
+          .from('school_subjects')
+          .insert({ school_id: selectedSchool, subject_id: selectedSubjectId })
+
+        if (assignError) throw assignError
 
         // Find the subject in allSubjects
         subject = allSubjects.find(s => s.id === selectedSubjectId)!
+        subjectId = selectedSubjectId
       } else {
         // Create new subject
         if (!newSubjectName.trim()) {
@@ -308,18 +410,40 @@ export function Schools() {
           }
 
           // Use existing subject
-          await groupsPageService.assignSubjectToSchool(selectedSchool, existingSubject.id)
+          const { error: assignError } = await supabase
+            .from('school_subjects')
+            .insert({ school_id: selectedSchool, subject_id: existingSubject.id })
+
+          if (assignError) throw assignError
 
           subject = existingSubject
+          subjectId = existingSubject.id
         } else {
-          // Create new subject and assign to school
-          subject = await groupsPageService.createSubjectGlobal({
-            name: newSubjectName.trim(),
-            schoolId: selectedSchool
-          })
+          // Create new subject
+          const { data: newSubject, error: subjectError } = await supabase
+            .from('subjects')
+            .insert({ name: newSubjectName.trim() })
+            .select()
+            .single()
+
+          if (subjectError) throw subjectError
+
+          // Assign the new subject to the school
+          const { error: assignError } = await supabase
+            .from('school_subjects')
+            .insert({ school_id: selectedSchool, subject_id: newSubject.id })
+
+          if (assignError) {
+            // Rollback: delete the subject if assignment fails
+            await supabase.from('subjects').delete().eq('id', newSubject.id)
+            throw assignError
+          }
+
+          subject = newSubject
+          subjectId = newSubject.id
 
           // Add to allSubjects
-          setAllSubjects([...allSubjects, subject])
+          setAllSubjects([...allSubjects, newSubject])
         }
       }
 
@@ -344,41 +468,21 @@ export function Schools() {
     if (!newName.trim()) return
 
     try {
-      // Use reassignSchoolSubject which handles both rename and reassignment
-      const data = await groupsPageService.reassignSchoolSubject(schoolId, subjectId, newName.trim())
+      const { data, error } = await supabase
+        .from('subjects')
+        .update({ name: newName.trim() })
+        .eq('id', subjectId)
+        .select()
+        .single()
 
-      // If the subject changed (reassignment happened), update UI accordingly
-      if (data.id !== subjectId) {
-        // Subject was reassigned to an existing one
-        // Remove old subject from this school's list, add new one
-        setSubjects({
-          ...subjects,
-          [schoolId]: [
-            ...(subjects[schoolId] || []).filter(s => s.id !== subjectId),
-            data
-          ]
-        })
+      if (error) throw error
 
-        // Update allSubjects if needed
-        if (!allSubjects.find(s => s.id === data.id)) {
-          setAllSubjects([...allSubjects, data])
-        }
-      } else {
-        // Subject was renamed in place
-        setSubjects({
-          ...subjects,
-          [schoolId]: (subjects[schoolId] || []).map(s => s.id === subjectId ? data : s)
-        })
-
-        // Update allSubjects too
-        setAllSubjects(allSubjects.map(s => s.id === subjectId ? data : s))
-      }
-
+      setSubjects({
+        ...subjects,
+        [schoolId]: (subjects[schoolId] || []).map(s => s.id === subjectId ? data : s)
+      })
       setEditingSubject(null)
       setEditSubjectName('')
-
-      // Refresh to get accurate state
-      fetchSchools()
     } catch (err: any) {
       setError(err.message)
     }
@@ -389,7 +493,13 @@ export function Schools() {
 
     try {
       // Unassign subject from school
-      await groupsPageService.removeSubjectFromSchool(schoolId, subjectId)
+      const { error } = await supabase
+        .from('school_subjects')
+        .delete()
+        .eq('school_id', schoolId)
+        .eq('subject_id', subjectId)
+
+      if (error) throw error
 
       // Remove subject from local state for this school
       setSubjects({
@@ -407,12 +517,18 @@ export function Schools() {
     if (!newGroupName.trim()) return
 
     try {
-      const data = await groupsPageService.createGroupWithRelations({
-        schoolId,
-        subjectId,
-        name: newGroupName.trim(),
-        timeslots: timeslots.filter(slot => slot.day && slot.startTime && slot.endTime)
-      })
+      const { data, error } = await supabase
+        .from('groups')
+        .insert({
+          school_id: schoolId,
+          subject_id: subjectId,
+          name: newGroupName.trim(),
+          timeslots: timeslots.filter(slot => slot.day && slot.startTime && slot.endTime)
+        })
+        .select()
+        .single()
+
+      if (error) throw error
 
       setGroups({
         ...groups,
@@ -431,17 +547,21 @@ export function Schools() {
     }
   }
 
-  const updateGroup = async (groupId: string, subjectId: string, schoolId: string) => {
+  const updateGroup = async (groupId: string, subjectId: string) => {
     if (!editGroupName.trim()) return
 
     try {
-      const data = await groupsPageService.updateGroupWithRelations({
-        groupId,
-        schoolId,
-        subjectId,
-        name: editGroupName.trim(),
-        timeslots: editGroupTimeslots.filter(slot => slot.day && slot.startTime && slot.endTime)
-      })
+      const { data, error } = await supabase
+        .from('groups')
+        .update({
+          name: editGroupName.trim(),
+          timeslots: editGroupTimeslots.filter(slot => slot.day && slot.startTime && slot.endTime)
+        })
+        .eq('id', groupId)
+        .select()
+        .single()
+
+      if (error) throw error
 
       setGroups({
         ...groups,
@@ -459,7 +579,12 @@ export function Schools() {
     if (!confirm('Are you sure you want to delete this group? This will also delete all its lessons and related data.')) return
 
     try {
-      await groupsPageService.deleteGroupById(groupId)
+      const { error } = await supabase
+        .from('groups')
+        .delete()
+        .eq('id', groupId)
+
+      if (error) throw error
 
       setGroups({
         ...groups,
@@ -480,7 +605,16 @@ export function Schools() {
     if (!newStudentName.trim()) return
 
     try {
-      const data = await groupsPageService.addStudentToGroup(groupId, newStudentName.trim())
+      const { data, error } = await supabase
+        .from('roster_items')
+        .insert({
+          group_id: groupId,
+          student_name: newStudentName.trim(),
+        })
+        .select()
+        .single()
+
+      if (error) throw error
 
       setRosters({
         ...rosters,
@@ -497,7 +631,14 @@ export function Schools() {
     if (!newName.trim()) return
 
     try {
-      const data = await groupsPageService.updateStudentName(studentId, newName.trim())
+      const { data, error } = await supabase
+        .from('roster_items')
+        .update({ student_name: newName.trim() })
+        .eq('id', studentId)
+        .select()
+        .single()
+
+      if (error) throw error
 
       setRosters({
         ...rosters,
@@ -514,7 +655,12 @@ export function Schools() {
     if (!confirm('Are you sure you want to remove this student from the group?')) return
 
     try {
-      await groupsPageService.deleteStudentById(studentId)
+      const { error } = await supabase
+        .from('roster_items')
+        .delete()
+        .eq('id', studentId)
+
+      if (error) throw error
 
       setRosters({
         ...rosters,
@@ -849,7 +995,7 @@ export function Schools() {
                                 <span className="text-lg">
                                   {collapsedSubjects[subject.id] ? '📄' : '📋'}
                                 </span>
-                                {editingSubject?.schoolId === school.id && editingSubject?.subjectId === subject.id ? (
+                                {editingSubject === subject.id ? (
                                   <div className="flex gap-2 items-center" onClick={(e) => e.stopPropagation()}>
                                     <input
                                       type="text"
@@ -900,7 +1046,7 @@ export function Schools() {
                                 </button>
                                 <button
                                   onClick={() => {
-                                    setEditingSubject({ schoolId: school.id, subjectId: subject.id })
+                                    setEditingSubject(subject.id)
                                     setEditSubjectName(subject.name)
                                   }}
                                   className="text-blue-600 hover:text-blue-800 text-sm"
@@ -1031,7 +1177,7 @@ export function Schools() {
                                                 className="font-medium bg-transparent border-b border-blue-500 focus:outline-none"
                                                 onKeyDown={(e) => {
                                                   if (e.key === 'Enter') {
-                                                    updateGroup(group.id, subject.id, school.id)
+                                                    updateGroup(group.id, subject.id)
                                                   } else if (e.key === 'Escape') {
                                                     setEditingGroup(null)
                                                     setEditGroupName('')
@@ -1041,7 +1187,7 @@ export function Schools() {
                                                 autoFocus
                                               />
                                               <button
-                                                onClick={() => updateGroup(group.id, subject.id, school.id)}
+                                                onClick={() => updateGroup(group.id, subject.id)}
                                                 className="text-green-600 hover:text-green-800 text-sm"
                                               >
                                                 ✓
@@ -1346,7 +1492,12 @@ export function Schools() {
                         const newName = prompt('Enter new subject name:', subject.name)
                         if (newName && newName.trim() && newName !== subject.name) {
                           try {
-                            await groupsPageService.updateSubjectName(subject.id, newName.trim())
+                            const { error } = await supabase
+                              .from('subjects')
+                              .update({ name: newName.trim() })
+                              .eq('id', subject.id)
+
+                            if (error) throw error
 
                             // Update allSubjects
                             setAllSubjects(allSubjects.map(s =>
@@ -1366,24 +1517,78 @@ export function Schools() {
                     </button>
                     <button
                       onClick={async () => {
-                        // Check if any groups use this subject
-                        const groupCount = Object.values(groups).flat().filter(g => g.subject_id === subject.id).length
-
-                        let confirmMessage = `Delete "${subject.name}"?`
-                        if (groupCount > 0) {
-                          confirmMessage = `Delete "${subject.name}"?\n\n${groupCount} group(s) are using it. They will be moved to "General Teaching" subject.`
-                        }
-
-                        if (!confirm(confirmMessage)) return
-
                         try {
-                          await groupsPageService.deleteSubjectGlobal(subject.id)
+                          // Check if any groups use this subject
+                          const { data: groupsUsingSubject, error: checkError } = await supabase
+                            .from('groups')
+                            .select('id, name, school_id')
+                            .eq('subject_id', subject.id)
+
+                          if (checkError) throw checkError
+
+                          let confirmMessage = `Delete "${subject.name}"?`
+                          if (groupsUsingSubject && groupsUsingSubject.length > 0) {
+                            confirmMessage = `Delete "${subject.name}"?\n\n${groupsUsingSubject.length} group(s) are using it. They will be moved to "General Teaching" subject.`
+                          }
+
+                          if (!confirm(confirmMessage)) return
+
+                          // If groups use this subject, move them to "General Teaching"
+                          if (groupsUsingSubject && groupsUsingSubject.length > 0) {
+                            // Find or create "General Teaching" subject
+                            let { data: generalSubject } = await supabase
+                              .from('subjects')
+                              .select('id')
+                              .eq('name', 'General Teaching')
+                              .single()
+
+                            if (!generalSubject) {
+                              const { data: newGeneral, error: createError } = await supabase
+                                .from('subjects')
+                                .insert({ name: 'General Teaching' })
+                                .select()
+                                .single()
+
+                              if (createError) throw createError
+                              generalSubject = newGeneral
+                            }
+
+                            // Move all groups to General Teaching
+                            const { error: updateError } = await supabase
+                              .from('groups')
+                              .update({ subject_id: generalSubject.id })
+                              .eq('subject_id', subject.id)
+
+                            if (updateError) throw updateError
+
+                            // Ensure General Teaching is assigned to all affected schools
+                            const schoolIds = [...new Set(groupsUsingSubject.map(g => g.school_id))]
+                            for (const schoolId of schoolIds) {
+                              await supabase
+                                .from('school_subjects')
+                                .upsert({ school_id: schoolId, subject_id: generalSubject.id }, { onConflict: 'school_id,subject_id' })
+                            }
+                          }
+
+                          // Delete all school_subjects assignments for this subject
+                          await supabase
+                            .from('school_subjects')
+                            .delete()
+                            .eq('subject_id', subject.id)
+
+                          // Delete the subject
+                          const { error } = await supabase
+                            .from('subjects')
+                            .delete()
+                            .eq('id', subject.id)
+
+                          if (error) throw error
 
                           // Update allSubjects
                           setAllSubjects(allSubjects.filter(s => s.id !== subject.id))
 
                           // Refresh page data
-                          await fetchSchools()
+                          fetchSchools()
                         } catch (err: any) {
                           setError(err.message)
                         }

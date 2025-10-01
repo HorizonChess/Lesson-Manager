@@ -124,7 +124,46 @@ npm run sync-timeslots
 - [x] Lessons page still works
 - [x] Schedule wizard sets timeslots correctly
 
+## Subject Deduplication (Sept 30, 2025)
+
+**Problem**: Subjects could be created with duplicate names, defeating the purpose of global subjects.
+
+**Solution**: Implemented tag-like behavior where editing a subject name to match an existing subject reassigns instead of creating duplicates.
+
+### Changes Made:
+
+1. **Cleanup Script** (`scripts/merge-duplicate-subjects.ts`)
+   - Merges existing duplicate subjects by name (case-insensitive)
+   - Consolidates all groups and school assignments to oldest subject
+   - Successfully merged duplicate "שחמט" (Chess) subjects
+
+2. **Service Layer Functions** (`src/services/groupsPage.ts`)
+   - `findSubjectByName()` - Case-insensitive subject lookup
+   - `reassignSchoolSubject()` - Smart subject update that reassigns to existing if name matches
+   - `updateSubjectName()` - Enhanced with duplicate prevention for global edits
+
+3. **UI Updates** (`src/pages/Schools.tsx`)
+   - School-level subject edit now uses `reassignSchoolSubject()` - typing existing subject name reassigns school to that subject
+   - Global "Manage Subjects" edit throws error if trying to rename to existing subject name
+   - Both flows refresh data to show accurate state after changes
+
+### Behavior:
+
+**School-level edit** (editing subject under a school):
+- User edits "General Teaching" → "Debate"
+- If "Debate" exists globally:
+  - All groups in this school under "General Teaching" move to "Debate"
+  - School is reassigned to existing "Debate" subject
+  - "General Teaching" is removed from this school (but stays global if other schools use it)
+- If "Debate" doesn't exist: Subject is renamed to "Debate" globally
+- Works like tags - typing existing name attaches that tag, and all content (groups) moves with it
+
+**Global edit** (Manage Subjects modal):
+- User edits "Chess A" → "Chess B" where "Chess B" already exists
+- Shows error: "A subject named 'Chess B' already exists. Cannot create duplicates."
+- Prevents accidental duplicate creation at global level
+
 ---
 
 *Completed: 2025-09-30*
-*Session: Global subjects implementation with full UI support*
+*Session: Global subjects implementation with full UI support + deduplication*
