@@ -1,9 +1,9 @@
 import { useState, useEffect } from 'react'
 import { useAuth } from '../contexts/AuthContext'
+import * as groupsPageService from '../services/groupsPage'
 import type { School, Subject, Group, RosterItem } from '../types/database'
 import { Modal } from '../components/Modal'
 import { GroupOverview } from '../components/GroupOverview'
-import * as groupsPageService from '../services/groupsPage'
 
 interface Timeslot {
   day: string
@@ -13,167 +13,359 @@ interface Timeslot {
 
 export function Schools() {
   const { user } = useAuth()
+
+  // Data state
   const [schools, setSchools] = useState<School[]>([])
-  const [subjects, setSubjects] = useState<Record<string, Subject[]>>({})
-  const [allSubjects, setAllSubjects] = useState<Subject[]>([]) // All global subjects
-  const [groups, setGroups] = useState<Record<string, Group[]>>({}) // groups by subject_id
-  const [rosters, setRosters] = useState<Record<string, RosterItem[]>>({}) // roster by group_id
+  const [allSubjects, setAllSubjects] = useState<Subject[]>([])
+  const [groupsBySchool, setGroupsBySchool] = useState<Record<string, Group[]>>({})
+  const [groupsBySubject, setGroupsBySubject] = useState<Record<string, Group[]>>({})
+  const [rostersByGroup, setRostersByGroup] = useState<Record<string, RosterItem[]>>({})
+
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
 
-  // Collapsing states
+  // UI state - Collapse
   const [collapsedSchools, setCollapsedSchools] = useState<Record<string, boolean>>({})
   const [collapsedSubjects, setCollapsedSubjects] = useState<Record<string, boolean>>({})
   const [collapsedGroups, setCollapsedGroups] = useState<Record<string, boolean>>({})
 
-  // Add states
-  const [showAddSchool, setShowAddSchool] = useState(false)
-  const [newSchoolName, setNewSchoolName] = useState('')
-  const [selectedSchool, setSelectedSchool] = useState<string | null>(null)
-  const [showAddSubject, setShowAddSubject] = useState(false)
-  const [subjectSelectionMode, setSubjectSelectionMode] = useState<'existing' | 'new'>('existing')
-  const [selectedSubjectId, setSelectedSubjectId] = useState<string>('')
-  const [newSubjectName, setNewSubjectName] = useState('')
-  const [showAddGroup, setShowAddGroup] = useState<string | null>(null) // subjectId
-  const [newGroupName, setNewGroupName] = useState('')
-  const [timeslots, setTimeslots] = useState<Timeslot[]>([])
-  const [showAddStudent, setShowAddStudent] = useState<string | null>(null) // groupId
-  const [newStudentName, setNewStudentName] = useState('')
+  // UI state - Modals
   const [showManageSubjects, setShowManageSubjects] = useState(false)
-
-  // Edit states
-  const [editingSchool, setEditingSchool] = useState<string | null>(null)
-  const [editSchoolName, setEditSchoolName] = useState('')
-  const [editingSubject, setEditingSubject] = useState<{ schoolId: string; subjectId: string } | null>(null)
-  const [editSubjectName, setEditSubjectName] = useState('')
-  const [editingGroup, setEditingGroup] = useState<string | null>(null)
-  const [editGroupName, setEditGroupName] = useState('')
-  const [editGroupTimeslots, setEditGroupTimeslots] = useState<Timeslot[]>([])
-  const [editingStudent, setEditingStudent] = useState<string | null>(null)
-  const [editStudentName, setEditStudentName] = useState('')
-
-  // Filter states
-  const [schoolFilter, setSchoolFilter] = useState<string>('')
-
-  // Group Overview Modal states
   const [showGroupOverview, setShowGroupOverview] = useState(false)
   const [selectedGroup, setSelectedGroup] = useState<Group | null>(null)
   const [selectedGroupSchool, setSelectedGroupSchool] = useState<School | null>(null)
   const [selectedGroupSubject, setSelectedGroupSubject] = useState<Subject | null>(null)
-  const [activeGroupTab, setActiveGroupTab] = useState<'students' | 'attendance' | 'lessons' | 'settings'>('students')
 
+  // UI state - School CRUD
+  const [showAddSchool, setShowAddSchool] = useState(false)
+  const [newSchoolName, setNewSchoolName] = useState('')
+  const [editingSchool, setEditingSchool] = useState<string | null>(null)
+  const [editSchoolName, setEditSchoolName] = useState('')
+
+  // UI state - Subject CRUD
+  const [showAddSubject, setShowAddSubject] = useState<string | null>(null) // schoolId
+  const [newSubjectName, setNewSubjectName] = useState('')
+  const [editingSubject, setEditingSubject] = useState<string | null>(null) // subjectId
+  const [editSubjectName, setEditSubjectName] = useState('')
+
+  // UI state - Group CRUD
+  const [showAddGroup, setShowAddGroup] = useState<{ schoolId: string; subjectId: string } | null>(null)
+  const [newGroupName, setNewGroupName] = useState('')
+  const [newGroupTimeslots, setNewGroupTimeslots] = useState<Timeslot[]>([])
+  const [editingGroup, setEditingGroup] = useState<string | null>(null) // groupId
+  const [editGroupName, setEditGroupName] = useState('')
+  const [editGroupTimeslots, setEditGroupTimeslots] = useState<Timeslot[]>([])
+
+  // UI state - Roster CRUD
+  const [showAddStudent, setShowAddStudent] = useState<string | null>(null) // groupId
+  const [newStudentName, setNewStudentName] = useState('')
+  const [editingStudent, setEditingStudent] = useState<string | null>(null) // rosterId
+  const [editStudentName, setEditStudentName] = useState('')
+
+  // Load all data
   useEffect(() => {
     if (user) {
-      fetchSchools()
+      fetchData()
     }
   }, [user])
 
-  const fetchSchools = async () => {
+  const fetchData = async () => {
     try {
       setLoading(true)
-      console.log('Fetching schools for user:', user?.id)
+      setError(null)
 
-      // Use service layer for all data fetching
       const data = await groupsPageService.fetchSchoolsPageData()
-
-      console.log('📥 Fetched data - allSubjects:', data.allSubjects.length, data.allSubjects.map(s => s.name))
 
       setSchools(data.schools)
       setAllSubjects(data.allSubjects)
-      setSubjects(data.subjectsBySchool)
-      setGroups(data.groupsBySubject)
-      setRosters(data.rostersByGroup)
+      setGroupsBySchool(data.groupsBySchool)
+      setGroupsBySubject(data.groupsBySubject)
+      setRostersByGroup(data.rostersByGroup)
 
-      // Implement smart collapsing logic
-      const newCollapsedSubjects: Record<string, boolean> = {}
+      // Smart collapsing: collapse groups by default
       const newCollapsedGroups: Record<string, boolean> = {}
-
-      data.schools.forEach(school => {
-        const schoolSubjects = data.subjectsBySchool[school.id] || []
-        const totalGroups = schoolSubjects.reduce<number>((sum, subject) => {
-          return sum + (data.groupsBySubject[subject.id]?.length || 0)
-        }, 0)
-
-        // Smart collapsing: if >6 total groups and multiple subjects, auto-collapse subjects
-        if (totalGroups > 6 && schoolSubjects.length > 1) {
-          schoolSubjects.forEach(subject => {
-            newCollapsedSubjects[subject.id] = true
-          })
-        }
-
-        // Initialize all groups as collapsed by default (student lists hidden)
-        schoolSubjects.forEach(subject => {
-          const subjectGroups = data.groupsBySubject[subject.id] || []
-          subjectGroups.forEach(group => {
-            newCollapsedGroups[group.id] = true
-          })
-        })
+      Object.values(data.groupsBySchool).flat().forEach(group => {
+        newCollapsedGroups[group.id] = true
       })
-
-      setCollapsedSubjects(newCollapsedSubjects)
       setCollapsedGroups(newCollapsedGroups)
     } catch (err: any) {
-      setError(err.message)
+      setError(err.message || 'Failed to load data')
     } finally {
       setLoading(false)
     }
   }
 
-  // Helper functions for collapsing
+  // ==================== SCHOOL CRUD ====================
+
+  const handleAddSchool = async (e: React.FormEvent) => {
+    e.preventDefault()
+    if (!user || !newSchoolName.trim()) return
+
+    try {
+      const school = await groupsPageService.createSchoolWithUser({
+        name: newSchoolName.trim(),
+        userId: user.id
+      })
+
+      setSchools([...schools, school])
+      setNewSchoolName('')
+      setShowAddSchool(false)
+    } catch (err: any) {
+      setError(err.message)
+    }
+  }
+
+  const handleUpdateSchool = async (schoolId: string, newName: string) => {
+    if (!newName.trim()) return
+
+    try {
+      const school = await groupsPageService.updateSchoolName(schoolId, newName.trim())
+
+      setSchools(schools.map(s => s.id === schoolId ? school : s))
+      setEditingSchool(null)
+      setEditSchoolName('')
+    } catch (err: any) {
+      setError(err.message)
+    }
+  }
+
+  const handleDeleteSchool = async (schoolId: string) => {
+    if (!confirm('Delete this school? All groups and students will also be deleted.')) return
+
+    try {
+      await groupsPageService.deleteSchoolById(schoolId)
+
+      setSchools(schools.filter(s => s.id !== schoolId))
+
+      // Remove groups for this school
+      const newGroupsBySchool = { ...groupsBySchool }
+      delete newGroupsBySchool[schoolId]
+      setGroupsBySchool(newGroupsBySchool)
+    } catch (err: any) {
+      setError(err.message)
+    }
+  }
+
+  // ==================== SUBJECT CRUD ====================
+
+  const handleAddSubject = async (e: React.FormEvent, schoolId: string) => {
+    e.preventDefault()
+    if (!user || !newSubjectName.trim()) return
+
+    try {
+      // Check if subject already exists
+      const existingSubject = allSubjects.find(
+        s => s.name.toLowerCase() === newSubjectName.trim().toLowerCase()
+      )
+
+      let subject: Subject
+      if (existingSubject) {
+        // Use existing subject
+        subject = existingSubject
+      } else {
+        // Create new subject
+        subject = await groupsPageService.createSubjectGlobal({
+          name: newSubjectName.trim(),
+          userId: user.id
+        })
+        setAllSubjects([...allSubjects, subject])
+      }
+
+      setNewSubjectName('')
+      setShowAddSubject(null)
+    } catch (err: any) {
+      setError(err.message)
+    }
+  }
+
+  const handleUpdateSubject = async (subjectId: string, newName: string) => {
+    if (!user || !newName.trim()) return
+
+    try {
+      const subject = await groupsPageService.updateSubjectName(subjectId, newName.trim(), user.id)
+
+      setAllSubjects(allSubjects.map(s => s.id === subjectId ? subject : s))
+      setEditingSubject(null)
+      setEditSubjectName('')
+      await fetchData() // Refresh to see changes
+    } catch (err: any) {
+      setError(err.message)
+    }
+  }
+
+  const handleDeleteSubject = async (subjectId: string) => {
+    if (!user) return
+
+    const groupCount = groupsBySubject[subjectId]?.length || 0
+    let confirmMsg = `Delete subject "${allSubjects.find(s => s.id === subjectId)?.name}"?`
+    if (groupCount > 0) {
+      confirmMsg += `\n\n${groupCount} group(s) will be moved to "General Teaching".`
+    }
+
+    if (!confirm(confirmMsg)) return
+
+    try {
+      await groupsPageService.deleteSubjectGlobal(subjectId, user.id)
+
+      setAllSubjects(allSubjects.filter(s => s.id !== subjectId))
+      await fetchData() // Refresh to see group reassignments
+    } catch (err: any) {
+      setError(err.message)
+    }
+  }
+
+  // ==================== GROUP CRUD ====================
+
+  const handleAddGroup = async (e: React.FormEvent, schoolId: string, subjectId: string) => {
+    e.preventDefault()
+    if (!newGroupName.trim()) return
+
+    try {
+      const group = await groupsPageService.createGroupWithRelations({
+        schoolId,
+        subjectId,
+        name: newGroupName.trim(),
+        timeslots: newGroupTimeslots.filter(t => t.day && t.startTime && t.endTime)
+      })
+
+      setGroupsBySchool({
+        ...groupsBySchool,
+        [schoolId]: [...(groupsBySchool[schoolId] || []), group]
+      })
+      setGroupsBySubject({
+        ...groupsBySubject,
+        [subjectId]: [...(groupsBySubject[subjectId] || []), group]
+      })
+      setCollapsedGroups({ ...collapsedGroups, [group.id]: true })
+
+      setNewGroupName('')
+      setNewGroupTimeslots([])
+      setShowAddGroup(null)
+    } catch (err: any) {
+      setError(err.message)
+    }
+  }
+
+  const handleUpdateGroup = async (groupId: string, schoolId: string, subjectId: string) => {
+    if (!editGroupName.trim()) return
+
+    try {
+      const group = await groupsPageService.updateGroupWithRelations({
+        groupId,
+        schoolId,
+        subjectId,
+        name: editGroupName.trim(),
+        timeslots: editGroupTimeslots.filter(t => t.day && t.startTime && t.endTime)
+      })
+
+      setGroupsBySchool({
+        ...groupsBySchool,
+        [schoolId]: (groupsBySchool[schoolId] || []).map(g => g.id === groupId ? group : g)
+      })
+      setGroupsBySubject({
+        ...groupsBySubject,
+        [subjectId]: (groupsBySubject[subjectId] || []).map(g => g.id === groupId ? group : g)
+      })
+
+      setEditingGroup(null)
+      setEditGroupName('')
+      setEditGroupTimeslots([])
+    } catch (err: any) {
+      setError(err.message)
+    }
+  }
+
+  const handleDeleteGroup = async (groupId: string, schoolId: string, subjectId: string) => {
+    if (!confirm('Delete this group? All lessons and student records will be deleted.')) return
+
+    try {
+      await groupsPageService.deleteGroupById(groupId)
+
+      setGroupsBySchool({
+        ...groupsBySchool,
+        [schoolId]: (groupsBySchool[schoolId] || []).filter(g => g.id !== groupId)
+      })
+      setGroupsBySubject({
+        ...groupsBySubject,
+        [subjectId]: (groupsBySubject[subjectId] || []).filter(g => g.id !== groupId)
+      })
+
+      const newRosters = { ...rostersByGroup }
+      delete newRosters[groupId]
+      setRostersByGroup(newRosters)
+    } catch (err: any) {
+      setError(err.message)
+    }
+  }
+
+  // ==================== ROSTER CRUD ====================
+
+  const handleAddStudent = async (e: React.FormEvent, groupId: string) => {
+    e.preventDefault()
+    if (!newStudentName.trim()) return
+
+    try {
+      const student = await groupsPageService.addStudentToGroup(groupId, newStudentName.trim())
+
+      setRostersByGroup({
+        ...rostersByGroup,
+        [groupId]: [...(rostersByGroup[groupId] || []), student]
+      })
+
+      setNewStudentName('')
+      setShowAddStudent(null)
+    } catch (err: any) {
+      setError(err.message)
+    }
+  }
+
+  const handleUpdateStudent = async (studentId: string, newName: string, groupId: string) => {
+    if (!newName.trim()) return
+
+    try {
+      const student = await groupsPageService.updateStudentName(studentId, newName.trim())
+
+      setRostersByGroup({
+        ...rostersByGroup,
+        [groupId]: (rostersByGroup[groupId] || []).map(s => s.id === studentId ? student : s)
+      })
+
+      setEditingStudent(null)
+      setEditStudentName('')
+    } catch (err: any) {
+      setError(err.message)
+    }
+  }
+
+  const handleDeleteStudent = async (studentId: string, groupId: string) => {
+    if (!confirm('Remove this student from the group?')) return
+
+    try {
+      await groupsPageService.deleteStudentById(studentId)
+
+      setRostersByGroup({
+        ...rostersByGroup,
+        [groupId]: (rostersByGroup[groupId] || []).filter(s => s.id !== studentId)
+      })
+    } catch (err: any) {
+      setError(err.message)
+    }
+  }
+
+  // ==================== HELPER FUNCTIONS ====================
+
   const toggleSchoolCollapse = (schoolId: string) => {
-    setCollapsedSchools(prev => ({
-      ...prev,
-      [schoolId]: !prev[schoolId]
-    }))
+    setCollapsedSchools(prev => ({ ...prev, [schoolId]: !prev[schoolId] }))
   }
 
   const toggleSubjectCollapse = (subjectId: string) => {
-    setCollapsedSubjects(prev => ({
-      ...prev,
-      [subjectId]: !prev[subjectId]
-    }))
+    setCollapsedSubjects(prev => ({ ...prev, [subjectId]: !prev[subjectId] }))
   }
 
   const toggleGroupCollapse = (groupId: string) => {
-    setCollapsedGroups(prev => ({
-      ...prev,
-      [groupId]: !prev[groupId]
-    }))
+    setCollapsedGroups(prev => ({ ...prev, [groupId]: !prev[groupId] }))
   }
 
-  // Timeslot helpers
-  const addTimeslot = () => {
-    setTimeslots([...timeslots, { day: '', startTime: '', endTime: '' }])
-  }
-
-  const updateTimeslot = (index: number, field: keyof Timeslot, value: string) => {
-    const updated = timeslots.map((slot, i) =>
-      i === index ? { ...slot, [field]: value } : slot
-    )
-    setTimeslots(updated)
-  }
-
-  const removeTimeslot = (index: number) => {
-    setTimeslots(timeslots.filter((_, i) => i !== index))
-  }
-
-  // Edit timeslot helpers
-  const addEditTimeslot = () => {
-    setEditGroupTimeslots([...editGroupTimeslots, { day: '', startTime: '', endTime: '' }])
-  }
-
-  const updateEditTimeslot = (index: number, field: keyof Timeslot, value: string) => {
-    const updated = editGroupTimeslots.map((slot, i) =>
-      i === index ? { ...slot, [field]: value } : slot
-    )
-    setEditGroupTimeslots(updated)
-  }
-
-  const removeEditTimeslot = (index: number) => {
-    setEditGroupTimeslots(editGroupTimeslots.filter((_, i) => i !== index))
-  }
-
-  // Group Overview Modal helpers
   const openGroupOverview = (group: Group, school: School, subject: Subject) => {
     setSelectedGroup(group)
     setSelectedGroupSchool(school)
@@ -189,11 +381,17 @@ export function Schools() {
   }
 
   const handleGroupUpdate = (updatedGroup: Group) => {
-    if (!selectedGroupSubject) return
+    if (!selectedGroupSchool || !selectedGroupSubject) return
 
-    setGroups({
-      ...groups,
-      [selectedGroupSubject.id]: (groups[selectedGroupSubject.id] || []).map(g =>
+    setGroupsBySchool({
+      ...groupsBySchool,
+      [selectedGroupSchool.id]: (groupsBySchool[selectedGroupSchool.id] || []).map(g =>
+        g.id === updatedGroup.id ? updatedGroup : g
+      )
+    })
+    setGroupsBySubject({
+      ...groupsBySubject,
+      [selectedGroupSubject.id]: (groupsBySubject[selectedGroupSubject.id] || []).map(g =>
         g.id === updatedGroup.id ? updatedGroup : g
       )
     })
@@ -202,328 +400,68 @@ export function Schools() {
 
   const handleRosterUpdate = (updatedRoster: RosterItem[]) => {
     if (!selectedGroup) return
-
-    setRosters({
-      ...rosters,
-      [selectedGroup.id]: updatedRoster
-    })
+    setRostersByGroup({ ...rostersByGroup, [selectedGroup.id]: updatedRoster })
   }
 
-  const handleGroupDelete = (groupId: string) => {
-    if (!selectedGroupSubject) return
+  const handleGroupDeleteFromModal = (groupId: string) => {
+    if (!selectedGroupSchool || !selectedGroupSubject) return
 
-    // Remove group from groups state
-    setGroups({
-      ...groups,
-      [selectedGroupSubject.id]: (groups[selectedGroupSubject.id] || []).filter(g => g.id !== groupId)
+    setGroupsBySchool({
+      ...groupsBySchool,
+      [selectedGroupSchool.id]: (groupsBySchool[selectedGroupSchool.id] || []).filter(g => g.id !== groupId)
+    })
+    setGroupsBySubject({
+      ...groupsBySubject,
+      [selectedGroupSubject.id]: (groupsBySubject[selectedGroupSubject.id] || []).filter(g => g.id !== groupId)
     })
 
-    // Remove roster for this group
-    const newRosters = { ...rosters }
+    const newRosters = { ...rostersByGroup }
     delete newRosters[groupId]
-    setRosters(newRosters)
+    setRostersByGroup(newRosters)
   }
 
-  const addSchool = async (e: React.FormEvent) => {
-    e.preventDefault()
-    if (!newSchoolName.trim() || !user) return
-
-    try {
-      const data = await groupsPageService.createSchoolWithUser({
-        name: newSchoolName.trim(),
-        userId: user.id
-      })
-
-      setSchools([...schools, data])
-      setNewSchoolName('')
-      setShowAddSchool(false)
-    } catch (err: any) {
-      setError(err.message)
-    }
+  // Timeslot helpers
+  const addTimeslot = () => {
+    setNewGroupTimeslots([...newGroupTimeslots, { day: '', startTime: '', endTime: '' }])
   }
 
-  const updateSchool = async (schoolId: string, newName: string) => {
-    if (!newName.trim()) return
-
-    try {
-      const data = await groupsPageService.updateSchoolName(schoolId, newName.trim())
-
-      setSchools(schools.map(s => s.id === schoolId ? data : s))
-      setEditingSchool(null)
-      setEditSchoolName('')
-    } catch (err: any) {
-      setError(err.message)
-    }
+  const updateTimeslot = (index: number, field: keyof Timeslot, value: string) => {
+    setNewGroupTimeslots(newGroupTimeslots.map((slot, i) =>
+      i === index ? { ...slot, [field]: value } : slot
+    ))
   }
 
-  const deleteSchool = async (schoolId: string) => {
-    if (!confirm('Are you sure you want to delete this school? This will also delete all its subjects and related data.')) return
-
-    try {
-      await groupsPageService.deleteSchoolById(schoolId)
-
-      setSchools(schools.filter(s => s.id !== schoolId))
-      // Remove subjects for this school
-      const newSubjects = { ...subjects }
-      delete newSubjects[schoolId]
-      setSubjects(newSubjects)
-    } catch (err: any) {
-      setError(err.message)
-    }
+  const removeTimeslot = (index: number) => {
+    setNewGroupTimeslots(newGroupTimeslots.filter((_, i) => i !== index))
   }
 
-  const addSubject = async (e: React.FormEvent) => {
-    e.preventDefault()
-    if (!selectedSchool) return
-
-    try {
-      let subject: Subject
-
-      if (subjectSelectionMode === 'existing') {
-        // Assign existing subject
-        if (!selectedSubjectId) {
-          setError('Please select a subject')
-          return
-        }
-
-        await groupsPageService.assignSubjectToSchool(selectedSchool, selectedSubjectId)
-
-        // Find the subject in allSubjects
-        subject = allSubjects.find(s => s.id === selectedSubjectId)!
-      } else {
-        // Create new subject
-        if (!newSubjectName.trim()) {
-          setError('Please enter a subject name')
-          return
-        }
-
-        // Check if subject with this name already exists
-        const existingSubject = allSubjects.find(
-          s => s.name.toLowerCase() === newSubjectName.trim().toLowerCase()
-        )
-
-        if (existingSubject) {
-          if (!confirm(`A subject named "${existingSubject.name}" already exists. Do you want to use the existing subject instead of creating a duplicate?`)) {
-            return
-          }
-
-          // Use existing subject
-          await groupsPageService.assignSubjectToSchool(selectedSchool, existingSubject.id)
-
-          subject = existingSubject
-        } else {
-          // Create new subject and assign to school
-          subject = await groupsPageService.createSubjectGlobal({
-            name: newSubjectName.trim(),
-            schoolId: selectedSchool
-          })
-
-          // Add to allSubjects
-          setAllSubjects([...allSubjects, subject])
-        }
-      }
-
-      // Add subject to local state with school_id for UI compatibility
-      const subjectWithSchool = { ...subject, school_id: selectedSchool }
-      setSubjects({
-        ...subjects,
-        [selectedSchool]: [...(subjects[selectedSchool] || []), subjectWithSchool as any]
-      })
-
-      setNewSubjectName('')
-      setSelectedSubjectId('')
-      setShowAddSubject(false)
-      setSelectedSchool(null)
-      setSubjectSelectionMode('existing')
-    } catch (err: any) {
-      setError(err.message)
-    }
+  const addEditTimeslot = () => {
+    setEditGroupTimeslots([...editGroupTimeslots, { day: '', startTime: '', endTime: '' }])
   }
 
-  const updateSubject = async (subjectId: string, newName: string, schoolId: string) => {
-    if (!newName.trim()) return
-
-    try {
-      // Use reassignSchoolSubject which handles both rename and reassignment
-      const data = await groupsPageService.reassignSchoolSubject(schoolId, subjectId, newName.trim())
-
-      // If the subject changed (reassignment happened), update UI accordingly
-      if (data.id !== subjectId) {
-        // Subject was reassigned to an existing one
-        // Remove old subject from this school's list, add new one
-        setSubjects({
-          ...subjects,
-          [schoolId]: [
-            ...(subjects[schoolId] || []).filter(s => s.id !== subjectId),
-            data
-          ]
-        })
-
-        // Update allSubjects if needed
-        if (!allSubjects.find(s => s.id === data.id)) {
-          setAllSubjects([...allSubjects, data])
-        }
-      } else {
-        // Subject was renamed in place
-        setSubjects({
-          ...subjects,
-          [schoolId]: (subjects[schoolId] || []).map(s => s.id === subjectId ? data : s)
-        })
-
-        // Update allSubjects too
-        setAllSubjects(allSubjects.map(s => s.id === subjectId ? data : s))
-      }
-
-      setEditingSubject(null)
-      setEditSubjectName('')
-
-      // Refresh to get accurate state
-      fetchSchools()
-    } catch (err: any) {
-      setError(err.message)
-    }
+  const updateEditTimeslot = (index: number, field: keyof Timeslot, value: string) => {
+    setEditGroupTimeslots(editGroupTimeslots.map((slot, i) =>
+      i === index ? { ...slot, [field]: value } : slot
+    ))
   }
 
-  const deleteSubject = async (subjectId: string, schoolId: string) => {
-    if (!confirm('Remove this subject from the school? (Groups will remain but be unassigned)')) return
-
-    try {
-      // Unassign subject from school
-      await groupsPageService.removeSubjectFromSchool(schoolId, subjectId)
-
-      // Remove subject from local state for this school
-      setSubjects({
-        ...subjects,
-        [schoolId]: (subjects[schoolId] || []).filter(s => s.id !== subjectId)
-      })
-    } catch (err: any) {
-      setError(err.message)
-    }
+  const removeEditTimeslot = (index: number) => {
+    setEditGroupTimeslots(editGroupTimeslots.filter((_, i) => i !== index))
   }
 
-  // Group CRUD operations
-  const addGroup = async (e: React.FormEvent, subjectId: string, schoolId: string) => {
-    e.preventDefault()
-    if (!newGroupName.trim()) return
-
-    try {
-      const data = await groupsPageService.createGroupWithRelations({
-        schoolId,
-        subjectId,
-        name: newGroupName.trim(),
-        timeslots: timeslots.filter(slot => slot.day && slot.startTime && slot.endTime)
-      })
-
-      setGroups({
-        ...groups,
-        [subjectId]: [...(groups[subjectId] || []), data]
-      })
-      // Set new group as collapsed by default
-      setCollapsedGroups({
-        ...collapsedGroups,
-        [data.id]: true
-      })
-      setNewGroupName('')
-      setTimeslots([])
-      setShowAddGroup(null)
-    } catch (err: any) {
-      setError(err.message)
-    }
+  // Get subjects used by a school (via groups)
+  const getSchoolSubjects = (schoolId: string): Subject[] => {
+    const schoolGroups = groupsBySchool[schoolId] || []
+    const subjectIds = new Set(schoolGroups.map(g => g.subject_id))
+    return allSubjects.filter(s => subjectIds.has(s.id))
   }
 
-  const updateGroup = async (groupId: string, subjectId: string, schoolId: string) => {
-    if (!editGroupName.trim()) return
-
-    try {
-      const data = await groupsPageService.updateGroupWithRelations({
-        groupId,
-        schoolId,
-        subjectId,
-        name: editGroupName.trim(),
-        timeslots: editGroupTimeslots.filter(slot => slot.day && slot.startTime && slot.endTime)
-      })
-
-      setGroups({
-        ...groups,
-        [subjectId]: (groups[subjectId] || []).map(g => g.id === groupId ? data : g)
-      })
-      setEditingGroup(null)
-      setEditGroupName('')
-      setEditGroupTimeslots([])
-    } catch (err: any) {
-      setError(err.message)
-    }
+  // Get groups for a school+subject combination
+  const getSchoolSubjectGroups = (schoolId: string, subjectId: string): Group[] => {
+    return (groupsBySchool[schoolId] || []).filter(g => g.subject_id === subjectId)
   }
 
-  const deleteGroup = async (groupId: string, subjectId: string) => {
-    if (!confirm('Are you sure you want to delete this group? This will also delete all its lessons and related data.')) return
-
-    try {
-      await groupsPageService.deleteGroupById(groupId)
-
-      setGroups({
-        ...groups,
-        [subjectId]: (groups[subjectId] || []).filter(g => g.id !== groupId)
-      })
-      // Remove roster items for this group
-      const newRosters = { ...rosters }
-      delete newRosters[groupId]
-      setRosters(newRosters)
-    } catch (err: any) {
-      setError(err.message)
-    }
-  }
-
-  // Student CRUD operations
-  const addStudent = async (e: React.FormEvent, groupId: string) => {
-    e.preventDefault()
-    if (!newStudentName.trim()) return
-
-    try {
-      const data = await groupsPageService.addStudentToGroup(groupId, newStudentName.trim())
-
-      setRosters({
-        ...rosters,
-        [groupId]: [...(rosters[groupId] || []), data]
-      })
-      setNewStudentName('')
-      setShowAddStudent(null)
-    } catch (err: any) {
-      setError(err.message)
-    }
-  }
-
-  const updateStudent = async (studentId: string, newName: string, groupId: string) => {
-    if (!newName.trim()) return
-
-    try {
-      const data = await groupsPageService.updateStudentName(studentId, newName.trim())
-
-      setRosters({
-        ...rosters,
-        [groupId]: (rosters[groupId] || []).map(s => s.id === studentId ? data : s)
-      })
-      setEditingStudent(null)
-      setEditStudentName('')
-    } catch (err: any) {
-      setError(err.message)
-    }
-  }
-
-  const deleteStudent = async (studentId: string, groupId: string) => {
-    if (!confirm('Are you sure you want to remove this student from the group?')) return
-
-    try {
-      await groupsPageService.deleteStudentById(studentId)
-
-      setRosters({
-        ...rosters,
-        [groupId]: (rosters[groupId] || []).filter(s => s.id !== studentId)
-      })
-    } catch (err: any) {
-      setError(err.message)
-    }
-  }
+  // ==================== RENDER ====================
 
   if (loading) {
     return (
@@ -533,13 +471,13 @@ export function Schools() {
     )
   }
 
-  // Filter schools based on selected filter
-  const filteredSchools = schoolFilter
-    ? schools.filter(school => school.id === schoolFilter)
-    : schools
+  if (!user) {
+    return <div className="p-8">Please log in</div>
+  }
 
   return (
     <div className="space-y-6">
+      {/* Header */}
       <div className="flex justify-between items-center">
         <h2 className="text-2xl font-bold">School Overview</h2>
         <div className="flex gap-2">
@@ -558,33 +496,18 @@ export function Schools() {
         </div>
       </div>
 
-      {schools.length > 1 && (
-        <div className="flex gap-4 items-center">
-          <label className="text-sm font-medium">Filter by School:</label>
-          <select
-            value={schoolFilter}
-            onChange={(e) => setSchoolFilter(e.target.value)}
-            className="px-3 py-2 border border-gray-300 rounded focus:outline-none focus:border-blue-500"
-          >
-            <option value="">All Schools</option>
-            {schools.map(school => (
-              <option key={school.id} value={school.id}>
-                {school.name}
-              </option>
-            ))}
-          </select>
-        </div>
-      )}
-
+      {/* Error */}
       {error && (
         <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded">
           {error}
+          <button onClick={() => setError(null)} className="ml-4 underline">Dismiss</button>
         </div>
       )}
 
+      {/* Add School Form */}
       {showAddSchool && (
         <div className="bg-gray-50 dark:bg-gray-800 p-4 rounded-lg">
-          <form onSubmit={addSchool} className="space-y-4">
+          <form onSubmit={handleAddSchool} className="space-y-4">
             <div>
               <label className="block text-sm font-medium mb-2">School Name</label>
               <input
@@ -594,6 +517,7 @@ export function Schools() {
                 placeholder="Enter school name"
                 className="w-full px-3 py-2 border border-gray-300 rounded focus:outline-none focus:border-blue-500"
                 required
+                autoFocus
               />
             </div>
             <div className="flex gap-2">
@@ -618,688 +542,455 @@ export function Schools() {
         </div>
       )}
 
-      {showAddSubject && selectedSchool && (
-        <div className="bg-gray-50 dark:bg-gray-800 p-4 rounded-lg">
-          <form onSubmit={addSubject} className="space-y-4">
-            <div>
-              <label className="block text-sm font-medium mb-2">Add Subject to School</label>
-              <div className="flex gap-2 mb-3">
-                <button
-                  type="button"
-                  onClick={() => setSubjectSelectionMode('existing')}
-                  className={`px-3 py-1 rounded text-sm ${
-                    subjectSelectionMode === 'existing'
-                      ? 'bg-blue-600 text-white'
-                      : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
-                  }`}
-                >
-                  Select Existing
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setSubjectSelectionMode('new')}
-                  className={`px-3 py-1 rounded text-sm ${
-                    subjectSelectionMode === 'new'
-                      ? 'bg-blue-600 text-white'
-                      : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
-                  }`}
-                >
-                  Create New
-                </button>
-              </div>
-
-              {subjectSelectionMode === 'existing' ? (
-                <select
-                  value={selectedSubjectId}
-                  onChange={(e) => setSelectedSubjectId(e.target.value)}
-                  className="w-full px-3 py-2 border border-gray-300 rounded focus:outline-none focus:border-blue-500"
-                  required
-                >
-                  <option value="">Select a subject...</option>
-                  {allSubjects
-                    .filter(s => !subjects[selectedSchool]?.some(ss => ss.id === s.id))
-                    .map(subject => (
-                      <option key={subject.id} value={subject.id}>
-                        {subject.name}
-                      </option>
-                    ))}
-                </select>
-              ) : (
-                <input
-                  type="text"
-                  value={newSubjectName}
-                  onChange={(e) => setNewSubjectName(e.target.value)}
-                  placeholder="Enter new subject name"
-                  className="w-full px-3 py-2 border border-gray-300 rounded focus:outline-none focus:border-blue-500"
-                  required
-                />
-              )}
-            </div>
-            <div className="flex gap-2">
-              <button
-                type="submit"
-                className="bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700"
-              >
-                {subjectSelectionMode === 'existing' ? 'Assign Subject' : 'Create & Assign'}
-              </button>
-              <button
-                type="button"
-                onClick={() => {
-                  setShowAddSubject(false)
-                  setNewSubjectName('')
-                  setSelectedSubjectId('')
-                  setSelectedSchool(null)
-                  setSubjectSelectionMode('existing')
-                }}
-                className="bg-gray-300 text-gray-700 px-4 py-2 rounded hover:bg-gray-400"
-              >
-                Cancel
-              </button>
-            </div>
-          </form>
-        </div>
-      )}
-
+      {/* Schools List - CONTINUED IN NEXT PART DUE TO LENGTH */}
       <div className="grid gap-6">
         {schools.length === 0 ? (
           <div className="text-center py-8 text-gray-500">
             No schools yet. Add your first school to get started!
           </div>
-        ) : filteredSchools.length === 0 ? (
-          <div className="text-center py-8 text-gray-500">
-            No schools match the selected filter.
-          </div>
         ) : (
-          filteredSchools.map((school) => (
-            <div key={school.id} className="bg-white dark:bg-gray-800 border rounded-lg">
-              {/* School Header - Clickable to collapse */}
-              <div
-                className="p-6 cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
-                onClick={() => toggleSchoolCollapse(school.id)}
-              >
-                <div className="flex justify-between items-center">
-                  <div className="flex items-center gap-3">
-                    <span className="text-xl">
-                      {collapsedSchools[school.id] ? '📁' : '📂'}
-                    </span>
-                    {editingSchool === school.id ? (
-                      <div className="flex gap-2 items-center" onClick={(e) => e.stopPropagation()}>
-                        <input
-                          type="text"
-                          value={editSchoolName}
-                          onChange={(e) => setEditSchoolName(e.target.value)}
-                          className="text-xl font-semibold bg-transparent border-b border-blue-500 focus:outline-none"
-                          onKeyDown={(e) => {
-                            if (e.key === 'Enter') {
-                              updateSchool(school.id, editSchoolName)
-                            } else if (e.key === 'Escape') {
-                              setEditingSchool(null)
-                              setEditSchoolName('')
-                            }
-                          }}
-                          autoFocus
-                        />
-                        <button
-                          onClick={() => updateSchool(school.id, editSchoolName)}
-                          className="text-green-600 hover:text-green-800 text-sm"
-                        >
-                          ✓
-                        </button>
-                        <button
-                          onClick={() => {
-                            setEditingSchool(null)
-                            setEditSchoolName('')
-                          }}
-                          className="text-gray-600 hover:text-gray-800 text-sm"
-                        >
-                          ✕
-                        </button>
-                      </div>
-                    ) : (
-                      <div>
-                        <h3 className="text-xl font-semibold">{school.name}</h3>
-                        <p className="text-gray-500 text-sm">
-                          {subjects[school.id]?.length || 0} subjects, {subjects[school.id]?.reduce((sum, s) => sum + (groups[s.id]?.filter(g => g.school_id === school.id).length || 0), 0) || 0} groups
-                        </p>
-                      </div>
-                    )}
-                  </div>
-                  <div className="flex gap-2" onClick={(e) => e.stopPropagation()}>
-                    <button
-                      onClick={() => {
-                        setSelectedSchool(school.id)
-                        setShowAddSubject(true)
-                      }}
-                      className="bg-green-600 text-white px-3 py-1 rounded text-sm hover:bg-green-700"
-                    >
-                      Add Subject
-                    </button>
-                    <button
-                      onClick={() => {
-                        setEditingSchool(school.id)
-                        setEditSchoolName(school.name)
-                      }}
-                      className="bg-blue-600 text-white px-3 py-1 rounded text-sm hover:bg-blue-700"
-                    >
-                      Edit
-                    </button>
-                    <button
-                      onClick={() => deleteSchool(school.id)}
-                      className="bg-red-600 text-white px-3 py-1 rounded text-sm hover:bg-red-700"
-                    >
-                      Delete
-                    </button>
-                  </div>
-                </div>
-              </div>
+          schools.map((school) => {
+            const schoolSubjects = getSchoolSubjects(school.id)
+            const totalGroups = (groupsBySchool[school.id] || []).length
 
-              {/* School Content - Only shown when not collapsed */}
-              {!collapsedSchools[school.id] && (
-                <div className="px-6 pb-6">
-                  {/* Add Subject Form */}
-                  {showAddSubject && selectedSchool === school.id && (
-                    <div className="mb-4 bg-gray-50 dark:bg-gray-700 p-4 rounded-lg">
-                      <form onSubmit={addSubject} className="space-y-4">
-                        <div>
-                          <label className="block text-sm font-medium mb-2">Subject Name</label>
+            return (
+              <div key={school.id} className="bg-white dark:bg-gray-800 border rounded-lg">
+                {/* School Header */}
+                <div
+                  className="p-6 cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
+                  onClick={() => toggleSchoolCollapse(school.id)}
+                >
+                  <div className="flex justify-between items-center">
+                    <div className="flex items-center gap-3">
+                      <span className="text-xl">
+                        {collapsedSchools[school.id] ? '=�' : '=�'}
+                      </span>
+                      {editingSchool === school.id ? (
+                        <div className="flex gap-2 items-center" onClick={(e) => e.stopPropagation()}>
                           <input
                             type="text"
-                            value={newSubjectName}
-                            onChange={(e) => setNewSubjectName(e.target.value)}
-                            placeholder="Enter subject name"
-                            className="w-full px-3 py-2 border border-gray-300 rounded focus:outline-none focus:border-blue-500"
-                            required
-                          />
-                        </div>
-                        <div className="flex gap-2">
-                          <button
-                            type="submit"
-                            className="bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700"
-                          >
-                            Add Subject
-                          </button>
-                          <button
-                            type="button"
-                            onClick={() => {
-                              setShowAddSubject(false)
-                              setNewSubjectName('')
-                              setSelectedSchool(null)
+                            value={editSchoolName}
+                            onChange={(e) => setEditSchoolName(e.target.value)}
+                            className="text-xl font-semibold bg-transparent border-b border-blue-500 focus:outline-none"
+                            onKeyDown={(e) => {
+                              if (e.key === 'Enter') handleUpdateSchool(school.id, editSchoolName)
+                              if (e.key === 'Escape') {
+                                setEditingSchool(null)
+                                setEditSchoolName('')
+                              }
                             }}
-                            className="bg-gray-300 text-gray-700 px-4 py-2 rounded hover:bg-gray-400"
+                            autoFocus
+                          />
+                          <button
+                            onClick={() => handleUpdateSchool(school.id, editSchoolName)}
+                            className="text-green-600 hover:text-green-800 text-sm"
                           >
-                            Cancel
+                            
+                          </button>
+                          <button
+                            onClick={() => {
+                              setEditingSchool(null)
+                              setEditSchoolName('')
+                            }}
+                            className="text-gray-600 hover:text-gray-800 text-sm"
+                          >
+                            
                           </button>
                         </div>
-                      </form>
+                      ) : (
+                        <div>
+                          <h3 className="text-xl font-semibold">{school.name}</h3>
+                          <p className="text-gray-500 text-sm">
+                            {schoolSubjects.length} subjects, {totalGroups} groups
+                          </p>
+                        </div>
+                      )}
                     </div>
-                  )}
+                    <div className="flex gap-2" onClick={(e) => e.stopPropagation()}>
+                      <button
+                        onClick={() => setShowAddSubject(school.id)}
+                        className="bg-green-600 text-white px-3 py-1 rounded text-sm hover:bg-green-700"
+                      >
+                        Add Subject
+                      </button>
+                      <button
+                        onClick={() => {
+                          setEditingSchool(school.id)
+                          setEditSchoolName(school.name)
+                        }}
+                        className="bg-blue-600 text-white px-3 py-1 rounded text-sm hover:bg-blue-700"
+                      >
+                        Edit
+                      </button>
+                      <button
+                        onClick={() => handleDeleteSchool(school.id)}
+                        className="bg-red-600 text-white px-3 py-1 rounded text-sm hover:bg-red-700"
+                      >
+                        Delete
+                      </button>
+                    </div>
+                  </div>
+                </div>
 
-                  {/* Subjects */}
-                  <div className="space-y-4">
-                    {subjects[school.id] && subjects[school.id].length > 0 ? (
-                      subjects[school.id].map((subject) => (
-                        <div key={subject.id} className="bg-gray-50 dark:bg-gray-700 rounded-lg">
-                          {/* Subject Header - Clickable to collapse */}
-                          <div
-                            className="p-4 cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-600 transition-colors rounded-lg"
-                            onClick={() => toggleSubjectCollapse(subject.id)}
-                          >
-                            <div className="flex justify-between items-center">
-                              <div className="flex items-center gap-2">
-                                <span className="text-lg">
-                                  {collapsedSubjects[subject.id] ? '📄' : '📋'}
-                                </span>
-                                {editingSubject?.schoolId === school.id && editingSubject?.subjectId === subject.id ? (
-                                  <div className="flex gap-2 items-center" onClick={(e) => e.stopPropagation()}>
-                                    <input
-                                      type="text"
-                                      value={editSubjectName}
-                                      onChange={(e) => setEditSubjectName(e.target.value)}
-                                      className="font-medium bg-transparent border-b border-blue-500 focus:outline-none"
-                                      onKeyDown={(e) => {
-                                        if (e.key === 'Enter') {
-                                          updateSubject(subject.id, editSubjectName, school.id)
-                                        } else if (e.key === 'Escape') {
-                                          setEditingSubject(null)
-                                          setEditSubjectName('')
-                                        }
-                                      }}
-                                      autoFocus
-                                    />
-                                    <button
-                                      onClick={() => updateSubject(subject.id, editSubjectName, school.id)}
-                                      className="text-green-600 hover:text-green-800 text-sm"
-                                    >
-                                      ✓
-                                    </button>
-                                    <button
-                                      onClick={() => {
-                                        setEditingSubject(null)
-                                        setEditSubjectName('')
-                                      }}
-                                      className="text-gray-600 hover:text-gray-800 text-sm"
-                                    >
-                                      ✕
-                                    </button>
-                                  </div>
-                                ) : (
-                                  <div>
-                                    <h4 className="font-medium">{subject.name}</h4>
-                                    <p className="text-sm text-gray-500">
-                                      {groups[subject.id]?.filter(g => g.school_id === school.id).length || 0} groups
-                                    </p>
-                                  </div>
-                                )}
-                              </div>
-                              <div className="flex gap-1" onClick={(e) => e.stopPropagation()}>
-                                <button
-                                  onClick={() => setShowAddGroup(subject.id)}
-                                  className="bg-purple-600 text-white px-2 py-1 rounded text-xs hover:bg-purple-700"
-                                >
-                                  Add Group
-                                </button>
-                                <button
-                                  onClick={() => {
-                                    setEditingSubject({ schoolId: school.id, subjectId: subject.id })
-                                    setEditSubjectName(subject.name)
-                                  }}
-                                  className="text-blue-600 hover:text-blue-800 text-sm"
-                                >
-                                  ✎
-                                </button>
-                                <button
-                                  onClick={() => deleteSubject(subject.id, school.id)}
-                                  className="text-red-600 hover:text-red-800 text-sm"
-                                >
-                                  ×
-                                </button>
-                              </div>
-                            </div>
+                {/* School Content */}
+                {!collapsedSchools[school.id] && (
+                  <div className="px-6 pb-6">
+                    {/* Add Subject Form */}
+                    {showAddSubject === school.id && (
+                      <div className="mb-4 bg-gray-50 dark:bg-gray-700 p-4 rounded-lg">
+                        <form onSubmit={(e) => handleAddSubject(e, school.id)} className="space-y-4">
+                          <div>
+                            <label className="block text-sm font-medium mb-2">Subject Name</label>
+                            <input
+                              type="text"
+                              value={newSubjectName}
+                              onChange={(e) => setNewSubjectName(e.target.value)}
+                              placeholder="Enter subject name (existing or new)"
+                              className="w-full px-3 py-2 border border-gray-300 rounded focus:outline-none focus:border-blue-500"
+                              required
+                              autoFocus
+                            />
+                            <p className="text-xs text-gray-500 mt-1">
+                              Tip: If a subject with this name exists, it will be used instead of creating a duplicate.
+                            </p>
                           </div>
+                          <div className="flex gap-2">
+                            <button
+                              type="submit"
+                              className="bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700"
+                            >
+                              Add Subject
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => {
+                                setShowAddSubject(null)
+                                setNewSubjectName('')
+                              }}
+                              className="bg-gray-300 text-gray-700 px-4 py-2 rounded hover:bg-gray-400"
+                            >
+                              Cancel
+                            </button>
+                          </div>
+                        </form>
+                      </div>
+                    )}
 
-                          {/* Subject Content - Only shown when not collapsed */}
-                          {!collapsedSubjects[subject.id] && (
-                            <div className="px-4 pb-4">
-                              {/* Add Group Form */}
-                              {showAddGroup === subject.id && (
-                                <div className="mb-3 bg-white dark:bg-gray-800 p-3 rounded">
-                                  <form onSubmit={(e) => addGroup(e, subject.id, school.id)} className="space-y-3">
+                    {/* Subjects List */}
+                    <div className="space-y-4">
+                      {schoolSubjects.length === 0 ? (
+                        <p className="text-gray-500 italic">No subjects yet. Add a subject to create groups.</p>
+                      ) : (
+                        schoolSubjects.map((subject) => {
+                          const subjectGroups = getSchoolSubjectGroups(school.id, subject.id)
+
+                          return (
+                            <div key={subject.id} className="bg-gray-50 dark:bg-gray-700 rounded-lg">
+                              {/* Subject Header */}
+                              <div
+                                className="p-4 cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-600 transition-colors rounded-lg"
+                                onClick={() => toggleSubjectCollapse(subject.id)}
+                              >
+                                <div className="flex justify-between items-center">
+                                  <div className="flex items-center gap-2">
+                                    <span className="text-lg">
+                                      {collapsedSubjects[subject.id] ? '📄' : '📋'}
+                                    </span>
                                     <div>
-                                      <label className="block text-sm font-medium mb-1">Group Name</label>
-                                      <input
-                                        type="text"
-                                        value={newGroupName}
-                                        onChange={(e) => setNewGroupName(e.target.value)}
-                                        placeholder="Enter group name"
-                                        className="w-full px-2 py-1 border border-gray-300 rounded focus:outline-none focus:border-blue-500 text-sm"
-                                        required
-                                      />
+                                      <h4 className="font-medium">{subject.name}</h4>
+                                      <p className="text-sm text-gray-500">
+                                        {subjectGroups.length} group(s)
+                                      </p>
                                     </div>
-                                    <div>
-                                      <div className="flex justify-between items-center mb-1">
-                                        <label className="block text-sm font-medium">Timeslots</label>
-                                        <button
-                                          type="button"
-                                          onClick={addTimeslot}
-                                          className="bg-green-600 text-white px-2 py-1 rounded text-xs hover:bg-green-700"
-                                        >
-                                          Add Timeslot
-                                        </button>
-                                      </div>
-                                      {timeslots.length === 0 ? (
-                                        <p className="text-gray-500 text-xs italic">No timeslots added yet</p>
-                                      ) : (
-                                        <div className="space-y-1">
-                                          {timeslots.map((slot, index) => (
-                                            <div key={index} className="grid grid-cols-4 gap-1 items-center">
-                                              <select
-                                                value={slot.day}
-                                                onChange={(e) => updateTimeslot(index, 'day', e.target.value)}
-                                                className="px-2 py-1 border border-gray-300 rounded focus:outline-none focus:border-blue-500 text-xs"
-                                              >
-                                                <option value="">Day</option>
-                                                <option value="Monday">Monday</option>
-                                                <option value="Tuesday">Tuesday</option>
-                                                <option value="Wednesday">Wednesday</option>
-                                                <option value="Thursday">Thursday</option>
-                                                <option value="Friday">Friday</option>
-                                                <option value="Saturday">Saturday</option>
-                                                <option value="Sunday">Sunday</option>
-                                              </select>
-                                              <input
-                                                type="time"
-                                                value={slot.startTime}
-                                                onChange={(e) => updateTimeslot(index, 'startTime', e.target.value)}
-                                                className="px-2 py-1 border border-gray-300 rounded focus:outline-none focus:border-blue-500 text-xs"
-                                              />
-                                              <input
-                                                type="time"
-                                                value={slot.endTime}
-                                                onChange={(e) => updateTimeslot(index, 'endTime', e.target.value)}
-                                                className="px-2 py-1 border border-gray-300 rounded focus:outline-none focus:border-blue-500 text-xs"
-                                              />
-                                              <button
-                                                type="button"
-                                                onClick={() => removeTimeslot(index)}
-                                                className="text-red-600 hover:text-red-800 text-xs"
-                                              >
-                                                Remove
-                                              </button>
-                                            </div>
-                                          ))}
-                                        </div>
-                                      )}
-                                    </div>
-                                    <div className="flex gap-1">
-                                      <button
-                                        type="submit"
-                                        className="bg-purple-600 text-white px-3 py-1 rounded text-xs hover:bg-purple-700"
-                                      >
-                                        Add Group
-                                      </button>
-                                      <button
-                                        type="button"
-                                        onClick={() => {
-                                          setShowAddGroup(null)
-                                          setNewGroupName('')
-                                          setTimeslots([])
-                                        }}
-                                        className="bg-gray-300 text-gray-700 px-3 py-1 rounded text-xs hover:bg-gray-400"
-                                      >
-                                        Cancel
-                                      </button>
-                                    </div>
-                                  </form>
+                                  </div>
+                                  <div className="flex gap-1" onClick={(e) => e.stopPropagation()}>
+                                    <button
+                                      onClick={() => setShowAddGroup({ schoolId: school.id, subjectId: subject.id })}
+                                      className="bg-purple-600 text-white px-2 py-1 rounded text-xs hover:bg-purple-700"
+                                    >
+                                      Add Group
+                                    </button>
+                                  </div>
                                 </div>
-                              )}
+                              </div>
 
-                              {/* Groups */}
-                              <div className="space-y-2">
-                                {groups[subject.id] && groups[subject.id].length > 0 ? (
-                                  groups[subject.id]
-                                    .filter((group) => group.school_id === school.id)
-                                    .map((group) => (
-                                    <div key={group.id} className="bg-white dark:bg-gray-800 p-3 rounded border">
-                                      <div className="flex justify-between items-start mb-2">
-                                        {editingGroup === group.id ? (
-                                          <div className="flex-1">
-                                            <div className="flex gap-2 items-center mb-2">
-                                              <input
-                                                type="text"
-                                                value={editGroupName}
-                                                onChange={(e) => setEditGroupName(e.target.value)}
-                                                className="font-medium bg-transparent border-b border-blue-500 focus:outline-none"
-                                                onKeyDown={(e) => {
-                                                  if (e.key === 'Enter') {
-                                                    updateGroup(group.id, subject.id, school.id)
-                                                  } else if (e.key === 'Escape') {
-                                                    setEditingGroup(null)
-                                                    setEditGroupName('')
-                                                    setEditGroupTimeslots([])
-                                                  }
-                                                }}
-                                                autoFocus
-                                              />
-                                              <button
-                                                onClick={() => updateGroup(group.id, subject.id, school.id)}
-                                                className="text-green-600 hover:text-green-800 text-sm"
-                                              >
-                                                ✓
-                                              </button>
-                                              <button
-                                                onClick={() => {
-                                                  setEditingGroup(null)
-                                                  setEditGroupName('')
-                                                  setEditGroupTimeslots([])
-                                                }}
-                                                className="text-gray-600 hover:text-gray-800 text-sm"
-                                              >
-                                                ✕
-                                              </button>
-                                            </div>
-                                            <div>
-                                              <div className="flex justify-between items-center mb-1">
-                                                <label className="block text-sm font-medium">Timeslots</label>
-                                                <button
-                                                  type="button"
-                                                  onClick={addEditTimeslot}
-                                                  className="bg-green-600 text-white px-2 py-1 rounded text-xs hover:bg-green-700"
-                                                >
-                                                  Add Timeslot
-                                                </button>
-                                              </div>
-                                              {editGroupTimeslots.length === 0 ? (
-                                                <p className="text-gray-500 text-xs italic">No timeslots added yet</p>
-                                              ) : (
-                                                <div className="space-y-1">
-                                                  {editGroupTimeslots.map((slot, index) => (
-                                                    <div key={index} className="grid grid-cols-4 gap-1 items-center">
-                                                      <select
-                                                        value={slot.day}
-                                                        onChange={(e) => updateEditTimeslot(index, 'day', e.target.value)}
-                                                        className="px-2 py-1 border border-gray-300 rounded focus:outline-none focus:border-blue-500 text-xs"
-                                                      >
-                                                        <option value="">Day</option>
-                                                        <option value="Monday">Monday</option>
-                                                        <option value="Tuesday">Tuesday</option>
-                                                        <option value="Wednesday">Wednesday</option>
-                                                        <option value="Thursday">Thursday</option>
-                                                        <option value="Friday">Friday</option>
-                                                        <option value="Saturday">Saturday</option>
-                                                        <option value="Sunday">Sunday</option>
-                                                      </select>
-                                                      <input
-                                                        type="time"
-                                                        value={slot.startTime}
-                                                        onChange={(e) => updateEditTimeslot(index, 'startTime', e.target.value)}
-                                                        className="px-2 py-1 border border-gray-300 rounded focus:outline-none focus:border-blue-500 text-xs"
-                                                      />
-                                                      <input
-                                                        type="time"
-                                                        value={slot.endTime}
-                                                        onChange={(e) => updateEditTimeslot(index, 'endTime', e.target.value)}
-                                                        className="px-2 py-1 border border-gray-300 rounded focus:outline-none focus:border-blue-500 text-xs"
-                                                      />
-                                                      <button
-                                                        type="button"
-                                                        onClick={() => removeEditTimeslot(index)}
-                                                        className="text-red-600 hover:text-red-800 text-xs"
-                                                      >
-                                                        Remove
-                                                      </button>
-                                                    </div>
-                                                  ))}
-                                                </div>
-                                              )}
-                                            </div>
-                                          </div>
-                                        ) : (
-                                          <div className="flex-1">
-                                            <h5
-                                              className="font-medium text-sm cursor-pointer hover:text-blue-600 dark:hover:text-blue-400 transition-colors"
-                                              onClick={() => openGroupOverview(group, school, subject)}
-                                              title="Click to open group overview"
+                              {/* Subject Content - Groups */}
+                              {!collapsedSubjects[subject.id] && (
+                                <div className="px-4 pb-4">
+                                  {/* Add Group Form */}
+                                  {showAddGroup?.schoolId === school.id && showAddGroup?.subjectId === subject.id && (
+                                    <div className="mb-3 bg-white dark:bg-gray-800 p-3 rounded">
+                                      <form onSubmit={(e) => handleAddGroup(e, school.id, subject.id)} className="space-y-3">
+                                        <div>
+                                          <label className="block text-sm font-medium mb-1">Group Name</label>
+                                          <input
+                                            type="text"
+                                            value={newGroupName}
+                                            onChange={(e) => setNewGroupName(e.target.value)}
+                                            placeholder="Enter group name"
+                                            className="w-full px-2 py-1 border border-gray-300 rounded focus:outline-none focus:border-blue-500 text-sm"
+                                            required
+                                            autoFocus
+                                          />
+                                        </div>
+                                        <div>
+                                          <div className="flex justify-between items-center mb-1">
+                                            <label className="block text-sm font-medium">Timeslots (optional)</label>
+                                            <button
+                                              type="button"
+                                              onClick={addTimeslot}
+                                              className="bg-green-600 text-white px-2 py-1 rounded text-xs hover:bg-green-700"
                                             >
-                                              {group.name}
-                                            </h5>
-                                            <div className="text-xs text-gray-500 mt-1">
-                                              {group.timeslots && group.timeslots.length > 0 ? (
-                                                <div className="space-y-1">
-                                                  {group.timeslots.map((slot: any, index: number) => (
-                                                    <div key={index}>
-                                                      {slot.day} {slot.startTime} - {slot.endTime}
-                                                    </div>
-                                                  ))}
-                                                </div>
-                                              ) : (
-                                                <span className="italic">No schedule set</span>
-                                              )}
-                                            </div>
+                                              Add Timeslot
+                                            </button>
                                           </div>
-                                        )}
-                                        <div className="flex gap-1">
-                                          <button
-                                            onClick={() => setShowAddStudent(group.id)}
-                                            className="bg-orange-600 text-white px-2 py-1 rounded text-xs hover:bg-orange-700"
-                                          >
-                                            Add Student
-                                          </button>
-                                          <button
-                                            onClick={() => {
-                                              setEditingGroup(group.id)
-                                              setEditGroupName(group.name)
-                                              setEditGroupTimeslots(group.timeslots || [])
-                                            }}
-                                            className="text-blue-600 hover:text-blue-800 text-xs"
-                                          >
-                                            ✎
-                                          </button>
-                                          <button
-                                            onClick={() => deleteGroup(group.id, subject.id)}
-                                            className="text-red-600 hover:text-red-800 text-xs"
-                                          >
-                                            ×
-                                          </button>
-                                        </div>
-                                      </div>
-
-                                      {/* Add Student Form */}
-                                      {showAddStudent === group.id && (
-                                        <div className="mb-2 bg-gray-50 dark:bg-gray-700 p-2 rounded">
-                                          <form onSubmit={(e) => addStudent(e, group.id)}>
-                                            <div className="flex gap-1">
-                                              <input
-                                                type="text"
-                                                value={newStudentName}
-                                                onChange={(e) => setNewStudentName(e.target.value)}
-                                                placeholder="Student name"
-                                                className="flex-1 px-2 py-1 border border-gray-300 rounded focus:outline-none focus:border-blue-500 text-xs"
-                                                required
-                                                autoFocus
-                                              />
-                                              <button
-                                                type="submit"
-                                                className="bg-orange-600 text-white px-2 py-1 rounded text-xs hover:bg-orange-700"
-                                              >
-                                                Add
-                                              </button>
-                                              <button
-                                                type="button"
-                                                onClick={() => {
-                                                  setShowAddStudent(null)
-                                                  setNewStudentName('')
-                                                }}
-                                                className="bg-gray-300 text-gray-700 px-2 py-1 rounded text-xs hover:bg-gray-400"
-                                              >
-                                                Cancel
-                                              </button>
-                                            </div>
-                                          </form>
-                                        </div>
-                                      )}
-
-                                      {/* Students - Collapsible */}
-                                      {rosters[group.id] && rosters[group.id].length > 0 && (
-                                        <div className="mt-2">
-                                          <div
-                                            className="flex items-center gap-1 cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-600 p-1 rounded"
-                                            onClick={() => toggleGroupCollapse(group.id)}
-                                          >
-                                            <span className="text-xs">
-                                              {collapsedGroups[group.id] ? '👥' : '👤'}
-                                            </span>
-                                            <h6 className="text-xs font-medium">Students ({rosters[group.id].length})</h6>
-                                          </div>
-                                          {!collapsedGroups[group.id] && (
-                                            <div className="space-y-1 mt-1">
-                                              {rosters[group.id].map((student) => (
-                                                <div
-                                                  key={student.id}
-                                                  className="flex justify-between items-center bg-gray-50 dark:bg-gray-700 p-1 rounded text-xs"
-                                                >
-                                                  {editingStudent === student.id ? (
-                                                    <div className="flex gap-1 items-center flex-1">
-                                                      <input
-                                                        type="text"
-                                                        value={editStudentName}
-                                                        onChange={(e) => setEditStudentName(e.target.value)}
-                                                        className="flex-1 bg-transparent border-b border-blue-500 focus:outline-none"
-                                                        onKeyDown={(e) => {
-                                                          if (e.key === 'Enter') {
-                                                            updateStudent(student.id, editStudentName, group.id)
-                                                          } else if (e.key === 'Escape') {
-                                                            setEditingStudent(null)
-                                                            setEditStudentName('')
-                                                          }
-                                                        }}
-                                                        autoFocus
-                                                      />
-                                                      <button
-                                                        onClick={() => updateStudent(student.id, editStudentName, group.id)}
-                                                        className="text-green-600 hover:text-green-800"
-                                                      >
-                                                        ✓
-                                                      </button>
-                                                      <button
-                                                        onClick={() => {
-                                                          setEditingStudent(null)
-                                                          setEditStudentName('')
-                                                        }}
-                                                        className="text-gray-600 hover:text-gray-800"
-                                                      >
-                                                        ✕
-                                                      </button>
-                                                    </div>
-                                                  ) : (
-                                                    <>
-                                                      <span>{student.student_name}</span>
-                                                      <div className="flex gap-1">
-                                                        <button
-                                                          onClick={() => {
-                                                            setEditingStudent(student.id)
-                                                            setEditStudentName(student.student_name)
-                                                          }}
-                                                          className="text-blue-600 hover:text-blue-800"
-                                                        >
-                                                          ✎
-                                                        </button>
-                                                        <button
-                                                          onClick={() => deleteStudent(student.id, group.id)}
-                                                          className="text-red-600 hover:text-red-800"
-                                                        >
-                                                          ×
-                                                        </button>
-                                                      </div>
-                                                    </>
-                                                  )}
+                                          {newGroupTimeslots.length === 0 ? (
+                                            <p className="text-gray-500 text-xs italic">No timeslots added</p>
+                                          ) : (
+                                            <div className="space-y-1">
+                                              {newGroupTimeslots.map((slot, index) => (
+                                                <div key={index} className="grid grid-cols-4 gap-1 items-center">
+                                                  <select
+                                                    value={slot.day}
+                                                    onChange={(e) => updateTimeslot(index, 'day', e.target.value)}
+                                                    className="px-2 py-1 border border-gray-300 rounded text-xs"
+                                                  >
+                                                    <option value="">Day</option>
+                                                    <option value="Monday">Monday</option>
+                                                    <option value="Tuesday">Tuesday</option>
+                                                    <option value="Wednesday">Wednesday</option>
+                                                    <option value="Thursday">Thursday</option>
+                                                    <option value="Friday">Friday</option>
+                                                    <option value="Saturday">Saturday</option>
+                                                    <option value="Sunday">Sunday</option>
+                                                  </select>
+                                                  <input
+                                                    type="time"
+                                                    value={slot.startTime}
+                                                    onChange={(e) => updateTimeslot(index, 'startTime', e.target.value)}
+                                                    className="px-2 py-1 border border-gray-300 rounded text-xs"
+                                                  />
+                                                  <input
+                                                    type="time"
+                                                    value={slot.endTime}
+                                                    onChange={(e) => updateTimeslot(index, 'endTime', e.target.value)}
+                                                    className="px-2 py-1 border border-gray-300 rounded text-xs"
+                                                  />
+                                                  <button
+                                                    type="button"
+                                                    onClick={() => removeTimeslot(index)}
+                                                    className="text-red-600 hover:text-red-800 text-xs"
+                                                  >
+                                                    Remove
+                                                  </button>
                                                 </div>
                                               ))}
                                             </div>
                                           )}
                                         </div>
-                                      )}
+                                        <div className="flex gap-1">
+                                          <button
+                                            type="submit"
+                                            className="bg-purple-600 text-white px-3 py-1 rounded text-xs hover:bg-purple-700"
+                                          >
+                                            Add Group
+                                          </button>
+                                          <button
+                                            type="button"
+                                            onClick={() => {
+                                              setShowAddGroup(null)
+                                              setNewGroupName('')
+                                              setNewGroupTimeslots([])
+                                            }}
+                                            className="bg-gray-300 text-gray-700 px-3 py-1 rounded text-xs hover:bg-gray-400"
+                                          >
+                                            Cancel
+                                          </button>
+                                        </div>
+                                      </form>
                                     </div>
-                                  ))
-                                ) : (
-                                  <p className="text-gray-500 text-sm italic">No groups yet</p>
-                                )}
-                              </div>
+                                  )}
+
+                                  {/* Groups List */}
+                                  <div className="space-y-2">
+                                    {subjectGroups.length === 0 ? (
+                                      <p className="text-gray-500 text-sm italic">No groups yet</p>
+                                    ) : (
+                                      subjectGroups.map((group) => (
+                                        <div key={group.id} className="bg-white dark:bg-gray-800 p-3 rounded border">
+                                          <div className="flex justify-between items-start mb-2">
+                                            <div className="flex-1">
+                                              <h5
+                                                className="font-medium text-sm cursor-pointer hover:text-blue-600 dark:hover:text-blue-400 transition-colors"
+                                                onClick={() => openGroupOverview(group, school, subject)}
+                                                title="Click to open group overview"
+                                              >
+                                                {group.name}
+                                              </h5>
+                                              <div className="text-xs text-gray-500 mt-1">
+                                                {group.timeslots && group.timeslots.length > 0 ? (
+                                                  <div className="space-y-1">
+                                                    {group.timeslots.map((slot: any, index: number) => (
+                                                      <div key={index}>
+                                                        {slot.day} {slot.startTime} - {slot.endTime}
+                                                      </div>
+                                                    ))}
+                                                  </div>
+                                                ) : (
+                                                  <span className="italic">No schedule set</span>
+                                                )}
+                                              </div>
+                                            </div>
+                                            <div className="flex gap-1">
+                                              <button
+                                                onClick={() => setShowAddStudent(group.id)}
+                                                className="bg-orange-600 text-white px-2 py-1 rounded text-xs hover:bg-orange-700"
+                                              >
+                                                Add Student
+                                              </button>
+                                              <button
+                                                onClick={() => handleDeleteGroup(group.id, school.id, subject.id)}
+                                                className="text-red-600 hover:text-red-800 text-xs"
+                                              >
+                                                ×
+                                              </button>
+                                            </div>
+                                          </div>
+
+                                          {/* Add Student Form */}
+                                          {showAddStudent === group.id && (
+                                            <div className="mb-2 bg-gray-50 dark:bg-gray-700 p-2 rounded">
+                                              <form onSubmit={(e) => handleAddStudent(e, group.id)}>
+                                                <div className="flex gap-1">
+                                                  <input
+                                                    type="text"
+                                                    value={newStudentName}
+                                                    onChange={(e) => setNewStudentName(e.target.value)}
+                                                    placeholder="Student name"
+                                                    className="flex-1 px-2 py-1 border border-gray-300 rounded focus:outline-none focus:border-blue-500 text-xs"
+                                                    required
+                                                    autoFocus
+                                                  />
+                                                  <button
+                                                    type="submit"
+                                                    className="bg-orange-600 text-white px-2 py-1 rounded text-xs hover:bg-orange-700"
+                                                  >
+                                                    Add
+                                                  </button>
+                                                  <button
+                                                    type="button"
+                                                    onClick={() => {
+                                                      setShowAddStudent(null)
+                                                      setNewStudentName('')
+                                                    }}
+                                                    className="bg-gray-300 text-gray-700 px-2 py-1 rounded text-xs hover:bg-gray-400"
+                                                  >
+                                                    Cancel
+                                                  </button>
+                                                </div>
+                                              </form>
+                                            </div>
+                                          )}
+
+                                          {/* Students - Collapsible */}
+                                          {rostersByGroup[group.id] && rostersByGroup[group.id].length > 0 && (
+                                            <div className="mt-2">
+                                              <div
+                                                className="flex items-center gap-1 cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-600 p-1 rounded"
+                                                onClick={() => toggleGroupCollapse(group.id)}
+                                              >
+                                                <span className="text-xs">
+                                                  {collapsedGroups[group.id] ? '👥' : '👤'}
+                                                </span>
+                                                <h6 className="text-xs font-medium">Students ({rostersByGroup[group.id].length})</h6>
+                                              </div>
+                                              {!collapsedGroups[group.id] && (
+                                                <div className="space-y-1 mt-1">
+                                                  {rostersByGroup[group.id].map((student) => (
+                                                    <div
+                                                      key={student.id}
+                                                      className="flex justify-between items-center bg-gray-50 dark:bg-gray-700 p-1 rounded text-xs"
+                                                    >
+                                                      {editingStudent === student.id ? (
+                                                        <div className="flex gap-1 items-center flex-1">
+                                                          <input
+                                                            type="text"
+                                                            value={editStudentName}
+                                                            onChange={(e) => setEditStudentName(e.target.value)}
+                                                            className="flex-1 bg-transparent border-b border-blue-500 focus:outline-none"
+                                                            onKeyDown={(e) => {
+                                                              if (e.key === 'Enter') handleUpdateStudent(student.id, editStudentName, group.id)
+                                                              if (e.key === 'Escape') {
+                                                                setEditingStudent(null)
+                                                                setEditStudentName('')
+                                                              }
+                                                            }}
+                                                            autoFocus
+                                                          />
+                                                          <button
+                                                            onClick={() => handleUpdateStudent(student.id, editStudentName, group.id)}
+                                                            className="text-green-600 hover:text-green-800"
+                                                          >
+                                                            ✓
+                                                          </button>
+                                                          <button
+                                                            onClick={() => {
+                                                              setEditingStudent(null)
+                                                              setEditStudentName('')
+                                                            }}
+                                                            className="text-gray-600 hover:text-gray-800"
+                                                          >
+                                                            ✕
+                                                          </button>
+                                                        </div>
+                                                      ) : (
+                                                        <>
+                                                          <span>{student.student_name}</span>
+                                                          <div className="flex gap-1">
+                                                            <button
+                                                              onClick={() => {
+                                                                setEditingStudent(student.id)
+                                                                setEditStudentName(student.student_name)
+                                                              }}
+                                                              className="text-blue-600 hover:text-blue-800"
+                                                            >
+                                                              ✎
+                                                            </button>
+                                                            <button
+                                                              onClick={() => handleDeleteStudent(student.id, group.id)}
+                                                              className="text-red-600 hover:text-red-800"
+                                                            >
+                                                              ×
+                                                            </button>
+                                                          </div>
+                                                        </>
+                                                      )}
+                                                    </div>
+                                                  ))}
+                                                </div>
+                                              )}
+                                            </div>
+                                          )}
+                                        </div>
+                                      ))
+                                    )}
+                                  </div>
+                                </div>
+                              )}
                             </div>
-                          )}
-                        </div>
-                      ))
-                    ) : (
-                      <p className="text-gray-500 italic">No subjects yet</p>
-                    )}
+                          )
+                        })
+                      )}
+                    </div>
                   </div>
-                </div>
-              )}
-            </div>
-          ))
+                )}
+              </div>
+            )
+          })
         )}
       </div>
 
-      {/* Group Overview Modal */}
+      {/* Group Overview Modal - M9 */}
       {selectedGroup && selectedGroupSchool && selectedGroupSubject && (
         <Modal
           isOpen={showGroupOverview}
@@ -1311,13 +1002,13 @@ export function Schools() {
             group={selectedGroup}
             school={selectedGroupSchool}
             subject={selectedGroupSubject}
-            roster={rosters[selectedGroup.id] || []}
+            roster={rostersByGroup[selectedGroup.id] || []}
             onClose={closeGroupOverview}
             onGroupUpdate={handleGroupUpdate}
             onRosterUpdate={handleRosterUpdate}
-            onGroupDelete={handleGroupDelete}
-            activeTab={activeGroupTab}
-            onTabChange={setActiveGroupTab}
+            onGroupDelete={handleGroupDeleteFromModal}
+            activeTab="students"
+            onTabChange={() => {}}
           />
         </Modal>
       )}
@@ -1330,69 +1021,74 @@ export function Schools() {
       >
         <div className="space-y-4">
           <p className="text-sm text-gray-600 dark:text-gray-400">
-            These subjects can be assigned to any school. Editing or deleting a subject affects all schools using it.
+            These are your subjects. They work like tags - create groups and assign them to subjects.
           </p>
 
           <div className="space-y-2">
             {allSubjects.length === 0 ? (
-              <p className="text-gray-500 italic">No subjects created yet</p>
+              <p className="text-gray-500 italic">No subjects yet. Add a subject when creating a group.</p>
             ) : (
               allSubjects.map((subject) => (
                 <div key={subject.id} className="flex justify-between items-center bg-gray-50 dark:bg-gray-700 p-3 rounded">
-                  <span className="font-medium">{subject.name}</span>
-                  <div className="flex gap-2">
-                    <button
-                      onClick={async () => {
-                        const newName = prompt('Enter new subject name:', subject.name)
-                        if (newName && newName.trim() && newName !== subject.name) {
-                          try {
-                            await groupsPageService.updateSubjectName(subject.id, newName.trim())
-
-                            // Update allSubjects
-                            setAllSubjects(allSubjects.map(s =>
-                              s.id === subject.id ? { ...s, name: newName.trim() } : s
-                            ))
-
-                            // Refresh page data
-                            fetchSchools()
-                          } catch (err: any) {
-                            setError(err.message)
+                  {editingSubject === subject.id ? (
+                    <div className="flex gap-2 items-center flex-1">
+                      <input
+                        type="text"
+                        value={editSubjectName}
+                        onChange={(e) => setEditSubjectName(e.target.value)}
+                        className="flex-1 font-medium bg-transparent border-b border-blue-500 focus:outline-none"
+                        onKeyDown={(e) => {
+                          if (e.key === 'Enter') handleUpdateSubject(subject.id, editSubjectName)
+                          if (e.key === 'Escape') {
+                            setEditingSubject(null)
+                            setEditSubjectName('')
                           }
-                        }
-                      }}
-                      className="text-blue-600 hover:text-blue-800 text-sm"
-                    >
-                      ✎ Edit
-                    </button>
-                    <button
-                      onClick={async () => {
-                        // Check if any groups use this subject
-                        const groupCount = Object.values(groups).flat().filter(g => g.subject_id === subject.id).length
-
-                        let confirmMessage = `Delete "${subject.name}"?`
-                        if (groupCount > 0) {
-                          confirmMessage = `Delete "${subject.name}"?\n\n${groupCount} group(s) are using it. They will be moved to "General Teaching" subject.`
-                        }
-
-                        if (!confirm(confirmMessage)) return
-
-                        try {
-                          await groupsPageService.deleteSubjectGlobal(subject.id)
-
-                          // Update allSubjects
-                          setAllSubjects(allSubjects.filter(s => s.id !== subject.id))
-
-                          // Refresh page data
-                          await fetchSchools()
-                        } catch (err: any) {
-                          setError(err.message)
-                        }
-                      }}
-                      className="text-red-600 hover:text-red-800 text-sm"
-                    >
-                      × Delete
-                    </button>
-                  </div>
+                        }}
+                        autoFocus
+                      />
+                      <button
+                        onClick={() => handleUpdateSubject(subject.id, editSubjectName)}
+                        className="text-green-600 hover:text-green-800"
+                      >
+                        
+                      </button>
+                      <button
+                        onClick={() => {
+                          setEditingSubject(null)
+                          setEditSubjectName('')
+                        }}
+                        className="text-gray-600 hover:text-gray-800"
+                      >
+                        
+                      </button>
+                    </div>
+                  ) : (
+                    <>
+                      <span className="font-medium">
+                        {subject.name}
+                        <span className="text-sm text-gray-500 ml-2">
+                          ({groupsBySubject[subject.id]?.length || 0} groups)
+                        </span>
+                      </span>
+                      <div className="flex gap-2">
+                        <button
+                          onClick={() => {
+                            setEditingSubject(subject.id)
+                            setEditSubjectName(subject.name)
+                          }}
+                          className="text-blue-600 hover:text-blue-800 text-sm"
+                        >
+                           Edit
+                        </button>
+                        <button
+                          onClick={() => handleDeleteSubject(subject.id)}
+                          className="text-red-600 hover:text-red-800 text-sm"
+                        >
+                          � Delete
+                        </button>
+                      </div>
+                    </>
+                  )}
                 </div>
               ))
             )}

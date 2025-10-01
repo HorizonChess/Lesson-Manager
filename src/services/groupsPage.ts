@@ -30,7 +30,7 @@ export async function fetchSubjects(): Promise<Subject[]> {
 export interface SchoolsPageData {
   schools: School[]
   allSubjects: Subject[]
-  subjectsBySchool: Record<string, Subject[]>
+  groupsBySchool: Record<string, Group[]>
   groupsBySubject: Record<string, Group[]>
   rostersByGroup: Record<string, RosterItem[]>
 }
@@ -39,7 +39,7 @@ export async function fetchSchoolsPageData(): Promise<SchoolsPageData> {
   // Fetch schools
   const schools = await fetchSchools()
 
-  // Fetch all global subjects
+  // Fetch all user's subjects (now user-owned, no junction table)
   const allSubjects = await fetchSubjects()
 
   // If no schools, return early
@@ -47,25 +47,11 @@ export async function fetchSchoolsPageData(): Promise<SchoolsPageData> {
     return {
       schools,
       allSubjects,
-      subjectsBySchool: {},
+      groupsBySchool: {},
       groupsBySubject: {},
       rostersByGroup: {}
     }
   }
-
-  // Fetch school-subject assignments
-  const { data: schoolSubjectsData, error: schoolSubjectsError } = await supabase
-    .from('school_subjects')
-    .select('school_id, subject_id, subjects(*)')
-    .in('school_id', schools.map(s => s.id))
-
-  if (schoolSubjectsError) throw schoolSubjectsError
-
-  // Extract subjects and add school_id for UI compatibility
-  const subjectsData = (schoolSubjectsData || []).map((ss: any) => ({
-    ...ss.subjects,
-    school_id: ss.school_id
-  }))
 
   // Fetch all groups
   const { data: groupsData, error: groupsError} = await supabase
@@ -78,12 +64,12 @@ export async function fetchSchoolsPageData(): Promise<SchoolsPageData> {
   // Fetch all rosters
   const rosters = await fetchRosters()
 
-  // Group subjects by school_id
-  const subjectsBySchool = (subjectsData || []).reduce<Record<string, Subject[]>>((acc, subject: any) => {
-    if (!acc[subject.school_id]) {
-      acc[subject.school_id] = []
+  // Group groups by school_id
+  const groupsBySchool = (groupsData || []).reduce<Record<string, Group[]>>((acc, group) => {
+    if (!acc[group.school_id]) {
+      acc[group.school_id] = []
     }
-    acc[subject.school_id].push(subject)
+    acc[group.school_id].push(group)
     return acc
   }, {})
 
@@ -99,38 +85,35 @@ export async function fetchSchoolsPageData(): Promise<SchoolsPageData> {
   return {
     schools,
     allSubjects,
-    subjectsBySchool,
+    groupsBySchool,
     groupsBySubject,
     rostersByGroup: rosters
   }
 }
 
-export async function fetchSchoolSubjectAssignments(schoolId: string): Promise<Subject[]> {
-  const { data, error } = await supabase
-    .from('school_subjects')
-    .select('subject_id, subjects(*)')
+// Fetch subjects used by a specific school (via groups)
+export async function fetchSchoolSubjects(schoolId: string): Promise<Subject[]> {
+  // Get all groups for this school
+  const { data: groups, error: groupsError } = await supabase
+    .from('groups')
+    .select('subject_id')
     .eq('school_id', schoolId)
 
-  if (error) throw error
-  return (data ?? []).map((item: any) => item.subjects).filter(Boolean)
-}
+  if (groupsError) throw groupsError
 
-export async function assignSubjectToSchool(schoolId: string, subjectId: string): Promise<void> {
-  const { error } = await supabase
-    .from('school_subjects')
-    .insert({ school_id: schoolId, subject_id: subjectId })
+  // Get unique subject IDs
+  const subjectIds = [...new Set((groups || []).map(g => g.subject_id))]
 
-  if (error) throw error
-}
+  if (subjectIds.length === 0) return []
 
-export async function removeSubjectFromSchool(schoolId: string, subjectId: string): Promise<void> {
-  const { error } = await supabase
-    .from('school_subjects')
-    .delete()
-    .eq('school_id', schoolId)
-    .eq('subject_id', subjectId)
+  // Fetch subjects
+  const { data: subjects, error: subjectsError } = await supabase
+    .from('subjects')
+    .select('*')
+    .in('id', subjectIds)
 
-  if (error) throw error
+  if (subjectsError) throw subjectsError
+  return subjects || []
 }
 
 export async function fetchGroupsWithRelations(): Promise<GroupWithRelations[]> {
@@ -310,16 +293,17 @@ export async function deleteSchoolById(schoolId: string): Promise<void> {
 // Subject CRUD operations
 export interface CreateSubjectPayload {
   name: string
-  schoolId?: string // Optional: if provided, also assign to this school
+  userId: string
 }
 
 export async function createSubjectGlobal(payload: CreateSubjectPayload): Promise<Subject> {
-  // Check if subject already exists (case-insensitive)
+  // Check if subject already exists for this user (case-insensitive)
   const { data: existing } = await supabase
     .from('subjects')
     .select('*')
     .ilike('name', payload.name.trim())
-    .single()
+    .eq('user_id', payload.userId)
+    .maybeSingle()
 
   if (existing) {
     throw new Error(`Subject "${existing.name}" already exists`)
@@ -327,7 +311,7 @@ export async function createSubjectGlobal(payload: CreateSubjectPayload): Promis
 
   const { data, error } = await supabase
     .from('subjects')
-    .insert({ name: payload.name.trim() })
+    .insert({ name: payload.name.trim(), user_id: payload.userId })
     .select('*')
     .single()
 
@@ -335,19 +319,15 @@ export async function createSubjectGlobal(payload: CreateSubjectPayload): Promis
     throw error ?? new Error('Failed to create subject')
   }
 
-  // If schoolId provided, also assign to that school
-  if (payload.schoolId) {
-    await assignSubjectToSchool(payload.schoolId, data.id)
-  }
-
   return data as Subject
 }
 
-export async function findSubjectByName(name: string): Promise<Subject | null> {
+export async function findSubjectByName(name: string, userId: string): Promise<Subject | null> {
   const { data, error } = await supabase
     .from('subjects')
     .select('*')
     .ilike('name', name.trim())
+    .eq('user_id', userId)
     .maybeSingle()
 
   if (error) throw error
@@ -355,51 +335,9 @@ export async function findSubjectByName(name: string): Promise<Subject | null> {
   return data as Subject | null
 }
 
-export async function reassignSchoolSubject(
-  schoolId: string,
-  oldSubjectId: string,
-  newSubjectName: string
-): Promise<Subject> {
-  // Check if a subject with the new name already exists
-  const existingSubject = await findSubjectByName(newSubjectName)
-
-  if (existingSubject) {
-    // Subject exists - reassign school to existing subject
-
-    // IMPORTANT: Update all groups in this school from old subject to new subject
-    const { error: updateGroupsError } = await supabase
-      .from('groups')
-      .update({ subject_id: existingSubject.id })
-      .eq('school_id', schoolId)
-      .eq('subject_id', oldSubjectId)
-
-    if (updateGroupsError) throw updateGroupsError
-
-    // Remove old school_subjects entry
-    await removeSubjectFromSchool(schoolId, oldSubjectId)
-
-    // Add new school_subjects entry (if it doesn't already exist)
-    const { data: existingAssoc } = await supabase
-      .from('school_subjects')
-      .select('id')
-      .eq('school_id', schoolId)
-      .eq('subject_id', existingSubject.id)
-      .maybeSingle()
-
-    if (!existingAssoc) {
-      await assignSubjectToSchool(schoolId, existingSubject.id)
-    }
-
-    return existingSubject
-  } else {
-    // Subject doesn't exist - rename the old subject (works like normal update)
-    return updateSubjectName(oldSubjectId, newSubjectName)
-  }
-}
-
-export async function updateSubjectName(subjectId: string, name: string): Promise<Subject> {
-  // Check if another subject with this name already exists
-  const existingSubject = await findSubjectByName(name)
+export async function updateSubjectName(subjectId: string, name: string, userId: string): Promise<Subject> {
+  // Check if another subject with this name already exists for this user
+  const existingSubject = await findSubjectByName(name, userId)
 
   if (existingSubject && existingSubject.id !== subjectId) {
     throw new Error(`A subject named "${existingSubject.name}" already exists. Cannot create duplicates.`)
@@ -419,7 +357,7 @@ export async function updateSubjectName(subjectId: string, name: string): Promis
   return data as Subject
 }
 
-export async function deleteSubjectGlobal(subjectId: string): Promise<void> {
+export async function deleteSubjectGlobal(subjectId: string, userId: string): Promise<void> {
   // Check if any groups use this subject
   const { data: groupsUsingSubject } = await supabase
     .from('groups')
@@ -428,13 +366,14 @@ export async function deleteSubjectGlobal(subjectId: string): Promise<void> {
 
   // If groups exist, move them to "General Teaching"
   if (groupsUsingSubject && groupsUsingSubject.length > 0) {
-    // Find or create "General Teaching" subject
+    // Find or create "General Teaching" subject for this user
     let generalSubjectId: string
 
     const { data: existingGeneral } = await supabase
       .from('subjects')
       .select('id')
       .eq('name', 'General Teaching')
+      .eq('user_id', userId)
       .maybeSingle()
 
     if (existingGeneral) {
@@ -442,7 +381,7 @@ export async function deleteSubjectGlobal(subjectId: string): Promise<void> {
     } else {
       const { data: newGeneral, error: createError } = await supabase
         .from('subjects')
-        .insert({ name: 'General Teaching' })
+        .insert({ name: 'General Teaching', user_id: userId })
         .select('id')
         .single()
 
@@ -458,20 +397,9 @@ export async function deleteSubjectGlobal(subjectId: string): Promise<void> {
       .eq('subject_id', subjectId)
 
     if (updateError) throw updateError
-
-    // Ensure General Teaching is assigned to all affected schools
-    const schoolIds = [...new Set(groupsUsingSubject.map(g => g.school_id))]
-    for (const schoolId of schoolIds) {
-      await supabase
-        .from('school_subjects')
-        .upsert(
-          { school_id: schoolId, subject_id: generalSubjectId },
-          { onConflict: 'school_id,subject_id', ignoreDuplicates: true }
-        )
-    }
   }
 
-  // Delete the subject (ON DELETE CASCADE will auto-delete school_subjects entries)
+  // Delete the subject (RLS ensures user owns it)
   const { error } = await supabase
     .from('subjects')
     .delete()

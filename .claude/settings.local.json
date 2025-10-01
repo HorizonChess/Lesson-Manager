@@ -18,7 +18,10 @@
       "mcp__playwright__browser_select_option",
       "mcp__playwright__browser_type",
       "Bash(npm run build:*)",
-      "Bash(npx tsx:*)"
+      "Bash(npx tsx:*)",
+      "Bash(npm run backup:*)",
+      "Bash(npx tsc:*)",
+      "Bash(timeout 30 npx tsc --noEmit)"
     ],
     "deny": [],
     "ask": []

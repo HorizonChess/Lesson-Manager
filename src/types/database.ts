@@ -15,16 +15,10 @@ export interface School {
 
 export interface Subject {
   id: string
+  user_id: string
   name: string
   created_at: string
   updated_at: string
-}
-
-export interface SchoolSubject {
-  id: string
-  school_id: string
-  subject_id: string
-  created_at: string
 }
 
 export interface Group {

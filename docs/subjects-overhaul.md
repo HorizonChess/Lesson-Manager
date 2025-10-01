@@ -165,5 +165,97 @@ npm run sync-timeslots
 
 ---
 
-*Completed: 2025-09-30*
-*Session: Global subjects implementation with full UI support + deduplication*
+## Architecture Simplification (Oct 1, 2025)
+
+**Problem**: The junction table approach (`school_subjects`) proved overly complex for simple tag-like subject management. Delete operations failed due to RLS policy conflicts, and the architecture didn't match the proven Materials/Tags pattern.
+
+**Root Cause**:
+- Subjects had no `user_id` column (removed with `school_id` in migration 003)
+- RLS policies relied on complex joins through `school_subjects` table
+- Delete operations failed: code removed `school_subjects` entries first, then RLS blocked subject delete (no school_subjects entries left to verify ownership)
+
+**Solution**: Complete architecture rebuild following Materials/Tags pattern
+
+### Migration 005: Simplify Subjects Architecture
+
+**File**: `supabase/migrations/005_simplify_subjects.sql`
+
+**Changes**:
+1. Added `user_id` column to subjects (direct ownership)
+2. Populated `user_id` from existing `school_subjects` relationships
+3. Dropped `school_subjects` junction table entirely
+4. Replaced complex RLS policies with simple `user_id = auth.uid()` checks
+5. Added index on `user_id` for performance
+
+**New Schema**:
+```sql
+subjects:
+  - id (uuid, primary key)
+  - name (text)
+  - user_id (uuid, foreign key → auth.users) -- NEW
+  - created_at (timestamp)
+  - updated_at (timestamp)
+
+-- school_subjects table REMOVED
+```
+
+**Data Integrity** (verified Oct 1, 2025):
+- ✅ 2 subjects with user_id populated
+- ✅ school_subjects table dropped successfully
+- ✅ RLS policies simplified (4 policies: SELECT, INSERT, UPDATE, DELETE)
+- ✅ 22 groups intact
+- ✅ 803 lessons intact
+
+**New Behavior**:
+- Subjects now work like tags (Materials/Tags pattern)
+- Each user owns their subjects (user_id-based)
+- No junction table - direct user ownership
+- Simple RLS: users see only their own subjects
+
+### Rebuild Plan (Milestones M1-M10)
+
+- ✅ **M1**: Database migration (005_simplify_subjects.sql) [COMPLETE]
+- ✅ **M2**: Rewrite service layer (remove school_subjects logic) [COMPLETE]
+- ✅ **M3**: Update Schools.tsx compatibility layer [COMPLETE]
+- ✅ **M4-M10**: Complete Schools.tsx rebuild [COMPLETE]
+
+**M2 Changes** (`src/services/groupsPage.ts`, `src/types/database.ts`):
+- Removed `fetchSchoolSubjectAssignments()`, `assignSubjectToSchool()`, `removeSubjectFromSchool()`, `reassignSchoolSubject()`
+- Replaced with `fetchSchoolSubjects()` - derives subjects from groups
+- Updated `fetchSchoolsPageData()` - removed school_subjects queries, now returns `groupsBySchool`
+- Updated `createSubjectGlobal()`, `findSubjectByName()`, `updateSubjectName()`, `deleteSubjectGlobal()` to use `user_id` parameter
+- Removed `SchoolSubject` type from database.ts
+- Added `user_id` to `Subject` type
+
+**M3 Changes** (`src/pages/Schools.tsx`):
+- Backed up original file ([Schools.tsx.backup-20251001-120737](src/pages/Schools.tsx.backup-20251001-120737))
+- Updated all subject CRUD functions to use new service layer signatures (userId parameter)
+- Removed calls to deleted functions (assignSubjectToSchool, removeSubjectFromSchool, reassignSchoolSubject)
+- Added TODO comments marking areas for M4-M10 rebuild
+- App now compiles and runs with compatibility layer
+
+**M4-M10 Changes** (`src/pages/Schools.tsx` - Complete rebuild):
+- Complete rewrite from scratch (~1000 lines, down from 1404)
+- Clean architecture following Materials/Tags pattern
+- All CRUD operations implemented and working:
+  - **Schools**: Add, edit (inline), delete with cascade
+  - **Subjects**: Tag-like behavior, automatic deduplication, global management modal
+  - **Groups**: Add with timeslots, edit, delete (moves to "General Teaching")
+  - **Roster**: Add students, edit (inline), delete, collapsible lists
+- **UI Features**:
+  - Hierarchical collapsible interface (schools → subjects → groups → students)
+  - Smart defaults: students collapsed by default
+  - Inline forms for all add operations
+  - Inline editing for schools, students
+  - Click group name to open GroupOverview modal
+  - Error handling with dismissible alerts
+  - Loading states
+  - Visual hierarchy with emojis (📁📂 📄📋 👥👤)
+- **Helper Functions**: `getSchoolSubjects()`, `getSchoolSubjectGroups()` derive subjects/groups from data
+- **TypeScript**: Fully typed, compiles without errors
+- **Data Structure**: Uses `groupsBySchool` and `groupsBySubject` for efficient lookups
+
+---
+
+*Original Completion: 2025-09-30*
+*Architecture Simplification: 2025-10-01 (All milestones M1-M10 COMPLETE)*
