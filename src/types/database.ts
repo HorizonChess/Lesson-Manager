@@ -21,6 +21,13 @@ export interface Subject {
   updated_at: string
 }
 
+export interface SchoolSubject {
+  id: string
+  school_id: string
+  subject_id: string
+  created_at: string
+}
+
 export interface Group {
   id: string
   school_id: string

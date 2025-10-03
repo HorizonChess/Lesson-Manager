@@ -4,6 +4,19 @@ import * as groupsPageService from '../services/groupsPage'
 import type { School, Subject, Group, RosterItem } from '../types/database'
 import { Modal } from '../components/Modal'
 import { GroupOverview } from '../components/GroupOverview'
+import {
+  Plus,
+  Edit2,
+  Trash2,
+  Check,
+  X,
+  Settings,
+  School as SchoolIcon,
+  BookOpen,
+  Users,
+  ChevronDown,
+  ChevronRight
+} from 'lucide-react'
 
 interface Timeslot {
   day: string
@@ -17,6 +30,7 @@ export function Schools() {
   // Data state
   const [schools, setSchools] = useState<School[]>([])
   const [allSubjects, setAllSubjects] = useState<Subject[]>([])
+  const [schoolSubjectsBySchool, setSchoolSubjectsBySchool] = useState<Record<string, Subject[]>>({})
   const [groupsBySchool, setGroupsBySchool] = useState<Record<string, Group[]>>({})
   const [groupsBySubject, setGroupsBySubject] = useState<Record<string, Group[]>>({})
   const [rostersByGroup, setRostersByGroup] = useState<Record<string, RosterItem[]>>({})
@@ -26,7 +40,7 @@ export function Schools() {
 
   // UI state - Collapse
   const [collapsedSchools, setCollapsedSchools] = useState<Record<string, boolean>>({})
-  const [collapsedSubjects, setCollapsedSubjects] = useState<Record<string, boolean>>({})
+  const [collapsedSubjects, setCollapsedSubjects] = useState<Record<string, boolean>>({}) // key: schoolId-subjectId
   const [collapsedGroups, setCollapsedGroups] = useState<Record<string, boolean>>({})
 
   // UI state - Modals
@@ -78,6 +92,7 @@ export function Schools() {
 
       setSchools(data.schools)
       setAllSubjects(data.allSubjects)
+      setSchoolSubjectsBySchool(data.schoolSubjectsBySchool)
       setGroupsBySchool(data.groupsBySchool)
       setGroupsBySubject(data.groupsBySubject)
       setRostersByGroup(data.rostersByGroup)
@@ -170,6 +185,15 @@ export function Schools() {
         })
         setAllSubjects([...allSubjects, subject])
       }
+
+      // Assign subject to school via junction table
+      await groupsPageService.assignSubjectToSchool(schoolId, subject.id)
+
+      // Update local state
+      setSchoolSubjectsBySchool({
+        ...schoolSubjectsBySchool,
+        [schoolId]: [...(schoolSubjectsBySchool[schoolId] || []), subject]
+      })
 
       setNewSubjectName('')
       setShowAddSubject(null)
@@ -358,8 +382,9 @@ export function Schools() {
     setCollapsedSchools(prev => ({ ...prev, [schoolId]: !prev[schoolId] }))
   }
 
-  const toggleSubjectCollapse = (subjectId: string) => {
-    setCollapsedSubjects(prev => ({ ...prev, [subjectId]: !prev[subjectId] }))
+  const toggleSubjectCollapse = (schoolId: string, subjectId: string) => {
+    const key = `${schoolId}-${subjectId}`
+    setCollapsedSubjects(prev => ({ ...prev, [key]: !prev[key] }))
   }
 
   const toggleGroupCollapse = (groupId: string) => {
@@ -483,14 +508,16 @@ export function Schools() {
         <div className="flex gap-2">
           <button
             onClick={() => setShowManageSubjects(true)}
-            className="bg-purple-600 text-white px-4 py-2 rounded hover:bg-purple-700"
+            className="bg-purple-600 text-white px-4 py-2 rounded hover:bg-purple-700 flex items-center gap-2"
           >
+            <Settings size={18} />
             Manage Subjects
           </button>
           <button
             onClick={() => setShowAddSchool(true)}
-            className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700"
+            className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700 flex items-center gap-2"
           >
+            <Plus size={18} />
             Add School
           </button>
         </div>
@@ -550,7 +577,6 @@ export function Schools() {
           </div>
         ) : (
           schools.map((school) => {
-            const schoolSubjects = getSchoolSubjects(school.id)
             const totalGroups = (groupsBySchool[school.id] || []).length
 
             return (
@@ -562,9 +588,10 @@ export function Schools() {
                 >
                   <div className="flex justify-between items-center">
                     <div className="flex items-center gap-3">
-                      <span className="text-xl">
-                        {collapsedSchools[school.id] ? '=�' : '=�'}
-                      </span>
+                      <div className="text-blue-600 dark:text-blue-400">
+                        {collapsedSchools[school.id] ? <ChevronRight size={24} /> : <ChevronDown size={24} />}
+                      </div>
+                      <SchoolIcon size={24} className="text-blue-600 dark:text-blue-400" />
                       {editingSchool === school.id ? (
                         <div className="flex gap-2 items-center" onClick={(e) => e.stopPropagation()}>
                           <input
@@ -585,7 +612,7 @@ export function Schools() {
                             onClick={() => handleUpdateSchool(school.id, editSchoolName)}
                             className="text-green-600 hover:text-green-800 text-sm"
                           >
-                            
+                            <Check size={18} />
                           </button>
                           <button
                             onClick={() => {
@@ -594,14 +621,14 @@ export function Schools() {
                             }}
                             className="text-gray-600 hover:text-gray-800 text-sm"
                           >
-                            
+                            <X size={18} />
                           </button>
                         </div>
                       ) : (
                         <div>
                           <h3 className="text-xl font-semibold">{school.name}</h3>
                           <p className="text-gray-500 text-sm">
-                            {schoolSubjects.length} subjects, {totalGroups} groups
+                            {(schoolSubjectsBySchool[school.id] || []).length} subjects, {totalGroups} groups
                           </p>
                         </div>
                       )}
@@ -609,8 +636,9 @@ export function Schools() {
                     <div className="flex gap-2" onClick={(e) => e.stopPropagation()}>
                       <button
                         onClick={() => setShowAddSubject(school.id)}
-                        className="bg-green-600 text-white px-3 py-1 rounded text-sm hover:bg-green-700"
+                        className="bg-green-600 text-white px-3 py-1 rounded text-sm hover:bg-green-700 flex items-center gap-1"
                       >
+                        <Plus size={16} />
                         Add Subject
                       </button>
                       <button
@@ -618,14 +646,16 @@ export function Schools() {
                           setEditingSchool(school.id)
                           setEditSchoolName(school.name)
                         }}
-                        className="bg-blue-600 text-white px-3 py-1 rounded text-sm hover:bg-blue-700"
+                        className="bg-blue-600 text-white px-3 py-1 rounded text-sm hover:bg-blue-700 flex items-center gap-1"
                       >
+                        <Edit2 size={16} />
                         Edit
                       </button>
                       <button
                         onClick={() => handleDeleteSchool(school.id)}
-                        className="bg-red-600 text-white px-3 py-1 rounded text-sm hover:bg-red-700"
+                        className="bg-red-600 text-white px-3 py-1 rounded text-sm hover:bg-red-700 flex items-center gap-1"
                       >
+                        <Trash2 size={16} />
                         Delete
                       </button>
                     </div>
@@ -678,10 +708,10 @@ export function Schools() {
 
                     {/* Subjects List */}
                     <div className="space-y-4">
-                      {schoolSubjects.length === 0 ? (
-                        <p className="text-gray-500 italic">No subjects yet. Add a subject to create groups.</p>
+                      {(schoolSubjectsBySchool[school.id] || []).length === 0 ? (
+                        <p className="text-gray-500 italic">No subjects yet. Add a subject to this school.</p>
                       ) : (
-                        schoolSubjects.map((subject) => {
+                        (schoolSubjectsBySchool[school.id] || []).map((subject) => {
                           const subjectGroups = getSchoolSubjectGroups(school.id, subject.id)
 
                           return (
@@ -689,13 +719,18 @@ export function Schools() {
                               {/* Subject Header */}
                               <div
                                 className="p-4 cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-600 transition-colors rounded-lg"
-                                onClick={() => toggleSubjectCollapse(subject.id)}
+                                onClick={() => toggleSubjectCollapse(school.id, subject.id)}
                               >
                                 <div className="flex justify-between items-center">
                                   <div className="flex items-center gap-2">
-                                    <span className="text-lg">
-                                      {collapsedSubjects[subject.id] ? '📄' : '📋'}
-                                    </span>
+                                    <div className="text-purple-600 dark:text-purple-400">
+                                      {collapsedSubjects[`${school.id}-${subject.id}`] ? (
+                                        <ChevronRight size={20} />
+                                      ) : (
+                                        <ChevronDown size={20} />
+                                      )}
+                                    </div>
+                                    <BookOpen size={20} className="text-purple-600 dark:text-purple-400" />
                                     <div>
                                       <h4 className="font-medium">{subject.name}</h4>
                                       <p className="text-sm text-gray-500">
@@ -706,8 +741,9 @@ export function Schools() {
                                   <div className="flex gap-1" onClick={(e) => e.stopPropagation()}>
                                     <button
                                       onClick={() => setShowAddGroup({ schoolId: school.id, subjectId: subject.id })}
-                                      className="bg-purple-600 text-white px-2 py-1 rounded text-xs hover:bg-purple-700"
+                                      className="bg-purple-600 text-white px-2 py-1 rounded text-xs hover:bg-purple-700 flex items-center gap-1"
                                     >
+                                      <Plus size={14} />
                                       Add Group
                                     </button>
                                   </div>
@@ -715,7 +751,7 @@ export function Schools() {
                               </div>
 
                               {/* Subject Content - Groups */}
-                              {!collapsedSubjects[subject.id] && (
+                              {!collapsedSubjects[`${school.id}-${subject.id}`] && (
                                 <div className="px-4 pb-4">
                                   {/* Add Group Form */}
                                   {showAddGroup?.schoolId === school.id && showAddGroup?.subjectId === subject.id && (
@@ -791,8 +827,9 @@ export function Schools() {
                                         <div className="flex gap-1">
                                           <button
                                             type="submit"
-                                            className="bg-purple-600 text-white px-3 py-1 rounded text-xs hover:bg-purple-700"
+                                            className="bg-purple-600 text-white px-3 py-1 rounded text-xs hover:bg-purple-700 flex items-center gap-1"
                                           >
+                                            <Plus size={14} />
                                             Add Group
                                           </button>
                                           <button
@@ -844,15 +881,16 @@ export function Schools() {
                                             <div className="flex gap-1">
                                               <button
                                                 onClick={() => setShowAddStudent(group.id)}
-                                                className="bg-orange-600 text-white px-2 py-1 rounded text-xs hover:bg-orange-700"
+                                                className="bg-orange-600 text-white px-2 py-1 rounded text-xs hover:bg-orange-700 flex items-center gap-1"
                                               >
+                                                <Plus size={14} />
                                                 Add Student
                                               </button>
                                               <button
                                                 onClick={() => handleDeleteGroup(group.id, school.id, subject.id)}
                                                 className="text-red-600 hover:text-red-800 text-xs"
                                               >
-                                                ×
+                                                <Trash2 size={14} />
                                               </button>
                                             </div>
                                           </div>
@@ -899,9 +937,14 @@ export function Schools() {
                                                 className="flex items-center gap-1 cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-600 p-1 rounded"
                                                 onClick={() => toggleGroupCollapse(group.id)}
                                               >
-                                                <span className="text-xs">
-                                                  {collapsedGroups[group.id] ? '👥' : '👤'}
-                                                </span>
+                                                <div className="text-orange-600 dark:text-orange-400">
+                                                  {collapsedGroups[group.id] ? (
+                                                    <ChevronRight size={16} />
+                                                  ) : (
+                                                    <ChevronDown size={16} />
+                                                  )}
+                                                </div>
+                                                <Users size={16} className="text-orange-600 dark:text-orange-400" />
                                                 <h6 className="text-xs font-medium">Students ({rostersByGroup[group.id].length})</h6>
                                               </div>
                                               {!collapsedGroups[group.id] && (
@@ -931,7 +974,7 @@ export function Schools() {
                                                             onClick={() => handleUpdateStudent(student.id, editStudentName, group.id)}
                                                             className="text-green-600 hover:text-green-800"
                                                           >
-                                                            ✓
+                                                            <Check size={16} />
                                                           </button>
                                                           <button
                                                             onClick={() => {
@@ -940,7 +983,7 @@ export function Schools() {
                                                             }}
                                                             className="text-gray-600 hover:text-gray-800"
                                                           >
-                                                            ✕
+                                                            <X size={16} />
                                                           </button>
                                                         </div>
                                                       ) : (
@@ -954,13 +997,13 @@ export function Schools() {
                                                               }}
                                                               className="text-blue-600 hover:text-blue-800"
                                                             >
-                                                              ✎
+                                                              <Edit2 size={14} />
                                                             </button>
                                                             <button
                                                               onClick={() => handleDeleteStudent(student.id, group.id)}
                                                               className="text-red-600 hover:text-red-800"
                                                             >
-                                                              ×
+                                                              <Trash2 size={14} />
                                                             </button>
                                                           </div>
                                                         </>
@@ -1050,7 +1093,7 @@ export function Schools() {
                         onClick={() => handleUpdateSubject(subject.id, editSubjectName)}
                         className="text-green-600 hover:text-green-800"
                       >
-                        
+                        <Check size={18} />
                       </button>
                       <button
                         onClick={() => {
@@ -1059,17 +1102,35 @@ export function Schools() {
                         }}
                         className="text-gray-600 hover:text-gray-800"
                       >
-                        
+                        <X size={18} />
                       </button>
                     </div>
                   ) : (
                     <>
-                      <span className="font-medium">
-                        {subject.name}
-                        <span className="text-sm text-gray-500 ml-2">
-                          ({groupsBySubject[subject.id]?.length || 0} groups)
+                      <div className="flex-1">
+                        <span className="font-medium">
+                          {subject.name}
+                          <span className="text-sm text-gray-500 ml-2">
+                            ({groupsBySubject[subject.id]?.length || 0} groups)
+                          </span>
                         </span>
-                      </span>
+                        {(() => {
+                          // Find which schools use this subject (via groups)
+                          const subjectGroups = groupsBySubject[subject.id] || []
+                          const schoolsUsingSubject = schools.filter(school =>
+                            subjectGroups.some(group => group.school_id === school.id)
+                          )
+
+                          if (schoolsUsingSubject.length > 0) {
+                            return (
+                              <div className="text-xs text-gray-500 mt-1">
+                                📁 {schoolsUsingSubject.map(s => s.name).join(', ')}
+                              </div>
+                            )
+                          }
+                          return null
+                        })()}
+                      </div>
                       <div className="flex gap-2">
                         <button
                           onClick={() => {
@@ -1078,13 +1139,13 @@ export function Schools() {
                           }}
                           className="text-blue-600 hover:text-blue-800 text-sm"
                         >
-                           Edit
+                          <Edit2 size={16} /> Edit
                         </button>
                         <button
                           onClick={() => handleDeleteSubject(subject.id)}
                           className="text-red-600 hover:text-red-800 text-sm"
                         >
-                          � Delete
+                          <Trash2 size={16} /> Delete
                         </button>
                       </div>
                     </>

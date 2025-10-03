@@ -1,5 +1,5 @@
 import { supabase } from '../lib/supabase'
-import type { Group, School, Subject, RosterItem } from '../types/database'
+import type { Group, School, Subject, RosterItem, SchoolSubject } from '../types/database'
 
 export interface GroupWithRelations extends Group {
   school?: { name: string | null } | null
@@ -30,6 +30,7 @@ export async function fetchSubjects(): Promise<Subject[]> {
 export interface SchoolsPageData {
   schools: School[]
   allSubjects: Subject[]
+  schoolSubjectsBySchool: Record<string, Subject[]>
   groupsBySchool: Record<string, Group[]>
   groupsBySubject: Record<string, Group[]>
   rostersByGroup: Record<string, RosterItem[]>
@@ -47,11 +48,33 @@ export async function fetchSchoolsPageData(): Promise<SchoolsPageData> {
     return {
       schools,
       allSubjects,
+      schoolSubjectsBySchool: {},
       groupsBySchool: {},
       groupsBySubject: {},
       rostersByGroup: {}
     }
   }
+
+  // Fetch school-subject assignments via junction table
+  const { data: schoolSubjectsData, error: schoolSubjectsError } = await supabase
+    .from('school_subjects')
+    .select('school_id, subject_id, subjects(*)')
+
+  if (schoolSubjectsError) throw schoolSubjectsError
+
+  // Build map of school_id -> subjects
+  const schoolSubjectsBySchool = (schoolSubjectsData || []).reduce<Record<string, Subject[]>>((acc, item) => {
+    const schoolId = item.school_id
+    const subject = (item as any).subjects as Subject | null
+
+    if (!subject) return acc
+
+    if (!acc[schoolId]) {
+      acc[schoolId] = []
+    }
+    acc[schoolId].push(subject)
+    return acc
+  }, {})
 
   // Fetch all groups
   const { data: groupsData, error: groupsError} = await supabase
@@ -85,6 +108,7 @@ export async function fetchSchoolsPageData(): Promise<SchoolsPageData> {
   return {
     schools,
     allSubjects,
+    schoolSubjectsBySchool,
     groupsBySchool,
     groupsBySubject,
     rostersByGroup: rosters
@@ -406,4 +430,57 @@ export async function deleteSubjectGlobal(subjectId: string, userId: string): Pr
     .eq('id', subjectId)
 
   if (error) throw error
+}
+
+// School-Subject Junction Table Operations
+export async function assignSubjectToSchool(schoolId: string, subjectId: string): Promise<SchoolSubject> {
+  // Check if already assigned
+  const { data: existing } = await supabase
+    .from('school_subjects')
+    .select('*')
+    .eq('school_id', schoolId)
+    .eq('subject_id', subjectId)
+    .maybeSingle()
+
+  if (existing) {
+    return existing as SchoolSubject
+  }
+
+  // Create new assignment
+  const { data, error } = await supabase
+    .from('school_subjects')
+    .insert({ school_id: schoolId, subject_id: subjectId })
+    .select('*')
+    .single()
+
+  if (error || !data) {
+    throw error ?? new Error('Failed to assign subject to school')
+  }
+
+  return data as SchoolSubject
+}
+
+export async function removeSubjectFromSchool(schoolId: string, subjectId: string): Promise<void> {
+  const { error } = await supabase
+    .from('school_subjects')
+    .delete()
+    .eq('school_id', schoolId)
+    .eq('subject_id', subjectId)
+
+  if (error) throw error
+}
+
+export async function fetchSchoolSubjectAssignments(schoolId: string): Promise<Subject[]> {
+  // Fetch subjects assigned to this school via junction table
+  const { data, error } = await supabase
+    .from('school_subjects')
+    .select('subject_id, subjects(*)')
+    .eq('school_id', schoolId)
+
+  if (error) throw error
+
+  // Extract subjects from the join result
+  return (data || [])
+    .map(item => (item as any).subjects)
+    .filter(Boolean) as Subject[]
 }
