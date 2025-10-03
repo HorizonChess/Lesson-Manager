@@ -580,10 +580,10 @@ export function Schools() {
             const totalGroups = (groupsBySchool[school.id] || []).length
 
             return (
-              <div key={school.id} className="bg-white dark:bg-gray-800 border rounded-lg">
+              <div key={school.id} className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl shadow-lg hover:shadow-xl transition-shadow">
                 {/* School Header */}
                 <div
-                  className="p-6 cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
+                  className="p-6 cursor-pointer bg-gradient-to-r from-blue-50 to-blue-100 dark:from-blue-900/20 dark:to-blue-800/20 hover:from-blue-100 hover:to-blue-200 dark:hover:from-blue-900/30 dark:hover:to-blue-800/30 transition-all rounded-t-xl border-b-2 border-blue-200 dark:border-blue-700"
                   onClick={() => toggleSchoolCollapse(school.id)}
                 >
                   <div className="flex justify-between items-center">
@@ -715,10 +715,10 @@ export function Schools() {
                           const subjectGroups = getSchoolSubjectGroups(school.id, subject.id)
 
                           return (
-                            <div key={subject.id} className="bg-gray-50 dark:bg-gray-700 rounded-lg">
+                            <div key={subject.id} className="bg-gradient-to-r from-purple-50 to-purple-100 dark:from-purple-900/20 dark:to-purple-800/20 rounded-lg border border-purple-200 dark:border-purple-700 shadow-md hover:shadow-lg transition-all">
                               {/* Subject Header */}
                               <div
-                                className="p-4 cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-600 transition-colors rounded-lg"
+                                className="p-4 cursor-pointer hover:from-purple-100 hover:to-purple-200 dark:hover:from-purple-900/30 dark:hover:to-purple-800/30 transition-all rounded-lg"
                                 onClick={() => toggleSubjectCollapse(school.id, subject.id)}
                               >
                                 <div className="flex justify-between items-center">
@@ -854,28 +854,35 @@ export function Schools() {
                                       <p className="text-gray-500 text-sm italic">No groups yet</p>
                                     ) : (
                                       subjectGroups.map((group) => (
-                                        <div key={group.id} className="bg-white dark:bg-gray-800 p-3 rounded border">
+                                        <div key={group.id} className="bg-gradient-to-r from-orange-50 to-orange-100 dark:from-orange-900/20 dark:to-orange-800/20 p-3 rounded-lg border border-orange-200 dark:border-orange-700 shadow-sm hover:shadow-md transition-all">
                                           <div className="flex justify-between items-start mb-2">
                                             <div className="flex-1">
-                                              <h5
-                                                className="font-medium text-sm cursor-pointer hover:text-blue-600 dark:hover:text-blue-400 transition-colors"
-                                                onClick={() => openGroupOverview(group, school, subject)}
-                                                title="Click to open group overview"
-                                              >
-                                                {group.name}
-                                              </h5>
-                                              <div className="text-xs text-gray-500 mt-1">
-                                                {group.timeslots && group.timeslots.length > 0 ? (
-                                                  <div className="space-y-1">
-                                                    {group.timeslots.map((slot: any, index: number) => (
-                                                      <div key={index}>
-                                                        {slot.day} {slot.startTime} - {slot.endTime}
+                                              <div className="flex items-start gap-2">
+                                                <div className="text-orange-600 dark:text-orange-400 mt-0.5">
+                                                  <Users size={16} />
+                                                </div>
+                                                <div>
+                                                  <h5
+                                                    className="font-medium text-sm cursor-pointer hover:text-blue-600 dark:hover:text-blue-400 transition-colors"
+                                                    onClick={() => openGroupOverview(group, school, subject)}
+                                                    title="Click to open group overview"
+                                                  >
+                                                    {group.name}
+                                                  </h5>
+                                                  <div className="text-xs text-gray-500 mt-1">
+                                                    {group.timeslots && group.timeslots.length > 0 ? (
+                                                      <div className="space-y-1">
+                                                        {group.timeslots.map((slot: any, index: number) => (
+                                                          <div key={index}>
+                                                            {slot.day} {slot.startTime} - {slot.endTime}
+                                                          </div>
+                                                        ))}
                                                       </div>
-                                                    ))}
+                                                    ) : (
+                                                      <span className="italic">No schedule set</span>
+                                                    )}
                                                   </div>
-                                                ) : (
-                                                  <span className="italic">No schedule set</span>
-                                                )}
+                                                </div>
                                               </div>
                                             </div>
                                             <div className="flex gap-1">
