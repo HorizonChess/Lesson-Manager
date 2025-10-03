@@ -626,10 +626,17 @@ export function Schools() {
                         </div>
                       ) : (
                         <div>
-                          <h3 className="text-xl font-semibold">{school.name}</h3>
-                          <p className="text-gray-500 text-sm">
-                            {(schoolSubjectsBySchool[school.id] || []).length} subjects, {totalGroups} groups
-                          </p>
+                          <h3 className="text-xl font-semibold text-gray-800 dark:text-gray-100">{school.name}</h3>
+                          <div className="flex gap-2 mt-1">
+                            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium bg-purple-100 text-purple-800 dark:bg-purple-900/30 dark:text-purple-300">
+                              <BookOpen size={12} />
+                              {(schoolSubjectsBySchool[school.id] || []).length} subjects
+                            </span>
+                            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium bg-orange-100 text-orange-800 dark:bg-orange-900/30 dark:text-orange-300">
+                              <Users size={12} />
+                              {totalGroups} groups
+                            </span>
+                          </div>
                         </div>
                       )}
                     </div>
@@ -732,10 +739,11 @@ export function Schools() {
                                     </div>
                                     <BookOpen size={20} className="text-purple-600 dark:text-purple-400" />
                                     <div>
-                                      <h4 className="font-medium">{subject.name}</h4>
-                                      <p className="text-sm text-gray-500">
-                                        {subjectGroups.length} group(s)
-                                      </p>
+                                      <h4 className="font-medium text-gray-800 dark:text-gray-100">{subject.name}</h4>
+                                      <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium bg-orange-100 text-orange-800 dark:bg-orange-900/30 dark:text-orange-300 mt-0.5">
+                                        <Users size={10} />
+                                        {subjectGroups.length} groups
+                                      </span>
                                     </div>
                                   </div>
                                   <div className="flex gap-1" onClick={(e) => e.stopPropagation()}>

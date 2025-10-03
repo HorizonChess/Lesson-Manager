@@ -257,5 +257,85 @@ subjects:
 
 ---
 
+## Architecture Correction (Oct 3, 2025)
+
+**Problem**: Migration 005 removed the `school_subjects` junction table, but this broke the core requirement: subjects should appear under a school ONLY if attributed to that school, regardless of groups.
+
+**Root Issue**: The simplification made subjects appear under ALL schools (showing all global subjects everywhere), which was incorrect. The requirement is:
+- Subjects work like tags (global entities)
+- Attribution to schools is via `school_subjects` junction table
+- Groups show HOW MANY times a subject is used, not WHETHER it's attributed
+
+**Solution**: Migration 006 restores the `school_subjects` junction table following the Materials/Tags pattern correctly.
+
+### Migration 006: Restore School-Subject Attribution
+
+**File**: `supabase/migrations/006_restore_school_subjects.sql`
+
+**Changes**:
+1. Restored `school_subjects` junction table with proper structure
+2. Added RLS policies for school-based access control
+3. Populated junction table from existing groups data
+4. Added indexes for performance
+
+**Correct Schema**:
+```sql
+subjects:
+  - id (uuid, primary key)
+  - name (text)
+  - user_id (uuid, foreign key → auth.users)
+  - created_at (timestamp)
+  - updated_at (timestamp)
+
+school_subjects (junction table):
+  - id (uuid, primary key)
+  - school_id (uuid, foreign key → schools)
+  - subject_id (uuid, foreign key → subjects)
+  - created_at (timestamp)
+  - UNIQUE(school_id, subject_id)
+
+groups:
+  - id (uuid, primary key)
+  - school_id (uuid, foreign key → schools)
+  - subject_id (uuid, foreign key → subjects)
+  - name (text)
+  - timeslots (jsonb array)
+```
+
+**Architecture Pattern** (matches Materials/Tags):
+- Materials ↔ MaterialTag (junction) ↔ Tags
+- Schools ↔ SchoolSubject (junction) ↔ Subjects
+
+### Code Changes (Oct 3, 2025)
+
+**Service Layer** (`src/services/groupsPage.ts`):
+- ✅ Added `SchoolSubject` type back to imports
+- ✅ Created `assignSubjectToSchool(schoolId, subjectId)` - links subject to school
+- ✅ Created `removeSubjectFromSchool(schoolId, subjectId)` - unlinks subject from school
+- ✅ Created `fetchSchoolSubjectAssignments(schoolId)` - gets subjects for a school
+- ✅ Updated `fetchSchoolsPageData()` to return `schoolSubjectsBySchool: Record<string, Subject[]>`
+
+**UI Layer** (`src/pages/Schools.tsx`):
+- ✅ Added `schoolSubjectsBySchool` state
+- ✅ Fixed display logic: changed from `allSubjects.map()` to `(schoolSubjectsBySchool[school.id] || []).map()`
+- ✅ Updated `handleAddSubject` to call `assignSubjectToSchool()` after creating/finding subject
+- ✅ Fixed subject count: shows `schoolSubjectsBySchool[school.id].length` instead of `allSubjects.length`
+- ✅ Replaced emoji collapse indicators with lucide-react icons (ChevronRight/ChevronDown)
+- ✅ Added visual hierarchy icons: SchoolIcon (blue), BookOpen (purple), Users (orange)
+- ✅ Implemented card-based layout with gradients and shadows:
+  - Schools: Blue gradient headers with shadow-lg
+  - Subjects: Purple gradient backgrounds with shadow-md
+  - Groups: Orange gradient backgrounds with shadow-sm
+- ✅ Color-coded hierarchy throughout (blue/purple/orange)
+
+**Correct Behavior**:
+- When adding subject "Math" to School A → appears only under School A (even with 0 groups)
+- When adding subject "Math" to School B → appears under School B too (same subject, two schools)
+- Subjects displayed based on `school_subjects` attribution, NOT based on groups
+- Groups show usage count, attribution is independent
+
+---
+
 *Original Completion: 2025-09-30*
 *Architecture Simplification: 2025-10-01 (All milestones M1-M10 COMPLETE)*
+*Architecture Correction: 2025-10-03 (Migration 006, proper junction table pattern)*
