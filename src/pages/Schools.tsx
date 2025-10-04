@@ -483,9 +483,38 @@ export function Schools() {
     return allSubjects.filter(s => subjectIds.has(s.id))
   }
 
-  // Get groups for a school+subject combination
+  // Get groups for a school+subject combination, sorted by schedule
   const getSchoolSubjectGroups = (schoolId: string, subjectId: string): Group[] => {
-    return (groupsBySchool[schoolId] || []).filter(g => g.subject_id === subjectId)
+    const groups = (groupsBySchool[schoolId] || []).filter(g => g.subject_id === subjectId)
+
+    return groups.sort((a, b) => {
+      const aHasSchedule = a.timeslots && a.timeslots.length > 0
+      const bHasSchedule = b.timeslots && b.timeslots.length > 0
+
+      // Groups with schedules come first
+      if (aHasSchedule && !bHasSchedule) return -1
+      if (!aHasSchedule && bHasSchedule) return 1
+
+      // Both have schedules - sort by day and time
+      if (aHasSchedule && bHasSchedule) {
+        const dayOrder = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday']
+        const aFirstSlot = a.timeslots![0]
+        const bFirstSlot = b.timeslots![0]
+
+        const aDayIndex = dayOrder.indexOf(aFirstSlot.day)
+        const bDayIndex = dayOrder.indexOf(bFirstSlot.day)
+
+        if (aDayIndex !== bDayIndex) {
+          return aDayIndex - bDayIndex
+        }
+
+        // Same day - sort by start time
+        return aFirstSlot.startTime.localeCompare(bFirstSlot.startTime)
+      }
+
+      // Both have no schedule - sort alphabetically
+      return a.name.localeCompare(b.name)
+    })
   }
 
   // ==================== RENDER ====================
@@ -611,21 +640,25 @@ export function Schools() {
                             }}
                             autoFocus
                           />
-                          <button
+                          <Button
+                            size="sm"
+                            variant="ghost"
                             onClick={() => handleUpdateSchool(school.id, editSchoolName)}
-                            className="text-green-600 hover:text-green-800 text-sm"
+                            className="text-green-600 hover:text-green-700"
                           >
-                            <Check size={18} />
-                          </button>
-                          <button
+                            <Check size={18} />
+                          </Button>
+                          <Button
+                            size="sm"
+                            variant="ghost"
                             onClick={() => {
                               setEditingSchool(null)
                               setEditSchoolName('')
                             }}
-                            className="text-gray-600 hover:text-gray-800 text-sm"
+                            className="text-gray-600 hover:text-gray-700"
                           >
-                            <X size={18} />
-                          </button>
+                            <X size={18} />
+                          </Button>
                         </div>
                       ) : (
                         <div>
@@ -745,7 +778,61 @@ export function Schools() {
                                     </div>
                                     <BookOpen size={18} className="text-purple-600 dark:text-purple-400" />
                                     <div>
-                                      <h4 className="font-medium text-gray-900 dark:text-gray-100">{subject.name}</h4>
+                                      {editingSchool === school.id && editingSubject === subject.id ? (
+                                        <div className="flex gap-2 items-center" onClick={(e) => e.stopPropagation()}>
+                                          <input
+                                            type="text"
+                                            value={editSubjectName}
+                                            onChange={(e) => setEditSubjectName(e.target.value)}
+                                            className="font-medium bg-transparent border-b border-purple-500 focus:outline-none text-gray-900 dark:text-gray-100"
+                                            onKeyDown={(e) => {
+                                              if (e.key === 'Enter') handleUpdateSubject(subject.id, editSubjectName)
+                                              if (e.key === 'Escape') {
+                                                setEditingSubject(null)
+                                                setEditSubjectName('')
+                                              }
+                                            }}
+                                            autoFocus
+                                          />
+                                          <Button
+                                            size="sm"
+                                            variant="ghost"
+                                            onClick={() => handleUpdateSubject(subject.id, editSubjectName)}
+                                            className="text-green-600 hover:text-green-700"
+                                          >
+                                            <Check size={16} />
+                                          </Button>
+                                          <Button
+                                            size="sm"
+                                            variant="ghost"
+                                            onClick={() => {
+                                              setEditingSubject(null)
+                                              setEditSubjectName('')
+                                            }}
+                                            className="text-gray-600 hover:text-gray-700"
+                                          >
+                                            <X size={16} />
+                                          </Button>
+                                        </div>
+                                      ) : editingSchool === school.id ? (
+                                        <div className="flex gap-2 items-center">
+                                          <h4 className="font-medium text-gray-900 dark:text-gray-100">{subject.name}</h4>
+                                          <Button
+                                            size="sm"
+                                            variant="ghost"
+                                            onClick={(e) => {
+                                              e.stopPropagation()
+                                              setEditingSubject(subject.id)
+                                              setEditSubjectName(subject.name)
+                                            }}
+                                            className="text-purple-600 hover:text-purple-700"
+                                          >
+                                            <Edit2 size={14} />
+                                          </Button>
+                                        </div>
+                                      ) : (
+                                        <h4 className="font-medium text-gray-900 dark:text-gray-100">{subject.name}</h4>
+                                      )}
                                       <Badge variant="secondary" className="mt-1">
                                         <Users size={10} className="text-orange-600 dark:text-orange-400" />
                                         {subjectGroups.length} groups

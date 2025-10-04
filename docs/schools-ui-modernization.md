@@ -110,8 +110,8 @@ Modernizing the Schools page UI to be professional, space-efficient, and serve a
 
 ---
 
-### ✅ Phase 5: Functional Enhancements (COMPLETE)
-**Completed**: October 4, 2025
+### ✅ Phase 5: Functional Enhancements (IN PROGRESS)
+**Started**: October 4, 2025
 
 **Critical Bug Fixes**:
 1. **Group Modal Tab Switching Bug**:
@@ -137,6 +137,28 @@ Modernizing the Schools page UI to be professional, space-efficient, and serve a
      - Lesson Record Modal: 7 buttons (Close, attendance toggles, Save/Cancel)
    - ✅ Preserved all functionality and dynamic styling
    - ✅ Consistent with Schools page button modernization
+
+4. **Group Ordering Fix**:
+   - ✅ **Issue**: Groups were not ordered logically (alphabetical only)
+   - ✅ **Fix**: Updated `getSchoolSubjectGroups()` to sort groups by schedule
+   - ✅ **Logic**:
+     - Groups with schedules appear first, ordered by day (Mon-Sun) then time
+     - Groups without schedules appear last, ordered alphabetically
+   - ✅ **Result**: Groups now display in chronological order matching their schedule
+
+5. **Subject Editing in Schools Page**:
+   - ✅ **Issue**: Could only edit school names, not subject names within a school
+   - ✅ **Use Case**: User accidentally attributed groups to wrong subject name; editing via global manager would affect ALL schools
+   - ✅ **Fix**: School "Edit" button now enables inline editing of both school name AND subject names
+   - ✅ **Implementation**:
+     - When clicking school's "Edit" button, small edit icons appear next to each subject
+     - Clicking subject edit icon shows inline input with Check/X buttons
+     - Uses Button component for consistent styling
+   - ✅ **Result**: Can edit subject names scoped to specific school context
+
+6. **School Edit Buttons Modernization**:
+   - ✅ Updated Check/X buttons in school name editing to use Button component (lines 643-661)
+   - ✅ Applied ghost variant with appropriate hover colors
 
 **New Features**:
 - [ ] Add search functionality (filter schools/subjects/groups by name)
