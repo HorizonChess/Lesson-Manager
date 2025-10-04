@@ -6,6 +6,8 @@ import { Modal } from '../components/Modal'
 import { GroupOverview } from '../components/GroupOverview'
 import { Button } from '../components/ui/button'
 import { Badge } from '../components/ui/badge'
+import toast, { Toaster } from 'react-hot-toast'
+import { motion, AnimatePresence } from 'framer-motion'
 import {
   Plus,
   Edit2,
@@ -133,8 +135,10 @@ export function Schools() {
       setSchools([...schools, school])
       setNewSchoolName('')
       setShowAddSchool(false)
+      toast.success(`School "${school.name}" created successfully`)
     } catch (err: any) {
       setError(err.message)
+      toast.error(`Failed to create school: ${err.message}`)
     }
   }
 
@@ -147,8 +151,10 @@ export function Schools() {
       setSchools(schools.map(s => s.id === schoolId ? school : s))
       setEditingSchool(null)
       setEditSchoolName('')
+      toast.success('School name updated successfully')
     } catch (err: any) {
       setError(err.message)
+      toast.error(`Failed to update school: ${err.message}`)
     }
   }
 
@@ -164,8 +170,10 @@ export function Schools() {
       const newGroupsBySchool = { ...groupsBySchool }
       delete newGroupsBySchool[schoolId]
       setGroupsBySchool(newGroupsBySchool)
+      toast.success('School deleted successfully')
     } catch (err: any) {
       setError(err.message)
+      toast.error(`Failed to delete school: ${err.message}`)
     }
   }
 
@@ -205,8 +213,10 @@ export function Schools() {
 
       setNewSubjectName('')
       setShowAddSubject(null)
+      toast.success(`Subject "${subject.name}" added successfully`)
     } catch (err: any) {
       setError(err.message)
+      toast.error(`Failed to add subject: ${err.message}`)
     }
   }
 
@@ -220,8 +230,10 @@ export function Schools() {
       setEditingSubject(null)
       setEditSubjectName('')
       await fetchData() // Refresh to see changes
+      toast.success('Subject name updated successfully')
     } catch (err: any) {
       setError(err.message)
+      toast.error(`Failed to update subject: ${err.message}`)
     }
   }
 
@@ -241,8 +253,10 @@ export function Schools() {
 
       setAllSubjects(allSubjects.filter(s => s.id !== subjectId))
       await fetchData() // Refresh to see group reassignments
+      toast.success('Subject deleted successfully')
     } catch (err: any) {
       setError(err.message)
+      toast.error(`Failed to delete subject: ${err.message}`)
     }
   }
 
@@ -273,8 +287,10 @@ export function Schools() {
       setNewGroupName('')
       setNewGroupTimeslots([])
       setShowAddGroup(null)
+      toast.success(`Group "${group.name}" created successfully`)
     } catch (err: any) {
       setError(err.message)
+      toast.error(`Failed to create group: ${err.message}`)
     }
   }
 
@@ -594,7 +610,9 @@ export function Schools() {
   }
 
   return (
-    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+    <>
+      <Toaster position="top-right" />
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
       <div className="space-y-4">
         {/* Header */}
         <div className="flex justify-between items-center">
@@ -668,9 +686,16 @@ export function Schools() {
       )}
 
       {/* Add School Form */}
-      {showAddSchool && (
-        <div className="bg-gray-50 dark:bg-gray-800 p-4 rounded-lg">
-          <form onSubmit={handleAddSchool} className="space-y-4">
+      <AnimatePresence>
+        {showAddSchool && (
+          <motion.div
+            initial={{ opacity: 0, height: 0 }}
+            animate={{ opacity: 1, height: 'auto' }}
+            exit={{ opacity: 0, height: 0 }}
+            transition={{ duration: 0.2 }}
+            className="bg-gray-50 dark:bg-gray-800 p-4 rounded-lg overflow-hidden"
+          >
+            <form onSubmit={handleAddSchool} className="space-y-4">
             <div>
               <label className="block text-sm font-medium mb-2">School Name</label>
               <input
@@ -702,8 +727,9 @@ export function Schools() {
               </button>
             </div>
           </form>
-        </div>
-      )}
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       {/* Schools List */}
       <div className="grid gap-4">
@@ -717,11 +743,17 @@ export function Schools() {
             <p className="text-sm mt-2">Try adjusting your search query</p>
           </div>
         ) : (
-          filteredSchools.map((school) => {
+          filteredSchools.map((school, index) => {
             const totalGroups = (groupsBySchool[school.id] || []).length
 
             return (
-              <div key={school.id} className="rounded-lg border border-gray-200 bg-white shadow-sm hover:shadow-md hover:-translate-y-0.5 transition-all duration-200 dark:border-gray-700 dark:bg-gray-800">
+              <motion.div
+                key={school.id}
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.3, delay: index * 0.05 }}
+                className="rounded-lg border border-gray-200 bg-white shadow-sm hover:shadow-md hover:-translate-y-0.5 transition-all duration-200 dark:border-gray-700 dark:bg-gray-800"
+              >
                 {/* School Header */}
                 <div
                   className="p-4 cursor-pointer bg-gray-50/50 hover:bg-gray-100/50 transition-colors rounded-t-lg border-b border-gray-200 dark:bg-gray-800/50 dark:hover:bg-gray-700/50 dark:border-gray-700"
@@ -1249,7 +1281,7 @@ export function Schools() {
                     </div>
                   </div>
                 )}
-              </div>
+              </motion.div>
             )
           })
         )}
@@ -1378,5 +1410,6 @@ export function Schools() {
       </Modal>
       </div>
     </div>
+    </>
   )
 }
