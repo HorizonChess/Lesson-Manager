@@ -17,7 +17,10 @@ import {
   BookOpen,
   Users,
   ChevronDown,
-  ChevronRight
+  ChevronRight,
+  Search,
+  ChevronsDown,
+  ChevronsRight
 } from 'lucide-react'
 
 interface Timeslot {
@@ -39,6 +42,9 @@ export function Schools() {
 
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
+
+  // UI state - Search & Filter
+  const [searchQuery, setSearchQuery] = useState('')
 
   // UI state - Collapse
   const [collapsedSchools, setCollapsedSchools] = useState<Record<string, boolean>>({})
@@ -517,6 +523,62 @@ export function Schools() {
     })
   }
 
+  // Filter schools/subjects/groups based on search query
+  const filteredSchools = schools.filter(school => {
+    const query = searchQuery.toLowerCase().trim()
+    if (!query) return true
+
+    // Check school name
+    if (school.name.toLowerCase().includes(query)) return true
+
+    // Check subjects under this school
+    const schoolSubjects = schoolSubjectsBySchool[school.id] || []
+    if (schoolSubjects.some(subject => subject.name.toLowerCase().includes(query))) return true
+
+    // Check groups under this school
+    const schoolGroups = groupsBySchool[school.id] || []
+    if (schoolGroups.some(group => group.name.toLowerCase().includes(query))) return true
+
+    return false
+  })
+
+  // Helper: Check if subject matches search or has matching groups
+  const subjectMatchesSearch = (subject: Subject, schoolId: string) => {
+    const query = searchQuery.toLowerCase().trim()
+    if (!query) return true
+
+    // Check subject name
+    if (subject.name.toLowerCase().includes(query)) return true
+
+    // Check groups under this subject
+    const subjectGroups = getSchoolSubjectGroups(schoolId, subject.id)
+    return subjectGroups.some(group => group.name.toLowerCase().includes(query))
+  }
+
+  // Helper: Check if group matches search
+  const groupMatchesSearch = (group: Group) => {
+    const query = searchQuery.toLowerCase().trim()
+    if (!query) return true
+    return group.name.toLowerCase().includes(query)
+  }
+
+  // Expand/collapse all schools
+  const expandAllSchools = () => {
+    const expanded: Record<string, boolean> = {}
+    filteredSchools.forEach(school => {
+      expanded[school.id] = false // false = expanded
+    })
+    setCollapsedSchools(expanded)
+  }
+
+  const collapseAllSchools = () => {
+    const collapsed: Record<string, boolean> = {}
+    filteredSchools.forEach(school => {
+      collapsed[school.id] = true
+    })
+    setCollapsedSchools(collapsed)
+  }
+
   // ==================== RENDER ====================
 
   if (loading) {
@@ -551,6 +613,48 @@ export function Schools() {
           >
             <Plus size={16} />
             Add School
+          </Button>
+        </div>
+      </div>
+
+      {/* Search & Controls */}
+      <div className="flex gap-3 items-center">
+        <div className="flex-1 relative">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={18} />
+          <input
+            type="text"
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            placeholder="Search schools, subjects, or groups..."
+            className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 dark:bg-gray-800 dark:border-gray-600 dark:text-gray-100"
+          />
+          {searchQuery && (
+            <Button
+              size="sm"
+              variant="ghost"
+              onClick={() => setSearchQuery('')}
+              className="absolute right-2 top-1/2 -translate-y-1/2"
+            >
+              <X size={16} />
+            </Button>
+          )}
+        </div>
+        <div className="flex gap-2">
+          <Button
+            size="sm"
+            variant="outline"
+            onClick={expandAllSchools}
+            title="Expand all schools"
+          >
+            <ChevronsDown size={16} />
+          </Button>
+          <Button
+            size="sm"
+            variant="outline"
+            onClick={collapseAllSchools}
+            title="Collapse all schools"
+          >
+            <ChevronsRight size={16} />
           </Button>
         </div>
       </div>
@@ -607,8 +711,13 @@ export function Schools() {
           <div className="text-center py-8 text-gray-500">
             No schools yet. Add your first school to get started!
           </div>
+        ) : filteredSchools.length === 0 ? (
+          <div className="text-center py-8 text-gray-500">
+            <p className="text-lg">No results found</p>
+            <p className="text-sm mt-2">Try adjusting your search query</p>
+          </div>
         ) : (
-          schools.map((school) => {
+          filteredSchools.map((school) => {
             const totalGroups = (groupsBySchool[school.id] || []).length
 
             return (
@@ -757,7 +866,9 @@ export function Schools() {
                       {(schoolSubjectsBySchool[school.id] || []).length === 0 ? (
                         <p className="text-gray-500 italic">No subjects yet. Add a subject to this school.</p>
                       ) : (
-                        (schoolSubjectsBySchool[school.id] || []).map((subject) => {
+                        (schoolSubjectsBySchool[school.id] || [])
+                          .filter(subject => subjectMatchesSearch(subject, school.id))
+                          .map((subject) => {
                           const subjectGroups = getSchoolSubjectGroups(school.id, subject.id)
 
                           return (
@@ -955,7 +1066,7 @@ export function Schools() {
                                     {subjectGroups.length === 0 ? (
                                       <p className="text-gray-500 text-sm italic">No groups yet</p>
                                     ) : (
-                                      subjectGroups.map((group) => (
+                                      subjectGroups.filter(groupMatchesSearch).map((group) => (
                                         <div key={group.id} className="bg-gray-50 p-2.5 rounded-md border border-gray-300/40 shadow-sm hover:shadow-md hover:-translate-y-0.5 transition-all duration-200 dark:bg-gray-700/50 dark:border-gray-600/40">
                                           <div className="flex justify-between items-start mb-2">
                                             <div className="flex-1">

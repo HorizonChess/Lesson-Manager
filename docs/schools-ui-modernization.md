@@ -161,17 +161,25 @@ Modernizing the Schools page UI to be professional, space-efficient, and serve a
    - ✅ Applied ghost variant with appropriate hover colors
 
 **New Features**:
-- [ ] Add search functionality (filter schools/subjects/groups by name)
-- [ ] Add expand/collapse all buttons (bulk expand/collapse schools)
-- [ ] Add loading states (skeleton screens during data fetch)
-- [ ] Improve empty states (better placeholders when no data)
+7. **Search Functionality**:
+   - ✅ Added search bar with Search icon at top of page
+   - ✅ Real-time filtering of schools, subjects, and groups by name
+   - ✅ Hierarchical search: shows school if any subject/group matches
+   - ✅ Clear button (X) appears when search has text
+   - ✅ Improved empty state: "No results found" when search returns no matches
+   - ✅ Placeholder text: "Search schools, subjects, or groups..."
 
-**Implementation Plan**:
-1. Debug GroupOverview.tsx tab rendering issue
-2. Add group name edit field to Settings tab
-3. Implement search bar at page top
-4. Add expand/collapse all controls
-5. Create skeleton loading components
+8. **Expand/Collapse All Controls**:
+   - ✅ Added two icon buttons next to search bar
+   - ✅ ChevronsDown button: Expands all filtered schools
+   - ✅ ChevronsRight button: Collapses all filtered schools
+   - ✅ Tooltips on hover for clarity
+   - ✅ Works seamlessly with search results
+
+9. **Empty States**:
+   - ✅ Enhanced "No results found" message during search
+   - ✅ Helpful hint: "Try adjusting your search query"
+   - ✅ Existing empty states preserved (no schools, no subjects, no groups)
 
 ---
 
