@@ -107,6 +107,13 @@ export function Schools() {
       setGroupsBySubject(data.groupsBySubject)
       setRostersByGroup(data.rostersByGroup)
 
+      // Collapse schools by default
+      const newCollapsedSchools: Record<string, boolean> = {}
+      data.schools.forEach(school => {
+        newCollapsedSchools[school.id] = true
+      })
+      setCollapsedSchools(newCollapsedSchools)
+
       // Smart collapsing: collapse groups by default
       const newCollapsedGroups: Record<string, boolean> = {}
       Object.values(data.groupsBySchool).flat().forEach(group => {
@@ -850,8 +857,16 @@ export function Schools() {
                 </div>
 
                 {/* School Content */}
-                {!collapsedSchools[school.id] && (
-                  <div className="px-6 pb-6">
+                <AnimatePresence>
+                  {!collapsedSchools[school.id] && (
+                    <motion.div
+                      initial={{ height: 0, opacity: 0 }}
+                      animate={{ height: 'auto', opacity: 1 }}
+                      exit={{ height: 0, opacity: 0 }}
+                      transition={{ duration: 0.3, ease: 'easeInOut' }}
+                      className="overflow-hidden"
+                    >
+                      <div className="px-6 pb-6">
                     {/* Add Subject Form */}
                     {showAddSubject === school.id && (
                       <div className="mb-4 bg-gray-50 dark:bg-gray-700 p-4 rounded-lg">
@@ -1279,8 +1294,10 @@ export function Schools() {
                         })
                       )}
                     </div>
-                  </div>
-                )}
+                      </div>
+                    </motion.div>
+                  )}
+                </AnimatePresence>
               </motion.div>
             )
           })

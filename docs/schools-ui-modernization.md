@@ -214,11 +214,25 @@ Modernizing the Schools page UI to be professional, space-efficient, and serve a
    - Staggered delay (50ms per card) for cascade effect
    - 0.3s duration for smooth appearance
 
+8. ✅ **School Collapse/Expand Animation**:
+   - Smooth height transition (0.3s easeInOut)
+   - Opacity fade synchronized with height change
+   - Content animates in/out elegantly
+   - Schools collapsed by default on page load
+
+9. ✅ **Modal Animations** (Applied to all modals):
+   - Backdrop fade-in/out (0.2s)
+   - Modal slides up with scale effect (0.95 → 1.0)
+   - Smooth exit animation when closing
+   - Applied to: Group Overview Modal, Manage Subjects Modal
+
 **User Experience Improvements**:
 - ✅ Immediate visual feedback on all CRUD operations
 - ✅ Smooth, polished transitions throughout the page
 - ✅ Professional feel with subtle animations
 - ✅ Non-intrusive notifications that auto-dismiss
+- ✅ Schools collapsed by default for cleaner initial view
+- ✅ Delightful collapse/expand interactions
 
 ---
 
