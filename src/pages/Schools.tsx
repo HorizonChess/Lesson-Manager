@@ -4,6 +4,8 @@ import * as groupsPageService from '../services/groupsPage'
 import type { School, Subject, Group, RosterItem } from '../types/database'
 import { Modal } from '../components/Modal'
 import { GroupOverview } from '../components/GroupOverview'
+import { Button } from '../components/ui/button'
+import { Badge } from '../components/ui/badge'
 import {
   Plus,
   Edit2,
@@ -501,25 +503,26 @@ export function Schools() {
   }
 
   return (
-    <div className="space-y-6">
-      {/* Header */}
-      <div className="flex justify-between items-center">
-        <h2 className="text-2xl font-bold">School Overview</h2>
+    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <div className="space-y-4">
+        {/* Header */}
+        <div className="flex justify-between items-center">
+          <h2 className="text-2xl font-bold">School Overview</h2>
         <div className="flex gap-2">
-          <button
+          <Button
+            variant="outline"
             onClick={() => setShowManageSubjects(true)}
-            className="bg-purple-600 text-white px-4 py-2 rounded hover:bg-purple-700 flex items-center gap-2"
           >
-            <Settings size={18} />
+            <Settings size={16} />
             Manage Subjects
-          </button>
-          <button
+          </Button>
+          <Button
+            variant="default"
             onClick={() => setShowAddSchool(true)}
-            className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700 flex items-center gap-2"
           >
-            <Plus size={18} />
+            <Plus size={16} />
             Add School
-          </button>
+          </Button>
         </div>
       </div>
 
@@ -569,8 +572,8 @@ export function Schools() {
         </div>
       )}
 
-      {/* Schools List - CONTINUED IN NEXT PART DUE TO LENGTH */}
-      <div className="grid gap-6">
+      {/* Schools List */}
+      <div className="grid gap-4">
         {schools.length === 0 ? (
           <div className="text-center py-8 text-gray-500">
             No schools yet. Add your first school to get started!
@@ -580,10 +583,10 @@ export function Schools() {
             const totalGroups = (groupsBySchool[school.id] || []).length
 
             return (
-              <div key={school.id} className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl shadow-lg hover:shadow-xl transition-shadow">
+              <div key={school.id} className="rounded-lg border border-gray-200 bg-white shadow-sm hover:shadow-md hover:-translate-y-0.5 transition-all duration-200 dark:border-gray-700 dark:bg-gray-800">
                 {/* School Header */}
                 <div
-                  className="p-6 cursor-pointer bg-gradient-to-r from-blue-50 to-blue-100 dark:from-blue-900/20 dark:to-blue-800/20 hover:from-blue-100 hover:to-blue-200 dark:hover:from-blue-900/30 dark:hover:to-blue-800/30 transition-all rounded-t-xl border-b-2 border-blue-200 dark:border-blue-700"
+                  className="p-4 cursor-pointer bg-gray-50/50 hover:bg-gray-100/50 transition-colors rounded-t-lg border-b border-gray-200 dark:bg-gray-800/50 dark:hover:bg-gray-700/50 dark:border-gray-700"
                   onClick={() => toggleSchoolCollapse(school.id)}
                 >
                   <div className="flex justify-between items-center">
@@ -626,45 +629,48 @@ export function Schools() {
                         </div>
                       ) : (
                         <div>
-                          <h3 className="text-xl font-semibold text-gray-800 dark:text-gray-100">{school.name}</h3>
-                          <div className="flex gap-2 mt-1">
-                            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium bg-purple-100 text-purple-800 dark:bg-purple-900/30 dark:text-purple-300">
-                              <BookOpen size={12} />
+                          <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100">{school.name}</h3>
+                          <div className="flex gap-2 mt-1.5">
+                            <Badge variant="secondary">
+                              <BookOpen size={12} className="text-purple-600 dark:text-purple-400" />
                               {(schoolSubjectsBySchool[school.id] || []).length} subjects
-                            </span>
-                            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium bg-orange-100 text-orange-800 dark:bg-orange-900/30 dark:text-orange-300">
-                              <Users size={12} />
+                            </Badge>
+                            <Badge variant="secondary">
+                              <Users size={12} className="text-orange-600 dark:text-orange-400" />
                               {totalGroups} groups
-                            </span>
+                            </Badge>
                           </div>
                         </div>
                       )}
                     </div>
                     <div className="flex gap-2" onClick={(e) => e.stopPropagation()}>
-                      <button
+                      <Button
+                        size="sm"
+                        variant="outline"
                         onClick={() => setShowAddSubject(school.id)}
-                        className="bg-green-600 text-white px-3 py-1 rounded text-sm hover:bg-green-700 flex items-center gap-1"
                       >
-                        <Plus size={16} />
+                        <Plus size={14} />
                         Add Subject
-                      </button>
-                      <button
+                      </Button>
+                      <Button
+                        size="sm"
+                        variant="ghost"
                         onClick={() => {
                           setEditingSchool(school.id)
                           setEditSchoolName(school.name)
                         }}
-                        className="bg-blue-600 text-white px-3 py-1 rounded text-sm hover:bg-blue-700 flex items-center gap-1"
                       >
-                        <Edit2 size={16} />
+                        <Edit2 size={14} />
                         Edit
-                      </button>
-                      <button
+                      </Button>
+                      <Button
+                        size="sm"
+                        variant="ghost"
                         onClick={() => handleDeleteSchool(school.id)}
-                        className="bg-red-600 text-white px-3 py-1 rounded text-sm hover:bg-red-700 flex items-center gap-1"
                       >
-                        <Trash2 size={16} />
+                        <Trash2 size={14} />
                         Delete
-                      </button>
+                      </Button>
                     </div>
                   </div>
                 </div>
@@ -714,7 +720,7 @@ export function Schools() {
                     )}
 
                     {/* Subjects List */}
-                    <div className="space-y-4">
+                    <div className="space-y-3">
                       {(schoolSubjectsBySchool[school.id] || []).length === 0 ? (
                         <p className="text-gray-500 italic">No subjects yet. Add a subject to this school.</p>
                       ) : (
@@ -722,10 +728,10 @@ export function Schools() {
                           const subjectGroups = getSchoolSubjectGroups(school.id, subject.id)
 
                           return (
-                            <div key={subject.id} className="bg-gradient-to-r from-purple-50 to-purple-100 dark:from-purple-900/20 dark:to-purple-800/20 rounded-lg border border-purple-200 dark:border-purple-700 shadow-md hover:shadow-lg transition-all">
+                            <div key={subject.id} className="rounded-md border border-gray-200/60 bg-white/50 shadow-sm hover:shadow-md hover:-translate-y-0.5 transition-all duration-200 dark:border-gray-700/60 dark:bg-gray-800/50">
                               {/* Subject Header */}
                               <div
-                                className="p-4 cursor-pointer hover:from-purple-100 hover:to-purple-200 dark:hover:from-purple-900/30 dark:hover:to-purple-800/30 transition-all rounded-lg"
+                                className="p-3 cursor-pointer hover:bg-gray-50/50 transition-colors rounded-t-md dark:hover:bg-gray-700/50"
                                 onClick={() => toggleSubjectCollapse(school.id, subject.id)}
                               >
                                 <div className="flex justify-between items-center">
@@ -737,23 +743,24 @@ export function Schools() {
                                         <ChevronDown size={20} />
                                       )}
                                     </div>
-                                    <BookOpen size={20} className="text-purple-600 dark:text-purple-400" />
+                                    <BookOpen size={18} className="text-purple-600 dark:text-purple-400" />
                                     <div>
-                                      <h4 className="font-medium text-gray-800 dark:text-gray-100">{subject.name}</h4>
-                                      <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium bg-orange-100 text-orange-800 dark:bg-orange-900/30 dark:text-orange-300 mt-0.5">
-                                        <Users size={10} />
+                                      <h4 className="font-medium text-gray-900 dark:text-gray-100">{subject.name}</h4>
+                                      <Badge variant="secondary" className="mt-1">
+                                        <Users size={10} className="text-orange-600 dark:text-orange-400" />
                                         {subjectGroups.length} groups
-                                      </span>
+                                      </Badge>
                                     </div>
                                   </div>
                                   <div className="flex gap-1" onClick={(e) => e.stopPropagation()}>
-                                    <button
+                                    <Button
+                                      size="sm"
+                                      variant="outline"
                                       onClick={() => setShowAddGroup({ schoolId: school.id, subjectId: subject.id })}
-                                      className="bg-purple-600 text-white px-2 py-1 rounded text-xs hover:bg-purple-700 flex items-center gap-1"
                                     >
-                                      <Plus size={14} />
+                                      <Plus size={12} />
                                       Add Group
-                                    </button>
+                                    </Button>
                                   </div>
                                 </div>
                               </div>
@@ -862,7 +869,7 @@ export function Schools() {
                                       <p className="text-gray-500 text-sm italic">No groups yet</p>
                                     ) : (
                                       subjectGroups.map((group) => (
-                                        <div key={group.id} className="bg-gradient-to-r from-orange-50 to-orange-100 dark:from-orange-900/20 dark:to-orange-800/20 p-3 rounded-lg border border-orange-200 dark:border-orange-700 shadow-sm hover:shadow-md transition-all">
+                                        <div key={group.id} className="bg-gray-50 p-2.5 rounded-md border border-gray-300/40 shadow-sm hover:shadow-md hover:-translate-y-0.5 transition-all duration-200 dark:bg-gray-700/50 dark:border-gray-600/40">
                                           <div className="flex justify-between items-start mb-2">
                                             <div className="flex-1">
                                               <div className="flex items-start gap-2">
@@ -894,19 +901,21 @@ export function Schools() {
                                               </div>
                                             </div>
                                             <div className="flex gap-1">
-                                              <button
+                                              <Button
+                                                size="sm"
+                                                variant="outline"
                                                 onClick={() => setShowAddStudent(group.id)}
-                                                className="bg-orange-600 text-white px-2 py-1 rounded text-xs hover:bg-orange-700 flex items-center gap-1"
                                               >
-                                                <Plus size={14} />
+                                                <Plus size={12} />
                                                 Add Student
-                                              </button>
-                                              <button
+                                              </Button>
+                                              <Button
+                                                size="sm"
+                                                variant="ghost"
                                                 onClick={() => handleDeleteGroup(group.id, school.id, subject.id)}
-                                                className="text-red-600 hover:text-red-800 text-xs"
                                               >
-                                                <Trash2 size={14} />
-                                              </button>
+                                                <Trash2 size={12} />
+                                              </Button>
                                             </div>
                                           </div>
 
@@ -1065,8 +1074,6 @@ export function Schools() {
             onGroupUpdate={handleGroupUpdate}
             onRosterUpdate={handleRosterUpdate}
             onGroupDelete={handleGroupDeleteFromModal}
-            activeTab="students"
-            onTabChange={() => {}}
           />
         </Modal>
       )}
@@ -1171,6 +1178,7 @@ export function Schools() {
           </div>
         </div>
       </Modal>
+      </div>
     </div>
   )
 }

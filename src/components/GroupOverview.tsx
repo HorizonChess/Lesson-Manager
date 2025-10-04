@@ -12,6 +12,7 @@ import {
   createAttendanceRecord,
   type AttendanceWithStudent
 } from '../services/groups.view'
+import { Button } from '../components/ui/button'
 
 interface GroupOverviewProps {
   group: Group
@@ -359,12 +360,12 @@ export function GroupOverview({
           <div className="p-6">
             <div className="flex justify-between items-center mb-4">
               <h3 className="text-lg font-medium">Students in {group.name}</h3>
-              <button
+              <Button
                 onClick={() => setShowAddStudent(true)}
-                className="bg-blue-600 text-white px-4 py-2 rounded text-sm hover:bg-blue-700"
+                variant="default"
               >
                 Add Student
-              </button>
+              </Button>
             </div>
 
             {error && (
@@ -390,22 +391,22 @@ export function GroupOverview({
                     />
                   </div>
                   <div className="flex gap-2">
-                    <button
+                    <Button
                       type="submit"
-                      className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700"
+                      variant="default"
                     >
                       Add Student
-                    </button>
-                    <button
+                    </Button>
+                    <Button
                       type="button"
                       onClick={() => {
                         setShowAddStudent(false)
                         setNewStudentName('')
                       }}
-                      className="bg-gray-300 text-gray-700 px-4 py-2 rounded hover:bg-gray-400"
+                      variant="ghost"
                     >
                       Cancel
-                    </button>
+                    </Button>
                   </div>
                 </form>
               </div>
@@ -436,41 +437,48 @@ export function GroupOverview({
                           }}
                           autoFocus
                         />
-                        <button
+                        <Button
                           onClick={() => updateStudent(student.id, editStudentName)}
-                          className="text-green-600 hover:text-green-800 text-sm"
+                          variant="ghost"
+                          size="sm"
+                          className="text-green-600 hover:text-green-700"
                         >
                           ✓
-                        </button>
-                        <button
+                        </Button>
+                        <Button
                           onClick={() => {
                             setEditingStudent(null)
                             setEditStudentName('')
                           }}
-                          className="text-gray-600 hover:text-gray-800 text-sm"
+                          variant="ghost"
+                          size="sm"
+                          className="text-gray-600 hover:text-gray-700"
                         >
                           ✕
-                        </button>
+                        </Button>
                       </div>
                     ) : (
                       <>
                         <span className="font-medium">{student.student_name}</span>
                         <div className="flex gap-2">
-                          <button
+                          <Button
                             onClick={() => {
                               setEditingStudent(student.id)
                               setEditStudentName(student.student_name)
                             }}
-                            className="text-blue-600 hover:text-blue-800 text-sm"
+                            variant="ghost"
+                            size="sm"
                           >
                             Edit
-                          </button>
-                          <button
+                          </Button>
+                          <Button
                             onClick={() => deleteStudent(student.id)}
-                            className="text-red-600 hover:text-red-800 text-sm"
+                            variant="ghost"
+                            size="sm"
+                            className="text-red-600 hover:text-red-700"
                           >
                             Remove
-                          </button>
+                          </Button>
                         </div>
                       </>
                     )}
@@ -686,24 +694,29 @@ export function GroupOverview({
                                   </div>
                                 </div>
                                 <div className="flex gap-1">
-                                  <button
+                                  <Button
                                     onClick={() => openLessonRecordForm(lesson.id)}
-                                    className="bg-blue-600 text-white px-2 py-1 rounded text-xs hover:bg-blue-700"
+                                    variant="default"
+                                    size="sm"
                                   >
                                     View
-                                  </button>
-                                  <button
+                                  </Button>
+                                  <Button
                                     onClick={() => toggleLessonCancellation(lesson.id, lesson.is_cancelled)}
-                                    className="bg-yellow-600 text-white px-2 py-1 rounded text-xs hover:bg-yellow-700"
+                                    variant="outline"
+                                    size="sm"
+                                    className="text-yellow-600 hover:text-yellow-700"
                                   >
                                     Cancel
-                                  </button>
-                                  <button
+                                  </Button>
+                                  <Button
                                     onClick={() => deleteLesson(lesson.id)}
-                                    className="bg-red-600 text-white px-2 py-1 rounded text-xs hover:bg-red-700"
+                                    variant="outline"
+                                    size="sm"
+                                    className="text-red-600 hover:text-red-700"
                                   >
                                     Delete
-                                  </button>
+                                  </Button>
                                 </div>
                               </div>
                             </div>
@@ -779,41 +792,50 @@ export function GroupOverview({
                                 </div>
 
                                 <div className="flex gap-1 ml-4">
-                                  <button
+                                  <Button
                                     onClick={() => openLessonRecordForm(lesson.id)}
-                                    className="bg-blue-600 text-white px-2 py-1 rounded text-xs hover:bg-blue-700"
+                                    variant="default"
+                                    size="sm"
                                   >
                                     View
-                                  </button>
+                                  </Button>
                                   {!lesson.is_cancelled ? (
                                     <>
-                                      <button
+                                      <Button
                                         onClick={() => toggleLessonCancellation(lesson.id, lesson.is_cancelled)}
-                                        className="bg-yellow-600 text-white px-2 py-1 rounded text-xs hover:bg-yellow-700"
+                                        variant="outline"
+                                        size="sm"
+                                        className="text-yellow-600 hover:text-yellow-700"
                                       >
                                         Cancel
-                                      </button>
-                                      <button
+                                      </Button>
+                                      <Button
                                         onClick={() => deleteLesson(lesson.id)}
-                                        className="bg-red-600 text-white px-2 py-1 rounded text-xs hover:bg-red-700"
+                                        variant="outline"
+                                        size="sm"
+                                        className="text-red-600 hover:text-red-700"
                                       >
                                         Delete
-                                      </button>
+                                      </Button>
                                     </>
                                   ) : (
                                     <>
-                                      <button
+                                      <Button
                                         onClick={() => toggleLessonCancellation(lesson.id, lesson.is_cancelled)}
-                                        className="bg-green-600 text-white px-2 py-1 rounded text-xs hover:bg-green-700"
+                                        variant="outline"
+                                        size="sm"
+                                        className="text-green-600 hover:text-green-700"
                                       >
                                         Restore
-                                      </button>
-                                      <button
+                                      </Button>
+                                      <Button
                                         onClick={() => deleteLesson(lesson.id)}
-                                        className="bg-red-600 text-white px-2 py-1 rounded text-xs hover:bg-red-700"
+                                        variant="outline"
+                                        size="sm"
+                                        className="text-red-600 hover:text-red-700"
                                       >
                                         Delete
-                                      </button>
+                                      </Button>
                                     </>
                                   )}
                                 </div>
@@ -830,15 +852,15 @@ export function GroupOverview({
                 <div className="border-t pt-4">
                   <h4 className="text-md font-medium mb-3">Quick Actions</h4>
                   <div className="flex flex-wrap gap-2">
-                    <button
+                    <Button
                       onClick={() => {
                         // Link to lessons page - could be enhanced to navigate programmatically
                         window.location.href = '/lessons'
                       }}
-                      className="bg-blue-600 text-white px-4 py-2 rounded text-sm hover:bg-blue-700"
+                      variant="default"
                     >
                       📚 Go to Lessons Page
-                    </button>
+                    </Button>
                     <div className="text-sm text-gray-500 px-4 py-2">
                       Create new lessons, lesson records, and manage attendance from the Lessons page
                     </div>
@@ -857,37 +879,38 @@ export function GroupOverview({
               <div className="flex gap-2">
                 {!editingGroup ? (
                   <>
-                    <button
+                    <Button
                       onClick={() => setEditingGroup(true)}
-                      className="bg-blue-600 text-white px-4 py-2 rounded text-sm hover:bg-blue-700"
+                      variant="default"
                     >
                       Edit Settings
-                    </button>
-                    <button
+                    </Button>
+                    <Button
                       onClick={deleteGroup}
-                      className="bg-red-600 text-white px-4 py-2 rounded text-sm hover:bg-red-700"
+                      variant="outline"
+                      className="text-red-600 hover:text-red-700"
                     >
                       Delete Group
-                    </button>
+                    </Button>
                   </>
                 ) : (
                   <>
-                    <button
+                    <Button
                       onClick={updateGroupSettings}
-                      className="bg-green-600 text-white px-4 py-2 rounded text-sm hover:bg-green-700"
+                      variant="default"
                     >
                       Save Changes
-                    </button>
-                    <button
+                    </Button>
+                    <Button
                       onClick={() => {
                         setEditingGroup(false)
                         setEditGroupName(group.name)
                         setEditGroupTimeslots(group.timeslots || [])
                       }}
-                      className="bg-gray-400 text-white px-4 py-2 rounded text-sm hover:bg-gray-500"
+                      variant="ghost"
                     >
                       Cancel
-                    </button>
+                    </Button>
                   </>
                 )}
               </div>
@@ -944,12 +967,14 @@ export function GroupOverview({
                     Schedule
                   </label>
                   {editingGroup && (
-                    <button
+                    <Button
                       onClick={addTimeslot}
-                      className="bg-green-600 text-white px-3 py-1 rounded text-sm hover:bg-green-700"
+                      variant="outline"
+                      size="sm"
+                      className="text-green-600 hover:text-green-700"
                     >
                       Add Timeslot
-                    </button>
+                    </Button>
                   )}
                 </div>
 
@@ -986,12 +1011,14 @@ export function GroupOverview({
                             onChange={(e) => updateTimeslot(index, 'endTime', e.target.value)}
                             className="px-3 py-2 border border-gray-300 rounded focus:outline-none focus:border-blue-500"
                           />
-                          <button
+                          <Button
                             onClick={() => removeTimeslot(index)}
-                            className="text-red-600 hover:text-red-800 text-sm"
+                            variant="ghost"
+                            size="sm"
+                            className="text-red-600 hover:text-red-700"
                           >
                             Remove
-                          </button>
+                          </Button>
                         </div>
                       ))
                     )}
@@ -1093,16 +1120,17 @@ export function GroupOverview({
                   })()}
                 </h2>
               </div>
-              <button
+              <Button
                 onClick={() => {
                   setOpenLessonRecord(null)
                   setRecordData({ covered: '', planned: '', homework: '', notes: '' })
                   setAttendanceData({})
                 }}
-                className="text-gray-500 hover:text-gray-700 text-xl min-w-[44px] min-h-[44px] flex items-center justify-center"
+                variant="ghost"
+                className="text-xl min-w-[44px] min-h-[44px]"
               >
                 ×
-              </button>
+              </Button>
             </div>
 
             {/* Content */}
@@ -1166,36 +1194,42 @@ export function GroupOverview({
                                 {student.student_name}
                               </div>
                               <div className="flex gap-1">
-                                <button
+                                <Button
                                   onClick={() => updateStudentAttendance(student.id, 'present')}
-                                  className={`px-2 py-1 rounded text-xs min-w-[60px] ${
+                                  variant={attendanceStatus === 'present' ? 'default' : 'outline'}
+                                  size="sm"
+                                  className={`min-w-[60px] ${
                                     attendanceStatus === 'present'
-                                      ? 'bg-green-600 text-white'
-                                      : 'bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-green-100 dark:hover:bg-green-900'
+                                      ? 'bg-green-600 hover:bg-green-700 text-white'
+                                      : 'hover:bg-green-100 dark:hover:bg-green-900'
                                   }`}
                                 >
                                   Present
-                                </button>
-                                <button
+                                </Button>
+                                <Button
                                   onClick={() => updateStudentAttendance(student.id, 'absent')}
-                                  className={`px-2 py-1 rounded text-xs min-w-[60px] ${
+                                  variant={attendanceStatus === 'absent' ? 'default' : 'outline'}
+                                  size="sm"
+                                  className={`min-w-[60px] ${
                                     attendanceStatus === 'absent'
-                                      ? 'bg-red-600 text-white'
-                                      : 'bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-red-100 dark:hover:bg-red-900'
+                                      ? 'bg-red-600 hover:bg-red-700 text-white'
+                                      : 'hover:bg-red-100 dark:hover:bg-red-900'
                                   }`}
                                 >
                                   Absent
-                                </button>
-                                <button
+                                </Button>
+                                <Button
                                   onClick={() => updateStudentAttendance(student.id, 'late')}
-                                  className={`px-2 py-1 rounded text-xs min-w-[60px] ${
+                                  variant={attendanceStatus === 'late' ? 'default' : 'outline'}
+                                  size="sm"
+                                  className={`min-w-[60px] ${
                                     attendanceStatus === 'late'
-                                      ? 'bg-yellow-600 text-white'
-                                      : 'bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-yellow-100 dark:hover:bg-yellow-900'
+                                      ? 'bg-yellow-600 hover:bg-yellow-700 text-white'
+                                      : 'hover:bg-yellow-100 dark:hover:bg-yellow-900'
                                   }`}
                                 >
                                   Late
-                                </button>
+                                </Button>
                               </div>
                             </div>
 
@@ -1234,21 +1268,23 @@ export function GroupOverview({
             {/* Footer */}
             <div className="border-t p-4">
               <div className="flex gap-3">
-                <button
+                <Button
                   onClick={saveLessonRecord}
-                  className="bg-blue-600 text-white px-6 py-3 rounded hover:bg-blue-700 flex-1 font-medium min-h-[44px]"
+                  variant="default"
+                  className="flex-1 font-medium min-h-[44px]"
                 >
                   Save Record
-                </button>
-                <button
+                </Button>
+                <Button
                   onClick={() => {
                     setOpenLessonRecord(null)
                     setRecordData({ covered: '', planned: '', homework: '', notes: '' })
                   }}
-                  className="bg-gray-300 dark:bg-gray-600 text-gray-700 dark:text-gray-300 px-6 py-3 rounded hover:bg-gray-400 dark:hover:bg-gray-500 min-h-[44px]"
+                  variant="ghost"
+                  className="min-h-[44px]"
                 >
                   Cancel
-                </button>
+                </Button>
               </div>
             </div>
           </div>
