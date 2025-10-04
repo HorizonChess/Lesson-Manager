@@ -3,6 +3,7 @@ import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { israeliCalendar } from '../services/israeliCalendar'
 import { ScheduleWizard } from '../components/ScheduleWizard'
+import { Button } from '../components/ui/button'
 import type { Task, Material } from '../types/database'
 import {
   fetchDashboardCounts,
@@ -214,33 +215,33 @@ ${templateJson}
 
       {/* Calendar Update Prompt */}
       {showCalendarPrompt && calendarUpdateNeeded.needsUpdate && (
-        <div className="bg-orange-50 border border-orange-200 rounded-lg p-4">
+        <div className="bg-orange-50 dark:bg-orange-900/20 border border-orange-200 dark:border-orange-800 rounded-lg p-4">
           <div className="flex items-start space-x-3">
             <div className="flex-shrink-0">
-              <svg className="h-5 w-5 text-orange-600" viewBox="0 0 20 20" fill="currentColor">
+              <svg className="h-5 w-5 text-orange-600 dark:text-orange-400" viewBox="0 0 20 20" fill="currentColor">
                 <path fillRule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
               </svg>
             </div>
             <div className="flex-1">
-              <h3 className="text-sm font-medium text-orange-800">
+              <h3 className="text-sm font-medium text-orange-800 dark:text-orange-200">
                 Calendar Update Required
               </h3>
-              <p className="mt-1 text-sm text-orange-700">
+              <p className="mt-1 text-sm text-orange-700 dark:text-orange-300">
                 School year {calendarUpdateNeeded.missingYear} vacation calendar is missing. Please update the calendar data to ensure accurate lesson scheduling.
               </p>
               <div className="mt-3 flex space-x-3">
-                <button
+                <Button
                   onClick={showCalendarUpdateInstructions}
-                  className="bg-orange-600 text-white px-3 py-1 rounded text-sm hover:bg-orange-700"
+                  className="bg-orange-600 hover:bg-orange-700"
                 >
                   Show Update Instructions
-                </button>
-                <button
+                </Button>
+                <Button
                   onClick={dismissCalendarPrompt}
-                  className="bg-gray-200 text-gray-800 px-3 py-1 rounded text-sm hover:bg-gray-300"
+                  variant="outline"
                 >
                   Dismiss for Now
-                </button>
+                </Button>
               </div>
             </div>
           </div>
@@ -248,7 +249,7 @@ ${templateJson}
       )}
 
       {/* Today's Overview */}
-      <div className="bg-white dark:bg-gray-800 border rounded-lg p-6">
+      <div className="bg-white dark:bg-gray-800 border dark:border-gray-700 rounded-lg p-6">
         <h2 className="text-lg font-semibold mb-4">Today's Schedule</h2>
         {todayLessons.length > 0 ? (
           <div className="space-y-3">
@@ -257,8 +258,8 @@ ${templateJson}
                 key={lesson.id}
                 className={`flex items-center justify-between p-3 rounded border ${
                   lesson.is_cancelled
-                    ? 'bg-red-50 border-red-200 text-red-700'
-                    : 'bg-blue-50 border-blue-200 text-blue-700'
+                    ? 'bg-red-50 dark:bg-red-900/20 border-red-200 dark:border-red-800 text-red-700 dark:text-red-300'
+                    : 'bg-blue-50 dark:bg-blue-900/20 border-blue-200 dark:border-blue-800 text-blue-700 dark:text-blue-300'
                 }`}
               >
                 <div>
@@ -272,7 +273,7 @@ ${templateJson}
                     {formatTime(lesson.start_time)} - {formatTime(lesson.end_time)}
                   </div>
                   {lesson.is_cancelled && (
-                    <div className="text-xs text-red-600">Cancelled</div>
+                    <div className="text-xs text-red-600 dark:text-red-400">Cancelled</div>
                   )}
                 </div>
               </div>
@@ -285,19 +286,19 @@ ${templateJson}
 
       {/* Quick Stats */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-        <div className="bg-white dark:bg-gray-800 border rounded-lg p-4">
+        <div className="bg-white dark:bg-gray-800 border dark:border-gray-700 rounded-lg p-4">
           <div className="text-2xl font-bold text-blue-600">{stats.schools}</div>
           <div className="text-sm text-gray-600 dark:text-gray-400">Schools</div>
         </div>
-        <div className="bg-white dark:bg-gray-800 border rounded-lg p-4">
+        <div className="bg-white dark:bg-gray-800 border dark:border-gray-700 rounded-lg p-4">
           <div className="text-2xl font-bold text-green-600">{stats.groups}</div>
           <div className="text-sm text-gray-600 dark:text-gray-400">Groups</div>
         </div>
-        <div className="bg-white dark:bg-gray-800 border rounded-lg p-4">
+        <div className="bg-white dark:bg-gray-800 border dark:border-gray-700 rounded-lg p-4">
           <div className="text-2xl font-bold text-purple-600">{stats.thisWeekLessons}</div>
           <div className="text-sm text-gray-600 dark:text-gray-400">This Week</div>
         </div>
-        <div className="bg-white dark:bg-gray-800 border rounded-lg p-4">
+        <div className="bg-white dark:bg-gray-800 border dark:border-gray-700 rounded-lg p-4">
           <div className="text-2xl font-bold text-orange-600">{stats.pendingTasks}</div>
           <div className="text-sm text-gray-600 dark:text-gray-400">Pending Tasks</div>
         </div>
@@ -307,7 +308,7 @@ ${templateJson}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
         <Link
           to="/schools"
-          className="bg-white dark:bg-gray-800 border rounded-lg p-4 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
+          className="bg-white dark:bg-gray-800 border dark:border-gray-700 rounded-lg p-4 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
         >
           <div className="flex items-center justify-between mb-2">
             <h3 className="font-semibold">School Overview</h3>
@@ -323,7 +324,7 @@ ${templateJson}
 
         <Link
           to="/lessons"
-          className="bg-white dark:bg-gray-800 border rounded-lg p-4 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
+          className="bg-white dark:bg-gray-800 border dark:border-gray-700 rounded-lg p-4 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
         >
           <div className="flex items-center justify-between mb-2">
             <h3 className="font-semibold">Lessons</h3>
@@ -339,7 +340,7 @@ ${templateJson}
 
         <Link
           to="/tasks"
-          className="bg-white dark:bg-gray-800 border rounded-lg p-4 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
+          className="bg-white dark:bg-gray-800 border dark:border-gray-700 rounded-lg p-4 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
         >
           <div className="flex items-center justify-between mb-2">
             <h3 className="font-semibold">Tasks</h3>
@@ -357,7 +358,7 @@ ${templateJson}
 
         <Link
           to="/lesson-plans"
-          className="bg-white dark:bg-gray-800 border rounded-lg p-4 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
+          className="bg-white dark:bg-gray-800 border dark:border-gray-700 rounded-lg p-4 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
         >
           <div className="flex items-center justify-between mb-2">
             <h3 className="font-semibold">Lesson Plans</h3>
@@ -378,7 +379,7 @@ ${templateJson}
       {(recentTasks.length > 0 || recentMaterials.length > 0) && (
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           {recentTasks.length > 0 && (
-            <div className="bg-white dark:bg-gray-800 border rounded-lg p-4">
+            <div className="bg-white dark:bg-gray-800 border dark:border-gray-700 rounded-lg p-4">
               <h3 className="font-semibold mb-3">Recent Tasks</h3>
               <div className="space-y-2">
                 {recentTasks.map(task => (
@@ -386,7 +387,7 @@ ${templateJson}
                     <span className="truncate">{task.title}</span>
                     <Link
                       to="/tasks"
-                      className="text-blue-600 hover:text-blue-800 text-xs ml-2"
+                      className="text-blue-600 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-300 text-xs ml-2"
                     >
                       View
                     </Link>
@@ -397,7 +398,7 @@ ${templateJson}
           )}
 
           {recentMaterials.length > 0 && (
-            <div className="bg-white dark:bg-gray-800 border rounded-lg p-4">
+            <div className="bg-white dark:bg-gray-800 border dark:border-gray-700 rounded-lg p-4">
               <h3 className="font-semibold mb-3">Recent Lesson Plans</h3>
               <div className="space-y-2">
                 {recentMaterials.map(material => (
@@ -405,7 +406,7 @@ ${templateJson}
                     <span className="truncate">{material.title}</span>
                     <Link
                       to="/lesson-plans"
-                      className="text-blue-600 hover:text-blue-800 text-xs ml-2"
+                      className="text-blue-600 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-300 text-xs ml-2"
                     >
                       View
                     </Link>

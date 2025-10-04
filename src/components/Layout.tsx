@@ -2,133 +2,188 @@ import { Outlet, NavLink } from 'react-router-dom'
 import { useAppStore } from '../stores/useAppStore'
 import { useAuth } from '../contexts/AuthContext'
 import { useEffect } from 'react'
+import { Button } from './ui/button'
+import { Toaster } from 'react-hot-toast'
+import {
+  Home,
+  School,
+  Calendar,
+  BookOpen,
+  CheckSquare,
+  BarChart3,
+  Sun,
+  Moon,
+  Languages,
+  LogOut
+} from 'lucide-react'
 
 export function Layout() {
   const { isDarkMode, isRTL, toggleDarkMode, toggleRTL } = useAppStore()
   const { user, signOut } = useAuth()
 
   useEffect(() => {
-    document.documentElement.className = isDarkMode ? 'dark' : ''
+    // Apply dark mode class
+    if (isDarkMode) {
+      document.documentElement.classList.add('dark')
+    } else {
+      document.documentElement.classList.remove('dark')
+    }
+
+    // Apply text direction
     document.documentElement.dir = isRTL ? 'rtl' : 'ltr'
   }, [isDarkMode, isRTL])
 
+  // Get user initials from email
+  const getUserInitials = () => {
+    if (!user?.email) return '?'
+    const parts = user.email.split('@')[0].split('.')
+    if (parts.length >= 2) {
+      return (parts[0][0] + parts[1][0]).toUpperCase()
+    }
+    return user.email.substring(0, 2).toUpperCase()
+  }
+
   return (
-    <div className="min-h-screen bg-white dark:bg-gray-900 text-gray-900 dark:text-white">
-      <header className="bg-blue-600 dark:bg-blue-800 text-white p-4">
-        <div className="container mx-auto flex justify-between items-center">
-          <h1 className="text-xl font-bold">Teacher Scheduler</h1>
-          <div className="flex gap-2 items-center">
-            {user && (
-              <span className="text-sm text-blue-200">
-                {user.email}
-              </span>
-            )}
-            <button
-              onClick={toggleDarkMode}
-              className="px-3 py-1 bg-blue-700 hover:bg-blue-800 rounded text-sm"
-            >
-              {isDarkMode ? '☀️' : '🌙'}
-            </button>
-            <button
-              onClick={toggleRTL}
-              className="px-3 py-1 bg-blue-700 hover:bg-blue-800 rounded text-sm"
-            >
-              {isRTL ? 'LTR' : 'RTL'}
-            </button>
-            {user && (
-              <button
-                onClick={() => signOut()}
-                className="px-3 py-1 bg-red-600 hover:bg-red-700 rounded text-sm"
-              >
-                Sign Out
-              </button>
-            )}
+    <>
+      <Toaster position="top-right" />
+      <div className="min-h-screen bg-gradient-to-b from-white via-gray-50 to-gray-100 dark:from-gray-900 dark:via-gray-950 dark:to-black text-gray-900 dark:text-white">
+        <header className="sticky top-0 z-40 w-full border-b border-gray-200/50 dark:border-gray-700/50 backdrop-blur-sm bg-white/80 dark:bg-gray-900/80">
+          <div className="container mx-auto px-4 sm:px-6 lg:px-8">
+            <div className="flex h-16 items-center justify-between">
+              <h1 className="text-xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
+                Teacher Scheduler
+              </h1>
+              <div className="flex gap-3 items-center">
+                {user && (
+                  <div className="flex items-center gap-3">
+                    <div className="hidden sm:block text-sm text-gray-600 dark:text-gray-400">
+                      {user.email.split('@')[0]}
+                    </div>
+                    <div className="h-8 w-8 rounded-full bg-gradient-to-br from-blue-500 to-purple-500 flex items-center justify-center text-white text-sm font-medium">
+                      {getUserInitials()}
+                    </div>
+                  </div>
+                )}
+                <Button
+                  size="sm"
+                  variant="ghost"
+                  onClick={toggleDarkMode}
+                  title={isDarkMode ? 'Switch to light mode' : 'Switch to dark mode'}
+                >
+                  {isDarkMode ? <Sun size={18} /> : <Moon size={18} />}
+                </Button>
+                <Button
+                  size="sm"
+                  variant="ghost"
+                  onClick={toggleRTL}
+                  title="Toggle text direction"
+                >
+                  <Languages size={18} />
+                </Button>
+                {user && (
+                  <Button
+                    size="sm"
+                    variant="ghost"
+                    onClick={() => signOut()}
+                    className="text-red-600 hover:text-red-700 dark:text-red-400 dark:hover:text-red-300"
+                  >
+                    <LogOut size={18} />
+                  </Button>
+                )}
+              </div>
+            </div>
           </div>
-        </div>
-      </header>
+        </header>
       
-      <nav className="bg-gray-100 dark:bg-gray-800 border-b">
-        <div className="container mx-auto px-4">
-          <div className="flex space-x-8 overflow-x-auto">
+      <nav className="border-b border-gray-200 dark:border-gray-700 bg-white/50 dark:bg-gray-900/50 backdrop-blur-sm">
+        <div className="container mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="flex space-x-8 overflow-x-auto scrollbar-hide">
             <NavLink
               to="/"
               className={({ isActive }) =>
-                `py-4 px-2 border-b-2 transition-colors whitespace-nowrap ${
+                `flex items-center gap-2 py-4 px-2 border-b-2 transition-all whitespace-nowrap ${
                   isActive
-                    ? 'border-blue-500 text-blue-600 dark:text-blue-400'
-                    : 'border-transparent text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200'
+                    ? 'border-blue-500 text-blue-600 dark:text-blue-400 font-medium'
+                    : 'border-transparent text-gray-600 hover:text-gray-900 dark:text-gray-400 dark:hover:text-gray-200'
                 }`
               }
             >
-              Dashboard
+              <Home size={18} />
+              <span className="hidden sm:inline">Dashboard</span>
             </NavLink>
             <NavLink
               to="/schools"
               className={({ isActive }) =>
-                `py-4 px-2 border-b-2 transition-colors whitespace-nowrap ${
+                `flex items-center gap-2 py-4 px-2 border-b-2 transition-all whitespace-nowrap ${
                   isActive
-                    ? 'border-blue-500 text-blue-600 dark:text-blue-400'
-                    : 'border-transparent text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200'
+                    ? 'border-blue-500 text-blue-600 dark:text-blue-400 font-medium'
+                    : 'border-transparent text-gray-600 hover:text-gray-900 dark:text-gray-400 dark:hover:text-gray-200'
                 }`
               }
             >
-              School Overview
+              <School size={18} />
+              <span className="hidden sm:inline">Schools</span>
             </NavLink>
             <NavLink
               to="/lessons"
               className={({ isActive }) =>
-                `py-4 px-2 border-b-2 transition-colors whitespace-nowrap ${
+                `flex items-center gap-2 py-4 px-2 border-b-2 transition-all whitespace-nowrap ${
                   isActive
-                    ? 'border-blue-500 text-blue-600 dark:text-blue-400'
-                    : 'border-transparent text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200'
+                    ? 'border-blue-500 text-blue-600 dark:text-blue-400 font-medium'
+                    : 'border-transparent text-gray-600 hover:text-gray-900 dark:text-gray-400 dark:hover:text-gray-200'
                 }`
               }
             >
-              Lessons
+              <Calendar size={18} />
+              <span className="hidden sm:inline">Lessons</span>
             </NavLink>
             <NavLink
               to="/lesson-plans"
               className={({ isActive }) =>
-                `py-4 px-2 border-b-2 transition-colors whitespace-nowrap ${
+                `flex items-center gap-2 py-4 px-2 border-b-2 transition-all whitespace-nowrap ${
                   isActive
-                    ? 'border-blue-500 text-blue-600 dark:text-blue-400'
-                    : 'border-transparent text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200'
+                    ? 'border-blue-500 text-blue-600 dark:text-blue-400 font-medium'
+                    : 'border-transparent text-gray-600 hover:text-gray-900 dark:text-gray-400 dark:hover:text-gray-200'
                 }`
               }
             >
-              Lesson Plans
+              <BookOpen size={18} />
+              <span className="hidden sm:inline">Plans</span>
             </NavLink>
             <NavLink
               to="/tasks"
               className={({ isActive }) =>
-                `py-4 px-2 border-b-2 transition-colors whitespace-nowrap ${
+                `flex items-center gap-2 py-4 px-2 border-b-2 transition-all whitespace-nowrap ${
                   isActive
-                    ? 'border-blue-500 text-blue-600 dark:text-blue-400'
-                    : 'border-transparent text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200'
+                    ? 'border-blue-500 text-blue-600 dark:text-blue-400 font-medium'
+                    : 'border-transparent text-gray-600 hover:text-gray-900 dark:text-gray-400 dark:hover:text-gray-200'
                 }`
               }
             >
-              Tasks
+              <CheckSquare size={18} />
+              <span className="hidden sm:inline">Tasks</span>
             </NavLink>
             <NavLink
               to="/reports"
               className={({ isActive }) =>
-                `py-4 px-2 border-b-2 transition-colors whitespace-nowrap ${
+                `flex items-center gap-2 py-4 px-2 border-b-2 transition-all whitespace-nowrap ${
                   isActive
-                    ? 'border-blue-500 text-blue-600 dark:text-blue-400'
-                    : 'border-transparent text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200'
+                    ? 'border-blue-500 text-blue-600 dark:text-blue-400 font-medium'
+                    : 'border-transparent text-gray-600 hover:text-gray-900 dark:text-gray-400 dark:hover:text-gray-200'
                 }`
               }
             >
-              Reports
+              <BarChart3 size={18} />
+              <span className="hidden sm:inline">Reports</span>
             </NavLink>
           </div>
         </div>
       </nav>
 
-      <main className="container mx-auto p-4">
+      <main className="container mx-auto p-4 sm:p-6 lg:p-8">
         <Outlet />
       </main>
-    </div>
+      </div>
+    </>
   )
 }
