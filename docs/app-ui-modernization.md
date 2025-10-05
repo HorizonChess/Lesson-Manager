@@ -40,10 +40,16 @@ Modernizing the entire app UI following the successful Schools page modernizatio
    - Typography scale (h1-h6)
    - Modern font stack (system fonts)
 
+6. ✅ **CRITICAL FIX: Tailwind v4 Dark Mode** - Added @custom-variant directive
+   - **Issue**: Dark mode toggle worked but no visual changes occurred
+   - **Root Cause**: Tailwind v4 requires explicit dark variant declaration
+   - **Fix**: Added `@custom-variant dark (&:where(.dark, .dark *));` to index.css
+   - **Result**: All `dark:` utility classes now work correctly
+
 **Files Modified**:
 - `src/stores/useAppStore.ts` - Added persist + system preference
-- `tailwind.config.ts` - Added gradients, animations, forms plugin
-- `src/index.css` - Added transitions, typography
+- `tailwind.config.ts` - Added animations, forms plugin, removed v3 darkMode config
+- `src/index.css` - **CRITICAL**: Added @custom-variant dark, transitions, typography
 
 ---
 
@@ -52,7 +58,9 @@ Modernizing the entire app UI following the successful Schools page modernizatio
 
 **Tasks Completed**:
 1. ✅ **Gradient Background** - Applied minimal gradients
-   - Uses `bg-gradient-light` and `bg-gradient-dark` from Tailwind config
+   - Light mode: `bg-gradient-to-br from-gray-50 via-white to-gray-100`
+   - Dark mode: `dark:from-gray-900 dark:via-gray-950 dark:to-black`
+   - Diagonal gradient (br) for more visual interest
 
 2. ✅ **Modern Header** - Glassmorphism design
    - Sticky header with backdrop-blur
@@ -91,32 +99,92 @@ Modernizing the entire app UI following the successful Schools page modernizatio
 
 ---
 
-### ⏳ Phase 3: Reusable UI Components (PENDING)
-**Tasks**:
-- [ ] Create Input component
-- [ ] Create Select component
-- [ ] Create Switch component
-- [ ] Create Textarea component
-- [ ] Define typography system
+### ✅ Phase 3: Reusable UI Components (COMPLETE)
+**Completed**: October 4, 2025
+
+**Tasks Completed**:
+1. ✅ **Input Component** - Created `src/components/ui/input.tsx`
+   - Dark mode support with `dark:` classes
+   - Error state with red border and error message
+   - Focus ring (blue-500)
+   - Disabled state with opacity
+   - Full accessibility with forwardRef
+
+2. ✅ **Textarea Component** - Created `src/components/ui/textarea.tsx`
+   - Same styling as Input for consistency
+   - Vertical resize only
+   - Min-height of 80px
+   - Error state support
+
+3. ✅ **Select Component** - Created `src/components/ui/select.tsx`
+   - Native select with modern styling
+   - Dark mode support
+   - Error state support
+   - Consistent with Input/Textarea
+
+4. ✅ **Switch Component** - Created `src/components/ui/switch.tsx`
+   - Toggle switch with smooth animation
+   - Blue background when checked
+   - Optional label prop
+   - Focus ring for accessibility
+   - Disabled state
+
+5. ✅ **Label Component** - Created `src/components/ui/label.tsx`
+   - Form label with dark mode
+   - Optional required indicator (red asterisk)
+   - Semantic HTML
+
+**Design System**:
+- All components use consistent border radius (`rounded-lg`)
+- Consistent focus ring: `ring-2 ring-blue-500 dark:ring-blue-400`
+- Consistent error state: `border-red-500 dark:border-red-400`
+- Smooth transitions: `transition-colors`
+- Height consistency: `h-10` for Input/Select
+
+**Files Created**:
+- `src/components/ui/input.tsx`
+- `src/components/ui/textarea.tsx`
+- `src/components/ui/select.tsx`
+- `src/components/ui/switch.tsx`
+- `src/components/ui/label.tsx`
 
 ---
 
-### ⏳ Phase 4: Global Integration (PENDING)
-**Tasks**:
-- [ ] Apply Switch to dark mode toggle
-- [ ] Add global Toaster
-- [ ] Apply background gradients
-- [ ] Extract Header/Nav components (if needed)
+### ✅ Phase 4: Global Integration (COMPLETE)
+**Completed**: October 4, 2025
+
+**Tasks Completed**:
+1. ✅ **Global Toaster** - Added to Layout.tsx
+   - react-hot-toast integration
+   - Positioned top-right
+   - Works with dark mode
+
+2. ✅ **Background Gradients** - Applied in Layout.tsx
+   - Light mode: `bg-gradient-to-br from-gray-50 via-white to-gray-100`
+   - Dark mode: `dark:from-gray-900 dark:via-gray-950 dark:to-black`
+   - Subtle diagonal gradient for visual interest
+
+3. ✅ **Modern Header** - Already completed in Phase 2
+   - Glassmorphism with backdrop blur
+   - Dark mode toggle with Sun/Moon icons
+   - User initials avatar
+
+4. ✅ **Button Component Integration** - Started modernization
+   - Updated MaterialsHeader to use Button with icons
+   - Added Plus and Tag icons from lucide-react
+
+**Files Modified**:
+- `src/components/materials/MaterialsHeader.tsx` - Modernized with Button component
 
 ---
 
-### ⏳ Phase 5: Dashboard Modernization (PENDING)
-**Tasks**:
-- [ ] Extract StatCard component
-- [ ] Extract QuickAccessCard component
-- [ ] Extract TodayLessonCard component
-- [ ] Update Dashboard to use new components
-- [ ] Add staggered animations
+### ⏳ Phase 5: Continue Modernization (PENDING)
+**Remaining Tasks**:
+- [ ] Add dark mode support to Tasks page forms
+- [ ] Add dark mode support to Lessons page
+- [ ] Add dark mode support to Reports page
+- [ ] Replace remaining old buttons with Button component
+- [ ] Add Input/Select/Textarea components to forms
 
 ---
 
@@ -127,13 +195,14 @@ Modernizing the entire app UI following the successful Schools page modernizatio
 src/
 ├── components/
 │   ├── ui/                    # Reusable primitives
-│   │   ├── button.tsx        # ✅ Exists
-│   │   ├── badge.tsx         # ✅ Exists
-│   │   ├── card.tsx          # ✅ Exists
-│   │   ├── input.tsx         # 🔜 To create
-│   │   ├── select.tsx        # 🔜 To create
-│   │   ├── switch.tsx        # 🔜 To create
-│   │   └── textarea.tsx      # 🔜 To create
+│   │   ├── button.tsx        # ✅ Created
+│   │   ├── badge.tsx         # ✅ Created
+│   │   ├── card.tsx          # ✅ Created
+│   │   ├── input.tsx         # ✅ Created (Phase 3)
+│   │   ├── select.tsx        # ✅ Created (Phase 3)
+│   │   ├── switch.tsx        # ✅ Created (Phase 3)
+│   │   ├── textarea.tsx      # ✅ Created (Phase 3)
+│   │   └── label.tsx         # ✅ Created (Phase 3)
 │   ├── layout/               # Layout components (optional)
 │   │   ├── AppHeader.tsx     # 🔜 Optional extraction
 │   │   └── AppNavigation.tsx # 🔜 Optional extraction

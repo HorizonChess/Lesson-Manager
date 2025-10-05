@@ -1,4 +1,6 @@
-﻿
+﻿import { Button } from '../ui/button'
+import { Plus, Tag } from 'lucide-react'
+
 interface MaterialsHeaderProps {
   onAddTag: () => void
   onAddMaterial: () => void
@@ -12,20 +14,17 @@ export function MaterialsHeader({ onAddTag, onAddMaterial }: MaterialsHeaderProp
         <p className="text-sm text-gray-600 dark:text-gray-400">Organize reusable lesson plans and attach them to lessons.</p>
       </div>
       <div className="flex gap-2">
-        <button
-          type="button"
+        <Button
           onClick={onAddTag}
-          className="rounded bg-green-600 px-4 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2"
+          className="bg-green-600 hover:bg-green-700"
         >
+          <Tag size={16} className="mr-2" />
           Add Tag
-        </button>
-        <button
-          type="button"
-          onClick={onAddMaterial}
-          className="rounded bg-blue-600 px-4 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
-        >
+        </Button>
+        <Button onClick={onAddMaterial}>
+          <Plus size={16} className="mr-2" />
           Add Lesson Plan
-        </button>
+        </Button>
       </div>
     </div>
   )
