@@ -35,6 +35,8 @@ import { LessonMaterialSelector } from '../components/lessons/LessonMaterialSele
 import { LessonsAddLessonModal } from '../components/lessons/LessonsAddLessonModal'
 import { LessonsRecordModal } from '../components/lessons/LessonsRecordModal'
 import type { RecurringLessonsFormState, RecurringPattern, LessonRecordData, EditTimeData } from '../components/lessons/types'
+import { Button } from '../components/ui/button'
+import { Plus, Repeat } from 'lucide-react'
 
 const normalizeLesson = (lesson: Lesson | LessonWithGroup): NormalizedLesson => {
   const candidate = lesson as LessonWithGroup
@@ -722,10 +724,7 @@ export function Lessons() {
   const dayStyleGetter = (date: Date) => {
     if (israeliCalendar.isVacationDay(date)) {
       return {
-        style: {
-          backgroundColor: '#fef3c7',
-          backgroundImage: 'repeating-linear-gradient(45deg, transparent, transparent 10px, rgba(0,0,0,.1) 10px, rgba(0,0,0,.1) 20px)'
-        }
+        className: 'vacation-day'
       }
     }
     return {}
@@ -1171,8 +1170,17 @@ export function Lessons() {
   // Simple event component - click to open, drag to move (built-in)
   const SimpleEventComponent = ({ event }: { event: LessonEvent }) => {
     return (
-      <div className="w-full h-full flex items-center justify-center text-xs font-medium p-1 cursor-pointer hover:bg-black/10 transition-colors">
-        <div className="truncate">{event.title}</div>
+      <div className="w-full h-full relative p-1 cursor-pointer hover:bg-black/10 dark:hover:bg-white/10 transition-colors overflow-hidden">
+        <div className="absolute top-1 left-1 text-[9px] opacity-70">
+          {moment(event.start).format('HH:mm')}
+        </div>
+        <div className="absolute top-1 right-1 text-[9px] opacity-70 truncate max-w-[40%]">
+          {event.resource?.school}
+        </div>
+        <div className="absolute inset-0 flex flex-col items-center justify-center px-1">
+          <div className="font-semibold text-xs truncate w-full text-center">{event.title}</div>
+          <div className="text-[10px] opacity-75 truncate w-full text-center mt-0.5">{event.resource?.subject}</div>
+        </div>
       </div>
     )
   }
@@ -1190,63 +1198,66 @@ export function Lessons() {
   return (
     <div className="space-y-6">
       <div className="flex justify-between items-center">
-        <h2 className="text-2xl font-bold">Lessons</h2>
-        <div className="flex gap-2">
-          <div className="flex bg-gray-100 dark:bg-gray-700 rounded-lg p-1">
+        <h2 className="text-2xl font-bold text-gray-900 dark:text-gray-100">Lessons</h2>
+        <div className="flex gap-2 items-center">
+          <div className="flex bg-gray-100 dark:bg-gray-800 rounded-lg p-1 shadow-sm">
             <button
               onClick={() => setCalendarView('calendar')}
-              className={`px-3 py-1 rounded text-sm transition-colors ${
+              className={`px-4 py-2 rounded-md text-sm font-medium transition-all ${
                 calendarView === 'calendar'
-                  ? 'bg-blue-600 text-white'
-                  : 'text-gray-600 dark:text-gray-300 hover:text-gray-800 dark:hover:text-gray-100'
+                  ? 'bg-slate-700 dark:bg-slate-600 text-white shadow-md'
+                  : 'text-gray-600 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-700'
               }`}
             >
               Calendar
             </button>
             <button
               onClick={() => setCalendarView('list')}
-              className={`px-3 py-1 rounded text-sm transition-colors ${
+              className={`px-4 py-2 rounded-md text-sm font-medium transition-all ${
                 calendarView === 'list'
-                  ? 'bg-blue-600 text-white'
-                  : 'text-gray-600 dark:text-gray-300 hover:text-gray-800 dark:hover:text-gray-100'
+                  ? 'bg-slate-700 dark:bg-slate-600 text-white shadow-md'
+                  : 'text-gray-600 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-700'
               }`}
             >
               List
             </button>
           </div>
           {calendarView === 'list' && (
-            <button
+            <Button
+              variant="outline"
+              size="sm"
               onClick={() => setLessonFilter(lessonFilter === 'upcoming' ? 'all' : 'upcoming')}
-              className="bg-gray-600 text-white px-3 py-2 rounded hover:bg-gray-700 text-sm"
             >
               {lessonFilter === 'upcoming' ? 'Show All' : 'Show Upcoming'}
-            </button>
+            </Button>
           )}
-          <button
+          <Button
+            variant="outline"
             onClick={() => setShowAddLesson(true)}
-            className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700"
             disabled={groups.length === 0}
           >
+            <Plus size={16} />
             Add Lesson
-          </button>
-          <button
+          </Button>
+          <Button
+            variant="default"
             onClick={() => setShowRecurringModal(true)}
-            className="bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700"
             disabled={groups.length === 0}
           >
+            <Repeat size={16} />
             Manage Recurring
-          </button>
+          </Button>
         </div>
       </div>
 
       {groups.length === 0 && (
-        <div className="bg-yellow-50 border border-yellow-200 text-yellow-700 px-4 py-3 rounded">
+        <div className="bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 text-yellow-700 dark:text-yellow-300 px-4 py-3 rounded">
           You need to create groups before adding lessons.
         </div>
       )}
 
       {error && (
-        <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded">
+        <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 text-red-700 dark:text-red-300 px-4 py-3 rounded">
           {error}
         </div>
       )}
