@@ -69,14 +69,35 @@ Create a new component when:
 - **Before**: 800-line `Lessons.tsx` with embedded modals and direct Supabase calls
 - **After**: Clean `Lessons.tsx` orchestrator + extracted `LessonsRecordModal`, `RecurringLessonsModal` components using service layer
 
-## Current Status (September 2025)
+## Current Status (October 2025)
 - MVP flows from schools through reports are complete and verified on sample data.
 - Smart Schedule Builder wizard (Phase M11) ships with Israeli period mapping, advanced distribution controls, and progressive disclosure.
 - Service layer refactor landed: dashboard, lessons, School Overview, materials, tasks, and setup screens now call Supabase through dedicated modules. Calendar mutations, attendance edits, and material attachments run through `lessonsMutations.ts`.
 - Scheduling utilities extracted to `src/lib/scheduling/index.ts`; wizard hook now orchestrates generation without inline Supabase calls.
 - Manual test plan (`docs/manual-test-plan.md`) covers baseline flows. Attendance, reports, and offline smoke items remain to be re-checked after page decomposition.
-- **Global Subjects Implementation (Sept 30, 2025)**: Subjects transformed from school-specific to global with `school_subjects` junction table. See `docs/subjects-overhaul.md` for details.
-- **Schools.tsx Refactor COMPLETE (Sept 30, 2025)**: Successfully refactored 1609-line Schools.tsx to follow architecture rules - all direct Supabase calls replaced with service layer functions. All CRUD operations (schools, subjects, groups, roster items) now use `groupsPage.ts` service functions. Backup saved as `Schools.tsx.backup` (can be removed after verification).
+
+### Global Subjects Implementation (Sept-Oct 2025)
+- **Sept 30, 2025**: Subjects transformed from school-specific to global with `school_subjects` junction table
+- **Oct 1, 2025**: Architecture simplified - added `user_id` to subjects, following Materials/Tags pattern (Migration 005)
+- **Oct 3, 2025**: Architecture corrected - restored `school_subjects` junction table for proper attribution (Migration 006). Subjects work like tags with school-based attribution via junction table, matching Materials/Tags pattern exactly.
+- See `docs/subjects-overhaul.md` for complete implementation details
+
+### Schools.tsx Complete Rebuild (Sept-Oct 2025)
+- **Sept 30, 2025**: Successfully refactored 1609-line Schools.tsx to follow architecture rules
+- **Oct 1, 2025**: Complete rebuild from scratch (~1000 lines) following proper component architecture
+- All direct Supabase calls replaced with service layer functions
+- All CRUD operations (schools, subjects, groups, roster items) use `groupsPage.ts` service functions
+- Card-based hierarchical UI with color-coded levels (blue/purple/orange)
+- Collapsible interface with visual hierarchy icons
+
+### Lessons Page UI Modernization (Oct 5, 2025)
+- **Visual Consistency**: Unified border colors and weights across calendar (all 1px, consistent rgba values)
+- **Border Alignment Fix**: Perfect alignment between header and body using `::before` pseudo-elements
+- **Button Styling**: Updated to match Schools page using shadcn Button component
+- **Animations**: Implemented framer-motion stagger animations matching Schools overview
+- **View Transitions**: Added loading spinner during Calendar ↔ List view switch
+- **List View**: Sequential stagger animations for day groups (100ms intervals)
+- **Calendar Events**: Fixed layout - removed duplicate timestamp, school name top-right
 
 ## Active Refactor Checklist (Phase A)
 - [done] Schedule wizard UI renders through `ScheduleWizardStepContent` plus panels in `src/components/schedule-wizard/`, while `useScheduleWizard` keeps the business logic (complete).

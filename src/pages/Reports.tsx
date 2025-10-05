@@ -3,6 +3,7 @@ import { useAuth } from '../contexts/AuthContext'
 import { supabase } from '../lib/supabase'
 import type { School, Subject, Group } from '../types/database'
 import * as XLSX from 'xlsx'
+import { ManageWagesModal } from '../components/ManageWagesModal'
 
 interface AttendanceReportData {
   school: string
@@ -37,6 +38,15 @@ interface HoursReportData {
   cancelledLessons?: number
   dates: Array<{date: string, hours: number}>
   totalDates: number
+}
+
+interface SalaryReportData {
+  school: string
+  subject?: string
+  group?: string
+  totalHours: number
+  hourlyRate: number
+  expectedSalary: number
 }
 
 // Calculate academic hours based on lesson duration
@@ -74,6 +84,7 @@ export function Reports() {
   const [selectedSchool, setSelectedSchool] = useState<string>('')
   const [selectedSubject, setSelectedSubject] = useState<string>('')
   const [selectedGroup, setSelectedGroup] = useState<string>('')
+  const [showWagesModal, setShowWagesModal] = useState(false)
   const [dateRange, setDateRange] = useState(() => {
     const today = new Date()
     const currentMonth = today.getMonth()
@@ -94,6 +105,7 @@ export function Reports() {
   const [attendanceReport, setAttendanceReport] = useState<AttendanceReportData[]>([])
   const [coverageReport, setCoverageReport] = useState<CoverageReportData[]>([])
   const [hoursReport, setHoursReport] = useState<HoursReportData[]>([])
+  const [salaryReport, setSalaryReport] = useState<SalaryReportData[]>([])
 
   // UI state for expandable rows
   const [expandedRows, setExpandedRows] = useState<Set<number>>(new Set())
@@ -116,40 +128,31 @@ export function Reports() {
 
   const fetchFilters = async () => {
     try {
-      const { data, error } = await supabase
-        .from('schools')
-        .select('*')
-        .order('name')
+      // Fetch schools and global subjects in parallel
+      const [schoolsResult, subjectsResult] = await Promise.all([
+        supabase.from('schools').select('*').order('name'),
+        supabase.from('subjects').select('*').order('name')
+      ])
 
-      if (error) throw error
-      setSchools(data || [])
+      if (schoolsResult.error) throw schoolsResult.error
+      if (subjectsResult.error) throw subjectsResult.error
+
+      setSchools(schoolsResult.data || [])
+      setSubjects(subjectsResult.data || [])
     } catch (err: any) {
       setError(err.message)
     }
   }
 
-  const fetchSubjects = async (schoolId: string) => {
+  const fetchGroups = async (schoolId?: string, subjectId?: string) => {
     try {
-      const { data, error } = await supabase
-        .from('subjects')
-        .select('*')
-        .eq('school_id', schoolId)
-        .order('name')
+      let query = supabase.from('groups').select('*')
 
-      if (error) throw error
-      setSubjects(data || [])
-    } catch (err: any) {
-      setError(err.message)
-    }
-  }
+      // Apply filters if provided
+      if (schoolId) query = query.eq('school_id', schoolId)
+      if (subjectId) query = query.eq('subject_id', subjectId)
 
-  const fetchGroups = async (subjectId: string) => {
-    try {
-      const { data, error } = await supabase
-        .from('groups')
-        .select('*')
-        .eq('subject_id', subjectId)
-        .order('name')
+      const { data, error } = await query.order('name')
 
       if (error) throw error
       setGroups(data || [])
@@ -160,24 +163,18 @@ export function Reports() {
 
   const handleSchoolChange = (schoolId: string) => {
     setSelectedSchool(schoolId)
-    setSelectedSubject('')
     setSelectedGroup('')
-    setSubjects([])
-    setGroups([])
 
-    if (schoolId) {
-      fetchSubjects(schoolId)
-    }
+    // Fetch groups based on school and subject filters
+    fetchGroups(schoolId || undefined, selectedSubject || undefined)
   }
 
   const handleSubjectChange = (subjectId: string) => {
     setSelectedSubject(subjectId)
     setSelectedGroup('')
-    setGroups([])
 
-    if (subjectId) {
-      fetchGroups(subjectId)
-    }
+    // Fetch groups based on school and subject filters
+    fetchGroups(selectedSchool || undefined, subjectId || undefined)
   }
 
   const generateAttendanceReport = async () => {
@@ -311,6 +308,11 @@ export function Reports() {
 
       console.log('Final attendance report data:', reportData)
       setAttendanceReport(reportData)
+
+      // Show alert if no data
+      if (reportData.length === 0) {
+        alert('No attendance data found for the selected period and filters. Attendance is only recorded when you take attendance in a lesson record.')
+      }
     } catch (err: any) {
       console.error('Attendance report error:', err)
       setError(`Failed to generate attendance report: ${err.message}`)
@@ -394,6 +396,11 @@ export function Reports() {
       })
 
       setCoverageReport(reportData)
+
+      // Show alert if no data
+      if (reportData.length === 0) {
+        alert('No coverage data found for the selected period and filters. Coverage is only recorded when you add covered/planned/homework content to a lesson record.')
+      }
     } catch (err: any) {
       setError(`Failed to generate coverage report: ${err.message}`)
       setCoverageReport([])
@@ -489,12 +496,11 @@ export function Reports() {
             group: groupName
           }
         } else if (selectedSubject) {
-          // Subject-specific report (grouped by groups within subject)
-          key = `group-${group.id}`
+          // Subject-specific report (grouped by schools)
+          key = `school-${group.school_id}`
           entryData = {
             school: schoolName,
-            subject: subjectName,
-            group: groupName
+            subject: subjectName
           }
         } else if (selectedSchool) {
           // School-specific report (grouped by subjects)
@@ -710,10 +716,212 @@ export function Reports() {
     })
   }
 
+  const generateSalaryReport = async () => {
+    if (!user) return
+
+    try {
+      setLoading(true)
+      setError(null)
+
+      // Fetch wage settings
+      const { data: wageSettings } = await supabase
+        .from('wage_settings')
+        .select('*')
+        .eq('user_id', user.id)
+        .single()
+
+      const defaultRate = wageSettings?.default_hourly_rate || 0
+
+      // Fetch wage exceptions
+      const { data: wageExceptions } = await supabase
+        .from('wage_exceptions')
+        .select('*')
+        .eq('user_id', user.id)
+
+      // Create lookup maps for exceptions
+      const schoolExceptions = new Map<string, number>()
+      const groupExceptions = new Map<string, number>()
+
+      wageExceptions?.forEach(exc => {
+        if (exc.school_id) {
+          schoolExceptions.set(exc.school_id, exc.hourly_rate)
+        } else if (exc.group_id) {
+          groupExceptions.set(exc.group_id, exc.hourly_rate)
+        }
+      })
+
+      // Fetch lessons (reuse hours report query logic)
+      let query = supabase
+        .from('lessons')
+        .select(`
+          *,
+          groups!inner(
+            id,
+            name,
+            subject_id,
+            school_id,
+            subjects(id, name),
+            schools(id, name)
+          )
+        `)
+        .gte('start_time', dateRange.start + 'T00:00:00')
+        .lte('start_time', dateRange.end + 'T23:59:59')
+        .order('start_time')
+
+      if (selectedGroup) {
+        query = query.eq('group_id', selectedGroup)
+      } else if (selectedSubject) {
+        query = query.eq('groups.subject_id', selectedSubject)
+      } else if (selectedSchool) {
+        query = query.eq('groups.school_id', selectedSchool)
+      }
+
+      const { data: lessons, error } = await query
+
+      if (error) throw error
+
+      // Calculate salary data grouped like hours report
+      const salaryMap = new Map<string, {
+        school: string
+        subject?: string
+        group?: string
+        totalHours: number
+        schoolId?: string
+        groupId?: string
+      }>()
+
+      lessons?.forEach(lesson => {
+        if (!lesson.groups || lesson.is_cancelled) return
+
+        const group = lesson.groups as any
+        const schoolName = group.schools?.name || 'Unknown School'
+        const subjectName = group.subjects?.name || 'Unknown Subject'
+        const groupName = group.name || 'Unknown Group'
+
+        const academicHours = calculateAcademicHours(lesson.start_time, lesson.end_time)
+
+        let key: string
+        let entryData: any
+
+        if (selectedGroup) {
+          key = `group-${group.id}`
+          entryData = {
+            school: schoolName,
+            subject: subjectName,
+            group: groupName,
+            groupId: group.id
+          }
+        } else if (selectedSubject) {
+          key = `school-${group.school_id}`
+          entryData = {
+            school: schoolName,
+            subject: subjectName,
+            schoolId: group.school_id
+          }
+        } else if (selectedSchool) {
+          key = `subject-${group.subject_id}`
+          entryData = {
+            school: schoolName,
+            subject: subjectName,
+            schoolId: group.school_id
+          }
+        } else {
+          key = `school-${group.school_id}`
+          entryData = {
+            school: schoolName,
+            schoolId: group.school_id
+          }
+        }
+
+        if (!salaryMap.has(key)) {
+          salaryMap.set(key, {
+            ...entryData,
+            totalHours: 0
+          })
+        }
+
+        const entry = salaryMap.get(key)!
+        entry.totalHours += academicHours
+      })
+
+      // Convert to array and calculate salaries
+      const reportData: SalaryReportData[] = Array.from(salaryMap.values()).map(entry => {
+        // Determine hourly rate (group > school > default)
+        let hourlyRate = defaultRate
+
+        if (entry.groupId && groupExceptions.has(entry.groupId)) {
+          hourlyRate = groupExceptions.get(entry.groupId)!
+        } else if (entry.schoolId && schoolExceptions.has(entry.schoolId)) {
+          hourlyRate = schoolExceptions.get(entry.schoolId)!
+        }
+
+        return {
+          school: entry.school,
+          subject: entry.subject,
+          group: entry.group,
+          totalHours: entry.totalHours,
+          hourlyRate,
+          expectedSalary: entry.totalHours * hourlyRate
+        }
+      })
+
+      setSalaryReport(reportData)
+
+      if (reportData.length === 0) {
+        alert('No salary data found for the selected period and filters.')
+      }
+    } catch (err: any) {
+      setError(`Failed to generate salary report: ${err.message}`)
+      setSalaryReport([])
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  const exportSalaryToExcel = () => {
+    if (salaryReport.length === 0) return
+
+    const worksheet = XLSX.utils.json_to_sheet(
+      salaryReport.map(row => ({
+        'School': row.school,
+        ...(row.subject && { 'Subject': row.subject }),
+        ...(row.group && { 'Group': row.group }),
+        'Total Hours': row.totalHours,
+        'Hourly Rate': row.hourlyRate,
+        'Expected Salary': row.expectedSalary
+      }))
+    )
+
+    const workbook = XLSX.utils.book_new()
+    XLSX.utils.book_append_sheet(workbook, worksheet, 'Salary Report')
+
+    worksheet['!cols'] = [
+      { wch: 25 }, // School
+      { wch: 20 }, // Subject
+      { wch: 20 }, // Group
+      { wch: 12 }, // Total Hours
+      { wch: 12 }, // Hourly Rate
+      { wch: 15 }  // Expected Salary
+    ]
+
+    const fileName = `Salary_Report_${new Date().toISOString().split('T')[0]}.xlsx`
+
+    XLSX.writeFile(workbook, fileName, {
+      bookType: 'xlsx',
+      type: 'binary'
+    })
+  }
+
   return (
     <div className="space-y-6">
       <div className="flex justify-between items-center">
         <h2 className="text-2xl font-bold">Reports</h2>
+        <button
+          onClick={() => setShowWagesModal(true)}
+          className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+        >
+          Manage Wages
+        </button>
       </div>
 
       {error && (
@@ -731,7 +939,7 @@ export function Reports() {
             <select
               value={selectedSchool}
               onChange={(e) => handleSchoolChange(e.target.value)}
-              className="w-full px-3 py-2 border border-gray-300 rounded focus:outline-none focus:border-blue-500"
+              className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded focus:outline-none focus:border-blue-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100"
             >
               <option value="">All Schools</option>
               {schools.map(school => (
@@ -745,8 +953,7 @@ export function Reports() {
             <select
               value={selectedSubject}
               onChange={(e) => handleSubjectChange(e.target.value)}
-              className="w-full px-3 py-2 border border-gray-300 rounded focus:outline-none focus:border-blue-500"
-              disabled={!selectedSchool}
+              className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded focus:outline-none focus:border-blue-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100"
             >
               <option value="">All Subjects</option>
               {subjects.map(subject => (
@@ -760,8 +967,7 @@ export function Reports() {
             <select
               value={selectedGroup}
               onChange={(e) => setSelectedGroup(e.target.value)}
-              className="w-full px-3 py-2 border border-gray-300 rounded focus:outline-none focus:border-blue-500"
-              disabled={!selectedSubject}
+              className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded focus:outline-none focus:border-blue-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100"
             >
               <option value="">All Groups</option>
               {groups.map(group => (
@@ -776,7 +982,7 @@ export function Reports() {
               type="date"
               value={dateRange.start}
               onChange={(e) => setDateRange({ ...dateRange, start: e.target.value })}
-              className="w-full px-3 py-2 border border-gray-300 rounded focus:outline-none focus:border-blue-500"
+              className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded focus:outline-none focus:border-blue-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100"
             />
           </div>
 
@@ -786,14 +992,14 @@ export function Reports() {
               type="date"
               value={dateRange.end}
               onChange={(e) => setDateRange({ ...dateRange, end: e.target.value })}
-              className="w-full px-3 py-2 border border-gray-300 rounded focus:outline-none focus:border-blue-500"
+              className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded focus:outline-none focus:border-blue-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100"
             />
           </div>
         </div>
       </div>
 
       {/* Report Buttons */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
         <div className="bg-white dark:bg-gray-800 border rounded-lg p-6 flex flex-col">
           <h3 className="text-lg font-semibold mb-2">Attendance Report</h3>
           <p className="text-sm text-gray-600 mb-4 flex-1">Attendance % computed for a date range; persisted per lesson</p>
@@ -825,6 +1031,18 @@ export function Reports() {
             onClick={generateCoverageReport}
             disabled={loading}
             className="w-full bg-purple-600 text-white px-4 py-2 rounded hover:bg-purple-700 disabled:opacity-50"
+          >
+            {loading ? 'Generating...' : 'Generate Report'}
+          </button>
+        </div>
+
+        <div className="bg-white dark:bg-gray-800 border rounded-lg p-6 flex flex-col">
+          <h3 className="text-lg font-semibold mb-2">Expected Salary</h3>
+          <p className="text-sm text-gray-600 dark:text-gray-400 mb-4 flex-1">Calculate expected salary based on hours and wage settings</p>
+          <button
+            onClick={generateSalaryReport}
+            disabled={loading}
+            className="w-full bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700 disabled:opacity-50"
           >
             {loading ? 'Generating...' : 'Generate Report'}
           </button>
@@ -1004,16 +1222,62 @@ export function Reports() {
         </div>
       )}
 
-      <div className="bg-green-50 dark:bg-green-900/20 border border-green-200 p-4 rounded-lg">
-        <div className="text-green-800 dark:text-green-200">
-          <h3 className="font-semibold mb-2">✅ M9.6 — Reports Implementation Complete</h3>
-          <p className="text-sm">
-            Reports functionality is now fully implemented with real data generation, interactive tables,
-            cascading filters, and Excel export. All three report types (Attendance, Hours, Coverage)
-            are working with proper data validation and formatting.
-          </p>
+      {/* Salary Report */}
+      {salaryReport.length > 0 && (
+        <div className="bg-white dark:bg-gray-800 border rounded-lg p-6">
+          <div className="flex justify-between items-center mb-4">
+            <h3 className="text-lg font-semibold">Expected Salary Report</h3>
+            <button
+              onClick={exportSalaryToExcel}
+              className="bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700"
+            >
+              Export to Excel
+            </button>
+          </div>
+          <div className="overflow-x-auto">
+            <table className="w-full">
+              <thead className="bg-gray-50 dark:bg-gray-900">
+                <tr>
+                  <th className="text-left py-2 px-3">School</th>
+                  {salaryReport.some(r => r.subject) && <th className="text-left py-2 px-3">Subject</th>}
+                  {salaryReport.some(r => r.group) && <th className="text-left py-2 px-3">Group</th>}
+                  <th className="text-left py-2 px-3">Total Hours</th>
+                  <th className="text-left py-2 px-3">Hourly Rate</th>
+                  <th className="text-left py-2 px-3">Expected Salary</th>
+                </tr>
+              </thead>
+              <tbody>
+                {salaryReport.map((row, index) => (
+                  <tr key={index} className="border-b hover:bg-gray-50 dark:hover:bg-gray-700">
+                    <td className="py-2 px-3">{row.school}</td>
+                    {salaryReport.some(r => r.subject) && <td className="py-2 px-3">{row.subject || '-'}</td>}
+                    {salaryReport.some(r => r.group) && <td className="py-2 px-3">{row.group || '-'}</td>}
+                    <td className="py-2 px-3">{row.totalHours}</td>
+                    <td className="py-2 px-3">${row.hourlyRate.toFixed(2)}</td>
+                    <td className="py-2 px-3 font-semibold">${row.expectedSalary.toFixed(2)}</td>
+                  </tr>
+                ))}
+                <tr className="bg-gray-100 dark:bg-gray-900 font-bold">
+                  <td className="py-2 px-3" colSpan={salaryReport.some(r => r.group) ? 3 : salaryReport.some(r => r.subject) ? 2 : 1}>Total</td>
+                  <td className="py-2 px-3">{salaryReport.reduce((sum, r) => sum + r.totalHours, 0)}</td>
+                  <td className="py-2 px-3">-</td>
+                  <td className="py-2 px-3">${salaryReport.reduce((sum, r) => sum + r.expectedSalary, 0).toFixed(2)}</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
         </div>
-      </div>
+      )}
+
+      {/* Manage Wages Modal */}
+      {user && (
+        <ManageWagesModal
+          isOpen={showWagesModal}
+          onClose={() => setShowWagesModal(false)}
+          userId={user.id}
+        />
+      )}
+
     </div>
   )
 }

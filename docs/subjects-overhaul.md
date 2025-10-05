@@ -336,6 +336,66 @@ groups:
 
 ---
 
+## UI Modernization (Oct 5, 2025)
+
+**Goal**: Modernize Lessons page UI to match Schools overview with consistent styling, animations, and UX patterns.
+
+### Changes Made:
+
+**Visual Styling**:
+- ✅ Fixed calendar event layout - removed duplicate timestamp, school name positioned top-right
+- ✅ Unified border colors throughout calendar - all borders use `rgba(229, 231, 235, 0.25)` (light) / `rgba(75, 85, 99, 0.25)` (dark)
+- ✅ Fixed calendar border alignment - borders now align perfectly between header and body using `::before` pseudo-elements
+- ✅ Standardized all border weights to 1px for professional appearance
+- ✅ Updated button styling to match Schools page - using shadcn Button component with `variant="outline"` and `variant="default"`
+- ✅ Improved button alignment - added `items-center` to button container flex
+
+**Animations & Transitions**:
+- ✅ Implemented framer-motion animations matching Schools overview:
+  - Header animates from top (`y: -10`, 0.3s)
+  - Button group animates from right (`x: 20`, 0.1s delay)
+  - Calendar/List view animates from bottom (`y: 20`, 0.4s)
+- ✅ Added view transition loading state - shows spinner during Calendar ↔ List switch (200ms delay)
+- ✅ Implemented stagger animations for list view - day groups appear sequentially with 100ms intervals (`delay: index * 0.1`)
+
+**List View Enhancements**:
+- ✅ Reduced button sizes for compactness (`p-1.5`, icon size 14)
+- ✅ Added icon-only buttons with tooltips (Eye, Ban, RotateCcw, Trash2)
+- ✅ Improved dark mode compatibility throughout
+
+### Technical Details:
+
+**Files Modified**:
+1. `src/pages/Lessons.tsx`:
+   - Added framer-motion imports (`motion`, `AnimatePresence`)
+   - Added `viewTransitioning` state for smooth view changes
+   - Created `handleViewChange()` with transition logic
+   - Wrapped views in `motion.div` with proper keys and animations
+   - Updated SimpleEventComponent to remove duplicate timestamp
+
+2. `src/components/lessons/LessonsCalendarView.tsx`:
+   - Unified all border colors with global CSS rules
+   - Fixed border alignment using `::before` pseudo-elements
+   - Standardized all borders to 1px weight
+   - Applied borders to both headers and columns for perfect alignment
+
+3. `src/components/lessons/LessonsListView.tsx`:
+   - Added framer-motion stagger animations
+   - Updated button styles with icons and tooltips
+   - Improved dark mode styling
+
+**Animation Pattern**:
+```typescript
+// Sequential stagger for list items
+delay: groupIndex * 0.1  // 100ms between each group
+
+// View transition with loading
+viewTransitioning ? <Spinner /> : <motion.div key="view" />
+```
+
+---
+
 *Original Completion: 2025-09-30*
 *Architecture Simplification: 2025-10-01 (All milestones M1-M10 COMPLETE)*
 *Architecture Correction: 2025-10-03 (Migration 006, proper junction table pattern)*
+*UI Modernization: 2025-10-05 (Lessons page styling, animations, and UX)*
