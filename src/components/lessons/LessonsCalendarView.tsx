@@ -111,15 +111,25 @@ export function LessonsCalendarView<TLesson = unknown>({
               .dark .rbc-calendar {
                 background: #0f172a;
               }
+              .rbc-calendar *,
+              .rbc-calendar *::before,
+              .rbc-calendar *::after {
+                border-color: rgba(229, 231, 235, 0.25) !important;
+              }
+              .dark .rbc-calendar *,
+              .dark .rbc-calendar *::before,
+              .dark .rbc-calendar *::after {
+                border-color: rgba(75, 85, 99, 0.25) !important;
+              }
               .rbc-toolbar {
                 display: none;
               }
               .rbc-time-view {
                 min-height: 600px;
-                border-color: rgba(229, 231, 235, 0.6);
+                border: 1px solid rgba(229, 231, 235, 0.25) !important;
               }
               .dark .rbc-time-view {
-                border-color: rgba(75, 85, 99, 0.3);
+                border: 1px solid rgba(75, 85, 99, 0.25) !important;
               }
               .rbc-time-slot {
                 border-top: 1px solid rgba(229, 231, 235, 0.6);
@@ -170,7 +180,7 @@ export function LessonsCalendarView<TLesson = unknown>({
                 font-weight: 700;
                 padding: 12px 8px;
                 background: linear-gradient(to bottom, #f9fafb, #f3f4f6);
-                border-bottom: 2px solid rgba(229, 231, 235, 0.8) !important;
+                border-bottom: 1px solid rgba(229, 231, 235, 0.3) !important;
                 border-left: none !important;
                 border-right: none !important;
                 box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
@@ -184,18 +194,18 @@ export function LessonsCalendarView<TLesson = unknown>({
                 top: 0;
                 bottom: 0;
                 width: 1px;
-                background: rgba(229, 231, 235, 0.6);
+                background: rgba(229, 231, 235, 0.3);
               }
               .rbc-header:first-child::before {
                 display: none;
               }
               .dark .rbc-header {
                 background: linear-gradient(to bottom, #1f2937, #111827);
-                border-bottom: 2px solid rgba(75, 85, 99, 0.5) !important;
+                border-bottom: 1px solid rgba(75, 85, 99, 0.2) !important;
                 color: #f3f4f6;
               }
               .dark .rbc-header::before {
-                background: rgba(75, 85, 99, 0.3);
+                background: rgba(75, 85, 99, 0.2);
               }
               .rbc-time-content {
                 border-top: none !important;
@@ -210,25 +220,25 @@ export function LessonsCalendarView<TLesson = unknown>({
                 top: 0;
                 bottom: 0;
                 width: 1px;
-                background: rgba(229, 231, 235, 0.6);
+                background: rgba(229, 231, 235, 0.3);
               }
               .rbc-time-column:first-child::before {
                 display: none;
               }
               .dark .rbc-time-column::before {
-                background: rgba(75, 85, 99, 0.3);
+                background: rgba(75, 85, 99, 0.2);
               }
               .rbc-time-header-gutter,
               .rbc-time-gutter {
                 background: linear-gradient(to right, #fafafa, #f5f5f5);
-                border-right: 2px solid rgba(229, 231, 235, 0.6);
+                border-right: 1px solid rgba(229, 231, 235, 0.3);
                 color: #6b7280;
                 font-size: 0.875rem;
               }
               .dark .rbc-time-header-gutter,
               .dark .rbc-time-gutter {
                 background: linear-gradient(to right, #1f2937, #111827);
-                border-right: 2px solid rgba(75, 85, 99, 0.4);
+                border-right: 1px solid rgba(75, 85, 99, 0.2);
                 color: #9ca3af;
               }
               .rbc-day-slot .rbc-time-slot {

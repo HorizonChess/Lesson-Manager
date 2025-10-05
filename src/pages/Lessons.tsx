@@ -37,6 +37,7 @@ import { LessonsRecordModal } from '../components/lessons/LessonsRecordModal'
 import type { RecurringLessonsFormState, RecurringPattern, LessonRecordData, EditTimeData } from '../components/lessons/types'
 import { Button } from '../components/ui/button'
 import { Plus, Repeat } from 'lucide-react'
+import { motion, AnimatePresence } from 'framer-motion'
 
 const normalizeLesson = (lesson: Lesson | LessonWithGroup): NormalizedLesson => {
   const candidate = lesson as LessonWithGroup
@@ -86,6 +87,7 @@ export function Lessons() {
   const [lessonFilter, setLessonFilter] = useState<'upcoming' | 'all'>('upcoming')
   const [currentDate, setCurrentDate] = useState(new Date())
   const [calendarView, setCalendarView] = useState<'calendar' | 'list'>('calendar')
+  const [viewTransitioning, setViewTransitioning] = useState(false)
 
   // Removed custom drag states - using react-big-calendar built-in DnD
 
@@ -591,6 +593,15 @@ export function Lessons() {
     } catch (err: any) {
       setError(err.message)
     }
+  }
+
+  const handleViewChange = (view: 'calendar' | 'list') => {
+    if (view === calendarView) return
+    setViewTransitioning(true)
+    setTimeout(() => {
+      setCalendarView(view)
+      setViewTransitioning(false)
+    }, 200)
   }
 
   const removeMaterial = async (lessonRecordId: string, materialId: string) => {
@@ -1171,9 +1182,6 @@ export function Lessons() {
   const SimpleEventComponent = ({ event }: { event: LessonEvent }) => {
     return (
       <div className="w-full h-full relative p-1 cursor-pointer hover:bg-black/10 dark:hover:bg-white/10 transition-colors overflow-hidden">
-        <div className="absolute top-1 left-1 text-[9px] opacity-70">
-          {moment(event.start).format('HH:mm')}
-        </div>
         <div className="absolute top-1 right-1 text-[9px] opacity-70 truncate max-w-[40%]">
           {event.resource?.school}
         </div>
@@ -1197,12 +1205,22 @@ export function Lessons() {
 
   return (
     <div className="space-y-6">
-      <div className="flex justify-between items-center">
+      <motion.div
+        initial={{ opacity: 0, y: -10 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.3 }}
+        className="flex justify-between items-center"
+      >
         <h2 className="text-2xl font-bold text-gray-900 dark:text-gray-100">Lessons</h2>
-        <div className="flex gap-2 items-center">
+        <motion.div
+          initial={{ opacity: 0, x: 20 }}
+          animate={{ opacity: 1, x: 0 }}
+          transition={{ duration: 0.3, delay: 0.1 }}
+          className="flex gap-2 items-center"
+        >
           <div className="flex bg-gray-100 dark:bg-gray-800 rounded-lg p-1 shadow-sm">
             <button
-              onClick={() => setCalendarView('calendar')}
+              onClick={() => handleViewChange('calendar')}
               className={`px-4 py-2 rounded-md text-sm font-medium transition-all ${
                 calendarView === 'calendar'
                   ? 'bg-slate-700 dark:bg-slate-600 text-white shadow-md'
@@ -1212,7 +1230,7 @@ export function Lessons() {
               Calendar
             </button>
             <button
-              onClick={() => setCalendarView('list')}
+              onClick={() => handleViewChange('list')}
               className={`px-4 py-2 rounded-md text-sm font-medium transition-all ${
                 calendarView === 'list'
                   ? 'bg-slate-700 dark:bg-slate-600 text-white shadow-md'
@@ -1247,8 +1265,8 @@ export function Lessons() {
             <Repeat size={16} />
             Manage Recurring
           </Button>
-        </div>
-      </div>
+        </motion.div>
+      </motion.div>
 
       {groups.length === 0 && (
         <div className="bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 text-yellow-700 dark:text-yellow-300 px-4 py-3 rounded">
@@ -1289,8 +1307,18 @@ export function Lessons() {
       />
 
       {/* Calendar and List Views */}
-      {calendarView === 'calendar' ? (
-        <LessonsCalendarView
+      {viewTransitioning ? (
+        <div className="flex items-center justify-center h-64">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 dark:border-blue-400"></div>
+        </div>
+      ) : calendarView === 'calendar' ? (
+        <motion.div
+          key="calendar"
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.4 }}
+        >
+          <LessonsCalendarView
           currentDate={currentDate}
           onPreviousWeek={goToPreviousWeek}
           onToday={goToToday}
@@ -1304,15 +1332,23 @@ export function Lessons() {
           dayPropGetter={dayStyleGetter}
           eventComponent={SimpleEventComponent}
           timeRangeFormatter={({ start, end }) => `${moment(start).format('HH:mm')} - ${moment(end).format('HH:mm')}`}
-        />
+          />
+        </motion.div>
       ) : (
-        <LessonsListView
+        <motion.div
+          key="list"
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.4 }}
+        >
+          <LessonsListView
           groupedLessons={groupedLessons}
           formatDateTime={formatDateTime}
           onOpenLessonRecord={openLessonRecordForm}
           onToggleLessonCancellation={toggleLessonCancellation}
           onDeleteLesson={deleteLesson}
-        />
+          />
+        </motion.div>
       )}
 
       {/* Lesson Record Modal */}

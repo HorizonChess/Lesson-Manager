@@ -1,4 +1,5 @@
 import { Eye, Ban, RotateCcw, Trash2 } from 'lucide-react'
+import { motion } from 'framer-motion'
 
 interface LessonSummary {
   id: string
@@ -37,11 +38,17 @@ export function LessonsListView({
 
   return (
     <div className="space-y-3">
-      {Object.entries(groupedLessons).map(([date, dayLessons]) => (
-        <div key={date} className="bg-white dark:bg-gray-800 border dark:border-gray-700 rounded-lg p-3">
+      {Object.entries(groupedLessons).map(([date, dayLessons], groupIndex) => (
+        <motion.div
+          key={date}
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.3, delay: groupIndex * 0.1 }}
+          className="bg-white dark:bg-gray-800 border dark:border-gray-700 rounded-lg p-3"
+        >
           <h3 className="font-semibold text-base mb-2 border-b dark:border-gray-700 pb-1.5">{date}</h3>
           <div className="space-y-1.5">
-            {dayLessons.map((lesson) => {
+            {dayLessons.map((lesson, lessonIndex) => {
               const { time: startTime } = formatDateTime(lesson.start_time)
               const { time: endTime } = formatDateTime(lesson.end_time)
 
@@ -94,7 +101,7 @@ export function LessonsListView({
               )
             })}
           </div>
-        </div>
+        </motion.div>
       ))}
     </div>
   )
