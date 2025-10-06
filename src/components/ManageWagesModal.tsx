@@ -19,11 +19,13 @@ interface ManageWagesModalProps {
 
 export function ManageWagesModal({ isOpen, onClose, userId }: ManageWagesModalProps) {
   const [defaultRate, setDefaultRate] = useState<string>('0')
+  const [currency, setCurrency] = useState<string>('NIS')
   const [exceptions, setExceptions] = useState<WageException[]>([])
   const [schools, setSchools] = useState<any[]>([])
   const [groups, setGroups] = useState<any[]>([])
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
+  const [saved, setSaved] = useState(false)
 
   // New exception form
   const [showAddForm, setShowAddForm] = useState(false)
@@ -55,6 +57,7 @@ export function ManageWagesModal({ isOpen, onClose, userId }: ManageWagesModalPr
 
       if (settings) {
         setDefaultRate(settings.default_hourly_rate.toString())
+        setCurrency(settings.currency || 'NIS')
       }
 
       // Fetch exceptions
@@ -106,6 +109,7 @@ export function ManageWagesModal({ isOpen, onClose, userId }: ManageWagesModalPr
     try {
       setLoading(true)
       setError('')
+      setSaved(false)
 
       const rate = parseFloat(defaultRate)
       if (isNaN(rate) || rate < 0) {
@@ -114,14 +118,21 @@ export function ManageWagesModal({ isOpen, onClose, userId }: ManageWagesModalPr
 
       const { error } = await supabase
         .from('wage_settings')
-        .upsert({
-          user_id: userId,
-          default_hourly_rate: rate
-        })
+        .upsert(
+          {
+            user_id: userId,
+            default_hourly_rate: rate,
+            currency
+          },
+          {
+            onConflict: 'user_id'
+          }
+        )
 
       if (error) throw error
 
-      alert('Default hourly rate saved successfully')
+      setSaved(true)
+      setTimeout(() => setSaved(false), 3000)
     } catch (err: any) {
       setError(err.message)
     } finally {
@@ -215,13 +226,31 @@ export function ManageWagesModal({ isOpen, onClose, userId }: ManageWagesModalPr
                 placeholder="0.00"
               />
             </div>
-            <button
-              onClick={saveDefaultRate}
-              disabled={loading}
-              className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 disabled:opacity-50"
-            >
-              Save Default Rate
-            </button>
+            <div>
+              <label className="block text-sm font-medium mb-2">Currency</label>
+              <select
+                value={currency}
+                onChange={(e) => setCurrency(e.target.value)}
+                className="px-3 py-2 border border-gray-300 dark:border-gray-600 rounded focus:outline-none focus:border-blue-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100"
+              >
+                <option value="NIS">NIS (₪)</option>
+                <option value="USD">USD ($)</option>
+                <option value="EUR">EUR (€)</option>
+                <option value="GBP">GBP (£)</option>
+              </select>
+            </div>
+            <div className="flex items-center gap-2">
+              <button
+                onClick={saveDefaultRate}
+                disabled={loading}
+                className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 disabled:opacity-50"
+              >
+                Save
+              </button>
+              {saved && (
+                <span className="text-sm text-gray-500 dark:text-gray-400">Saved</span>
+              )}
+            </div>
           </div>
           <p className="text-sm text-gray-600 dark:text-gray-400 mt-2">
             This rate applies to all lessons unless overridden by a school or group exception below.
@@ -330,7 +359,7 @@ export function ManageWagesModal({ isOpen, onClose, userId }: ManageWagesModalPr
                       {exception.school_name || exception.group_name}
                     </div>
                     <div className="text-sm text-gray-600 dark:text-gray-400">
-                      {exception.school_id ? 'School' : 'Group'} • ${exception.hourly_rate}/hour
+                      {exception.school_id ? 'School' : 'Group'} • {currency === 'NIS' ? '₪' : currency === 'USD' ? '$' : currency === 'EUR' ? '€' : '£'}{exception.hourly_rate}/hour
                     </div>
                   </div>
                   <button

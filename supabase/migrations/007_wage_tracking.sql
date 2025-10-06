@@ -6,6 +6,7 @@ CREATE TABLE wage_settings (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   user_id UUID NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
   default_hourly_rate DECIMAL(10,2) NOT NULL DEFAULT 0,
+  currency VARCHAR(10) NOT NULL DEFAULT 'NIS',
   created_at TIMESTAMPTZ DEFAULT NOW(),
   updated_at TIMESTAMPTZ DEFAULT NOW(),
   UNIQUE(user_id)
@@ -24,11 +25,17 @@ CREATE TABLE wage_exceptions (
   CHECK (
     (school_id IS NOT NULL AND group_id IS NULL) OR
     (school_id IS NULL AND group_id IS NOT NULL)
-  ),
-  -- Ensure no duplicate exceptions
-  UNIQUE(user_id, school_id) WHERE school_id IS NOT NULL,
-  UNIQUE(user_id, group_id) WHERE group_id IS NOT NULL
+  )
 );
+
+-- Step 2b: Create partial unique indexes to prevent duplicate exceptions
+CREATE UNIQUE INDEX wage_exceptions_unique_school
+  ON wage_exceptions(user_id, school_id)
+  WHERE school_id IS NOT NULL;
+
+CREATE UNIQUE INDEX wage_exceptions_unique_group
+  ON wage_exceptions(user_id, group_id)
+  WHERE group_id IS NOT NULL;
 
 -- Step 3: Enable RLS
 ALTER TABLE wage_settings ENABLE ROW LEVEL SECURITY;

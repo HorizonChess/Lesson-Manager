@@ -49,6 +49,17 @@ interface SalaryReportData {
   expectedSalary: number
 }
 
+// Get currency symbol
+const getCurrencySymbol = (currency: string): string => {
+  switch (currency) {
+    case 'NIS': return '₪'
+    case 'USD': return '$'
+    case 'EUR': return '€'
+    case 'GBP': return '£'
+    default: return currency
+  }
+}
+
 // Calculate academic hours based on lesson duration
 const calculateAcademicHours = (startTime: string, endTime: string): number => {
   const start = new Date(startTime)
@@ -106,6 +117,7 @@ export function Reports() {
   const [coverageReport, setCoverageReport] = useState<CoverageReportData[]>([])
   const [hoursReport, setHoursReport] = useState<HoursReportData[]>([])
   const [salaryReport, setSalaryReport] = useState<SalaryReportData[]>([])
+  const [currency, setCurrency] = useState<string>('NIS')
 
   // UI state for expandable rows
   const [expandedRows, setExpandedRows] = useState<Set<number>>(new Set())
@@ -731,6 +743,8 @@ export function Reports() {
         .single()
 
       const defaultRate = wageSettings?.default_hourly_rate || 0
+      const userCurrency = wageSettings?.currency || 'NIS'
+      setCurrency(userCurrency)
 
       // Fetch wage exceptions
       const { data: wageExceptions } = await supabase
@@ -1253,15 +1267,15 @@ export function Reports() {
                     {salaryReport.some(r => r.subject) && <td className="py-2 px-3">{row.subject || '-'}</td>}
                     {salaryReport.some(r => r.group) && <td className="py-2 px-3">{row.group || '-'}</td>}
                     <td className="py-2 px-3">{row.totalHours}</td>
-                    <td className="py-2 px-3">${row.hourlyRate.toFixed(2)}</td>
-                    <td className="py-2 px-3 font-semibold">${row.expectedSalary.toFixed(2)}</td>
+                    <td className="py-2 px-3">{getCurrencySymbol(currency)}{row.hourlyRate.toFixed(2)}</td>
+                    <td className="py-2 px-3 font-semibold">{getCurrencySymbol(currency)}{row.expectedSalary.toFixed(2)}</td>
                   </tr>
                 ))}
                 <tr className="bg-gray-100 dark:bg-gray-900 font-bold">
                   <td className="py-2 px-3" colSpan={salaryReport.some(r => r.group) ? 3 : salaryReport.some(r => r.subject) ? 2 : 1}>Total</td>
                   <td className="py-2 px-3">{salaryReport.reduce((sum, r) => sum + r.totalHours, 0)}</td>
                   <td className="py-2 px-3">-</td>
-                  <td className="py-2 px-3">${salaryReport.reduce((sum, r) => sum + r.expectedSalary, 0).toFixed(2)}</td>
+                  <td className="py-2 px-3">{getCurrencySymbol(currency)}{salaryReport.reduce((sum, r) => sum + r.expectedSalary, 0).toFixed(2)}</td>
                 </tr>
               </tbody>
             </table>
