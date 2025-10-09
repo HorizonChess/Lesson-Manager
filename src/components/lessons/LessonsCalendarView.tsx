@@ -1,7 +1,8 @@
-import type { ComponentType } from 'react'
+import { useState, useEffect, type ComponentType } from 'react'
 import { Calendar, momentLocalizer } from 'react-big-calendar'
 import withDragAndDrop from 'react-big-calendar/lib/addons/dragAndDrop'
 import moment from 'moment'
+import MobileWeekView from './MobileWeekView'
 import 'react-big-calendar/lib/addons/dragAndDrop/styles.css'
 import 'react-big-calendar/lib/css/react-big-calendar.css'
 
@@ -50,6 +51,24 @@ export function LessonsCalendarView<TLesson = unknown>({
   eventComponent,
   timeRangeFormatter
 }: LessonsCalendarViewProps<TLesson>) {
+  // Detect screen size for mobile view
+  const [isMobile, setIsMobile] = useState(false)
+
+  useEffect(() => {
+    const checkMobile = () => {
+      setIsMobile(window.innerWidth < 640)
+    }
+
+    checkMobile()
+    window.addEventListener('resize', checkMobile)
+    return () => window.removeEventListener('resize', checkMobile)
+  }, [])
+
+  // Use mobile view (4 days) on small screens, full week on desktop
+  const calendarViews = isMobile
+    ? { week: MobileWeekView }
+    : { week: true }
+
   return (
     <div className="bg-white dark:bg-gray-800 rounded-lg border overflow-hidden">
       <div className="flex justify-between items-center p-3 bg-gray-50 dark:bg-gray-700 border-b">
@@ -274,7 +293,7 @@ export function LessonsCalendarView<TLesson = unknown>({
           date={currentDate}
           onNavigate={onNavigate}
           view="week"
-          views={['week']}
+          views={calendarViews}
           step={15}
           timeslots={2}
           min={new Date(0, 0, 0, 7, 0)}

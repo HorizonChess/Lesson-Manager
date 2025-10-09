@@ -491,22 +491,22 @@ export function Schools() {
     setNewGroupTimeslots(newGroupTimeslots.filter((_, i) => i !== index))
   }
 
-  const addEditTimeslot = () => {
+  const _addEditTimeslot = () => {
     setEditGroupTimeslots([...editGroupTimeslots, { day: '', startTime: '', endTime: '' }])
   }
 
-  const updateEditTimeslot = (index: number, field: keyof Timeslot, value: string) => {
+  const _updateEditTimeslot = (index: number, field: keyof Timeslot, value: string) => {
     setEditGroupTimeslots(editGroupTimeslots.map((slot, i) =>
       i === index ? { ...slot, [field]: value } : slot
     ))
   }
 
-  const removeEditTimeslot = (index: number) => {
+  const _removeEditTimeslot = (index: number) => {
     setEditGroupTimeslots(editGroupTimeslots.filter((_, i) => i !== index))
   }
 
   // Get subjects used by a school (via groups)
-  const getSchoolSubjects = (schoolId: string): Subject[] => {
+  const _getSchoolSubjects = (schoolId: string): Subject[] => {
     const schoolGroups = groupsBySchool[schoolId] || []
     const subjectIds = new Set(schoolGroups.map(g => g.subject_id))
     return allSubjects.filter(s => subjectIds.has(s.id))
@@ -619,15 +619,16 @@ export function Schools() {
   return (
     <>
       <Toaster position="top-right" />
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <div className="max-w-7xl mx-auto px-2 sm:px-4 lg:px-8">
       <div className="space-y-4">
         {/* Header */}
-        <div className="flex justify-between items-center">
-          <h2 className="text-2xl font-bold">School Overview</h2>
-        <div className="flex gap-2">
+        <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-3">
+          <h2 className="text-xl sm:text-2xl font-bold">School Overview</h2>
+        <div className="flex flex-col sm:flex-row gap-2">
           <Button
             variant="outline"
             onClick={() => setShowManageSubjects(true)}
+            className="w-full sm:w-auto justify-center"
           >
             <Settings size={16} />
             Manage Subjects
@@ -635,6 +636,7 @@ export function Schools() {
           <Button
             variant="default"
             onClick={() => setShowAddSchool(true)}
+            className="w-full sm:w-auto justify-center"
           >
             <Plus size={16} />
             Add School
@@ -643,7 +645,7 @@ export function Schools() {
       </div>
 
       {/* Search & Controls */}
-      <div className="flex gap-3 items-center">
+      <div className="flex flex-col sm:flex-row gap-2 sm:gap-3 sm:items-center">
         <div className="flex-1 relative">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={18} />
           <input
@@ -664,12 +666,13 @@ export function Schools() {
             </Button>
           )}
         </div>
-        <div className="flex gap-2">
+        <div className="flex gap-2 justify-end">
           <Button
             size="sm"
             variant="outline"
             onClick={expandAllSchools}
             title="Expand all schools"
+            className="flex-1 sm:flex-none"
           >
             <ChevronsDown size={16} />
           </Button>
@@ -678,6 +681,7 @@ export function Schools() {
             variant="outline"
             onClick={collapseAllSchools}
             title="Collapse all schools"
+            className="flex-1 sm:flex-none"
           >
             <ChevronsRight size={16} />
           </Button>
@@ -763,22 +767,22 @@ export function Schools() {
               >
                 {/* School Header */}
                 <div
-                  className="p-4 cursor-pointer bg-gray-50/50 hover:bg-gray-100/50 transition-colors rounded-t-lg border-b border-gray-200 dark:bg-gray-800/50 dark:hover:bg-gray-700/50 dark:border-gray-700"
+                  className="p-3 sm:p-4 cursor-pointer bg-gray-50/50 hover:bg-gray-100/50 transition-colors rounded-t-lg border-b border-gray-200 dark:bg-gray-800/50 dark:hover:bg-gray-700/50 dark:border-gray-700"
                   onClick={() => toggleSchoolCollapse(school.id)}
                 >
-                  <div className="flex justify-between items-center">
-                    <div className="flex items-center gap-3">
-                      <div className="text-blue-600 dark:text-blue-400">
-                        {collapsedSchools[school.id] ? <ChevronRight size={24} /> : <ChevronDown size={24} />}
+                  <div className="flex flex-col sm:flex-row sm:justify-between gap-3">
+                    <div className="flex items-center gap-2 sm:gap-3 min-w-0">
+                      <div className="text-blue-600 dark:text-blue-400 flex-shrink-0">
+                        {collapsedSchools[school.id] ? <ChevronRight size={20} className="sm:w-6 sm:h-6" /> : <ChevronDown size={20} className="sm:w-6 sm:h-6" />}
                       </div>
-                      <SchoolIcon size={24} className="text-blue-600 dark:text-blue-400" />
+                      <SchoolIcon size={20} className="sm:w-6 sm:h-6 text-blue-600 dark:text-blue-400 flex-shrink-0" />
                       {editingSchool === school.id ? (
-                        <div className="flex gap-2 items-center" onClick={(e) => e.stopPropagation()}>
+                        <div className="flex gap-2 items-center flex-1 min-w-0" onClick={(e) => e.stopPropagation()}>
                           <input
                             type="text"
                             value={editSchoolName}
                             onChange={(e) => setEditSchoolName(e.target.value)}
-                            className="text-xl font-semibold bg-transparent border-b border-blue-500 focus:outline-none"
+                            className="text-base sm:text-xl font-semibold bg-transparent border-b border-blue-500 focus:outline-none flex-1 min-w-0"
                             onKeyDown={(e) => {
                               if (e.key === 'Enter') handleUpdateSchool(school.id, editSchoolName)
                               if (e.key === 'Escape') {
@@ -792,9 +796,9 @@ export function Schools() {
                             size="sm"
                             variant="ghost"
                             onClick={() => handleUpdateSchool(school.id, editSchoolName)}
-                            className="text-green-600 hover:text-green-700"
+                            className="text-green-600 hover:text-green-700 flex-shrink-0"
                           >
-                            <Check size={18} />
+                            <Check size={16} className="sm:w-[18px] sm:h-[18px]" />
                           </Button>
                           <Button
                             size="sm"
@@ -803,35 +807,37 @@ export function Schools() {
                               setEditingSchool(null)
                               setEditSchoolName('')
                             }}
-                            className="text-gray-600 hover:text-gray-700"
+                            className="text-gray-600 hover:text-gray-700 flex-shrink-0"
                           >
-                            <X size={18} />
+                            <X size={16} className="sm:w-[18px] sm:h-[18px]" />
                           </Button>
                         </div>
                       ) : (
-                        <div>
-                          <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100">{school.name}</h3>
-                          <div className="flex gap-2 mt-1.5">
-                            <Badge variant="secondary">
-                              <BookOpen size={12} className="text-purple-600 dark:text-purple-400" />
+                        <div className="min-w-0 flex-1">
+                          <h3 className="text-base sm:text-lg font-semibold text-gray-900 dark:text-gray-100 truncate">{school.name}</h3>
+                          <div className="flex flex-wrap gap-1.5 sm:gap-2 mt-1.5">
+                            <Badge variant="secondary" className="text-xs">
+                              <BookOpen size={10} className="sm:w-3 sm:h-3 text-purple-600 dark:text-purple-400" />
                               {(schoolSubjectsBySchool[school.id] || []).length} subjects
                             </Badge>
-                            <Badge variant="secondary">
-                              <Users size={12} className="text-orange-600 dark:text-orange-400" />
+                            <Badge variant="secondary" className="text-xs">
+                              <Users size={10} className="sm:w-3 sm:h-3 text-orange-600 dark:text-orange-400" />
                               {totalGroups} groups
                             </Badge>
                           </div>
                         </div>
                       )}
                     </div>
-                    <div className="flex gap-2" onClick={(e) => e.stopPropagation()}>
+                    <div className="flex flex-wrap sm:flex-nowrap gap-1.5 sm:gap-2 justify-end" onClick={(e) => e.stopPropagation()}>
                       <Button
                         size="sm"
                         variant="outline"
                         onClick={() => setShowAddSubject(school.id)}
+                        className="flex-1 sm:flex-none text-xs sm:text-sm"
                       >
-                        <Plus size={14} />
-                        Add Subject
+                        <Plus size={12} className="sm:w-[14px] sm:h-[14px]" />
+                        <span className="hidden sm:inline ml-1">Add Subject</span>
+                        <span className="sm:hidden ml-1">Subject</span>
                       </Button>
                       <Button
                         size="sm"
@@ -840,17 +846,19 @@ export function Schools() {
                           setEditingSchool(school.id)
                           setEditSchoolName(school.name)
                         }}
+                        className="text-xs sm:text-sm px-2"
                       >
-                        <Edit2 size={14} />
-                        Edit
+                        <Edit2 size={12} className="sm:w-[14px] sm:h-[14px]" />
+                        <span className="hidden sm:inline ml-1">Edit</span>
                       </Button>
                       <Button
                         size="sm"
                         variant="ghost"
                         onClick={() => handleDeleteSchool(school.id)}
+                        className="text-xs sm:text-sm px-2"
                       >
-                        <Trash2 size={14} />
-                        Delete
+                        <Trash2 size={12} className="sm:w-[14px] sm:h-[14px]" />
+                        <span className="hidden sm:inline ml-1">Delete</span>
                       </Button>
                     </div>
                   </div>
@@ -866,7 +874,7 @@ export function Schools() {
                       transition={{ duration: 0.3, ease: 'easeInOut' }}
                       className="overflow-hidden"
                     >
-                      <div className="px-6 pb-6">
+                      <div className="px-3 sm:px-6 pb-4 sm:pb-6">
                     {/* Add Subject Form */}
                     {showAddSubject === school.id && (
                       <div className="mb-4 bg-gray-50 dark:bg-gray-700 p-4 rounded-lg">
@@ -922,27 +930,27 @@ export function Schools() {
                             <div key={subject.id} className="rounded-md border border-gray-200/60 bg-white/50 shadow-sm hover:shadow-md hover:-translate-y-0.5 transition-all duration-200 dark:border-gray-700/60 dark:bg-gray-800/50">
                               {/* Subject Header */}
                               <div
-                                className="p-3 cursor-pointer hover:bg-gray-50/50 transition-colors rounded-t-md dark:hover:bg-gray-700/50"
+                                className="p-2.5 sm:p-3 cursor-pointer hover:bg-gray-50/50 transition-colors rounded-t-md dark:hover:bg-gray-700/50"
                                 onClick={() => toggleSubjectCollapse(school.id, subject.id)}
                               >
-                                <div className="flex justify-between items-center">
-                                  <div className="flex items-center gap-2">
-                                    <div className="text-purple-600 dark:text-purple-400">
+                                <div className="flex flex-col sm:flex-row sm:justify-between gap-2">
+                                  <div className="flex items-center gap-2 min-w-0">
+                                    <div className="text-purple-600 dark:text-purple-400 flex-shrink-0">
                                       {collapsedSubjects[`${school.id}-${subject.id}`] ? (
-                                        <ChevronRight size={20} />
+                                        <ChevronRight size={18} className="sm:w-5 sm:h-5" />
                                       ) : (
-                                        <ChevronDown size={20} />
+                                        <ChevronDown size={18} className="sm:w-5 sm:h-5" />
                                       )}
                                     </div>
-                                    <BookOpen size={18} className="text-purple-600 dark:text-purple-400" />
-                                    <div>
+                                    <BookOpen size={16} className="sm:w-[18px] sm:h-[18px] text-purple-600 dark:text-purple-400 flex-shrink-0" />
+                                    <div className="min-w-0 flex-1">
                                       {editingSchool === school.id && editingSubject === subject.id ? (
-                                        <div className="flex gap-2 items-center" onClick={(e) => e.stopPropagation()}>
+                                        <div className="flex gap-1.5 items-center" onClick={(e) => e.stopPropagation()}>
                                           <input
                                             type="text"
                                             value={editSubjectName}
                                             onChange={(e) => setEditSubjectName(e.target.value)}
-                                            className="font-medium bg-transparent border-b border-purple-500 focus:outline-none text-gray-900 dark:text-gray-100"
+                                            className="text-sm sm:text-base font-medium bg-transparent border-b border-purple-500 focus:outline-none text-gray-900 dark:text-gray-100 flex-1 min-w-0"
                                             onKeyDown={(e) => {
                                               if (e.key === 'Enter') handleUpdateSubject(subject.id, editSubjectName)
                                               if (e.key === 'Escape') {
@@ -956,9 +964,9 @@ export function Schools() {
                                             size="sm"
                                             variant="ghost"
                                             onClick={() => handleUpdateSubject(subject.id, editSubjectName)}
-                                            className="text-green-600 hover:text-green-700"
+                                            className="text-green-600 hover:text-green-700 flex-shrink-0 p-1"
                                           >
-                                            <Check size={16} />
+                                            <Check size={14} className="sm:w-4 sm:h-4" />
                                           </Button>
                                           <Button
                                             size="sm"
@@ -967,14 +975,14 @@ export function Schools() {
                                               setEditingSubject(null)
                                               setEditSubjectName('')
                                             }}
-                                            className="text-gray-600 hover:text-gray-700"
+                                            className="text-gray-600 hover:text-gray-700 flex-shrink-0 p-1"
                                           >
-                                            <X size={16} />
+                                            <X size={14} className="sm:w-4 sm:h-4" />
                                           </Button>
                                         </div>
                                       ) : editingSchool === school.id ? (
-                                        <div className="flex gap-2 items-center">
-                                          <h4 className="font-medium text-gray-900 dark:text-gray-100">{subject.name}</h4>
+                                        <div className="flex gap-1.5 items-center">
+                                          <h4 className="text-sm sm:text-base font-medium text-gray-900 dark:text-gray-100 truncate">{subject.name}</h4>
                                           <Button
                                             size="sm"
                                             variant="ghost"
@@ -983,28 +991,29 @@ export function Schools() {
                                               setEditingSubject(subject.id)
                                               setEditSubjectName(subject.name)
                                             }}
-                                            className="text-purple-600 hover:text-purple-700"
+                                            className="text-purple-600 hover:text-purple-700 flex-shrink-0 p-1"
                                           >
-                                            <Edit2 size={14} />
+                                            <Edit2 size={12} className="sm:w-[14px] sm:h-[14px]" />
                                           </Button>
                                         </div>
                                       ) : (
-                                        <h4 className="font-medium text-gray-900 dark:text-gray-100">{subject.name}</h4>
+                                        <h4 className="text-sm sm:text-base font-medium text-gray-900 dark:text-gray-100 truncate">{subject.name}</h4>
                                       )}
-                                      <Badge variant="secondary" className="mt-1">
+                                      <Badge variant="secondary" className="mt-1 text-xs">
                                         <Users size={10} className="text-orange-600 dark:text-orange-400" />
                                         {subjectGroups.length} groups
                                       </Badge>
                                     </div>
                                   </div>
-                                  <div className="flex gap-1" onClick={(e) => e.stopPropagation()}>
+                                  <div className="flex justify-end" onClick={(e) => e.stopPropagation()}>
                                     <Button
                                       size="sm"
                                       variant="outline"
                                       onClick={() => setShowAddGroup({ schoolId: school.id, subjectId: subject.id })}
+                                      className="text-xs sm:text-sm w-full sm:w-auto"
                                     >
                                       <Plus size={12} />
-                                      Add Group
+                                      <span className="ml-1">Add Group</span>
                                     </Button>
                                   </div>
                                 </div>
@@ -1012,7 +1021,7 @@ export function Schools() {
 
                               {/* Subject Content - Groups */}
                               {!collapsedSubjects[`${school.id}-${subject.id}`] && (
-                                <div className="px-4 pb-4">
+                                <div className="px-2 sm:px-4 pb-3 sm:pb-4">
                                   {/* Add Group Form */}
                                   {showAddGroup?.schoolId === school.id && showAddGroup?.subjectId === subject.id && (
                                     <div className="mb-3 bg-white dark:bg-gray-800 p-3 rounded">
@@ -1114,16 +1123,16 @@ export function Schools() {
                                       <p className="text-gray-500 text-sm italic">No groups yet</p>
                                     ) : (
                                       subjectGroups.filter(groupMatchesSearch).map((group) => (
-                                        <div key={group.id} className="bg-gray-50 p-2.5 rounded-md border border-gray-300/40 shadow-sm hover:shadow-md hover:-translate-y-0.5 transition-all duration-200 dark:bg-gray-700/50 dark:border-gray-600/40">
-                                          <div className="flex justify-between items-start mb-2">
-                                            <div className="flex-1">
-                                              <div className="flex items-start gap-2">
-                                                <div className="text-orange-600 dark:text-orange-400 mt-0.5">
-                                                  <Users size={16} />
+                                        <div key={group.id} className="bg-gray-50 p-2 sm:p-2.5 rounded-md border border-gray-300/40 shadow-sm hover:shadow-md hover:-translate-y-0.5 transition-all duration-200 dark:bg-gray-700/50 dark:border-gray-600/40">
+                                          <div className="flex flex-col sm:flex-row sm:justify-between gap-2 mb-2">
+                                            <div className="flex-1 min-w-0">
+                                              <div className="flex items-start gap-1.5 sm:gap-2">
+                                                <div className="text-orange-600 dark:text-orange-400 mt-0.5 flex-shrink-0">
+                                                  <Users size={14} className="sm:w-4 sm:h-4" />
                                                 </div>
-                                                <div>
+                                                <div className="min-w-0 flex-1">
                                                   <h5
-                                                    className="font-medium text-sm cursor-pointer hover:text-blue-600 dark:hover:text-blue-400 transition-colors"
+                                                    className="font-medium text-xs sm:text-sm cursor-pointer hover:text-blue-600 dark:hover:text-blue-400 transition-colors truncate"
                                                     onClick={() => openGroupOverview(group, school, subject)}
                                                     title="Click to open group overview"
                                                   >
@@ -1131,9 +1140,9 @@ export function Schools() {
                                                   </h5>
                                                   <div className="text-xs text-gray-500 mt-1">
                                                     {group.timeslots && group.timeslots.length > 0 ? (
-                                                      <div className="space-y-1">
+                                                      <div className="space-y-0.5">
                                                         {group.timeslots.map((slot: any, index: number) => (
-                                                          <div key={index}>
+                                                          <div key={index} className="truncate">
                                                             {slot.day} {slot.startTime} - {slot.endTime}
                                                           </div>
                                                         ))}
@@ -1145,19 +1154,21 @@ export function Schools() {
                                                 </div>
                                               </div>
                                             </div>
-                                            <div className="flex gap-1">
+                                            <div className="flex gap-1 justify-end flex-shrink-0">
                                               <Button
                                                 size="sm"
                                                 variant="outline"
                                                 onClick={() => setShowAddStudent(group.id)}
+                                                className="text-xs flex-1 sm:flex-none"
                                               >
-                                                <Plus size={12} />
-                                                Add Student
+                                                <Plus size={10} className="sm:w-3 sm:h-3" />
+                                                <span className="ml-1">Add Student</span>
                                               </Button>
                                               <Button
                                                 size="sm"
                                                 variant="ghost"
                                                 onClick={() => handleDeleteGroup(group.id, school.id, subject.id)}
+                                                className="p-1.5 sm:p-2"
                                               >
                                                 <Trash2 size={12} />
                                               </Button>

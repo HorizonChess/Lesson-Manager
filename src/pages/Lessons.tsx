@@ -37,7 +37,7 @@ import { LessonsRecordModal } from '../components/lessons/LessonsRecordModal'
 import type { RecurringLessonsFormState, RecurringPattern, LessonRecordData, EditTimeData } from '../components/lessons/types'
 import { Button } from '../components/ui/button'
 import { Plus, Repeat } from 'lucide-react'
-import { motion, AnimatePresence } from 'framer-motion'
+import { motion } from 'framer-motion'
 
 const normalizeLesson = (lesson: Lesson | LessonWithGroup): NormalizedLesson => {
   const candidate = lesson as LessonWithGroup
@@ -52,7 +52,14 @@ const normalizeLesson = (lesson: Lesson | LessonWithGroup): NormalizedLesson => 
   } as NormalizedLesson
 }
 
-type LessonEvent = LessonsCalendarEvent<NormalizedLesson>
+interface LessonEventResource {
+  school?: string
+  subject?: string
+}
+
+type LessonEvent = LessonsCalendarEvent<NormalizedLesson> & {
+  resource?: LessonEventResource
+}
 
 const createInitialRecurringFormData = (): RecurringLessonsFormState => ({
   groupId: '',
@@ -1179,14 +1186,15 @@ export function Lessons() {
   }
 
   // Simple event component - click to open, drag to move (built-in)
+  // On mobile, hide school name to prevent overlap with group name
   const SimpleEventComponent = ({ event }: { event: LessonEvent }) => {
     return (
       <div className="w-full h-full relative p-1 cursor-pointer hover:bg-black/10 dark:hover:bg-white/10 transition-colors overflow-hidden">
-        <div className="absolute top-1 right-1 text-[9px] opacity-70 truncate max-w-[40%]">
+        <div className="absolute top-1 right-1 text-[9px] opacity-70 truncate max-w-[40%] hidden sm:block">
           {event.resource?.school}
         </div>
         <div className="absolute inset-0 flex flex-col items-center justify-center px-1">
-          <div className="font-semibold text-xs truncate w-full text-center">{event.title}</div>
+          <div className="font-semibold text-xs truncate w-full text-center leading-tight">{event.title}</div>
           <div className="text-[10px] opacity-75 truncate w-full text-center mt-0.5">{event.resource?.subject}</div>
         </div>
       </div>
@@ -1204,24 +1212,24 @@ export function Lessons() {
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4 md:space-y-6 px-2 sm:px-0">
       <motion.div
         initial={{ opacity: 0, y: -10 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.3 }}
-        className="flex justify-between items-center"
+        className="flex flex-col sm:flex-row sm:justify-between gap-3 sm:items-center"
       >
-        <h2 className="text-2xl font-bold text-gray-900 dark:text-gray-100">Lessons</h2>
+        <h2 className="text-xl sm:text-2xl font-bold text-gray-900 dark:text-gray-100">Lessons</h2>
         <motion.div
           initial={{ opacity: 0, x: 20 }}
           animate={{ opacity: 1, x: 0 }}
           transition={{ duration: 0.3, delay: 0.1 }}
-          className="flex gap-2 items-center"
+          className="flex flex-col sm:flex-row gap-2 sm:items-center"
         >
           <div className="flex bg-gray-100 dark:bg-gray-800 rounded-lg p-1 shadow-sm">
             <button
               onClick={() => handleViewChange('calendar')}
-              className={`px-4 py-2 rounded-md text-sm font-medium transition-all ${
+              className={`flex-1 sm:flex-none px-3 sm:px-4 py-2 rounded-md text-sm font-medium transition-all ${
                 calendarView === 'calendar'
                   ? 'bg-slate-700 dark:bg-slate-600 text-white shadow-md'
                   : 'text-gray-600 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-700'
@@ -1231,7 +1239,7 @@ export function Lessons() {
             </button>
             <button
               onClick={() => handleViewChange('list')}
-              className={`px-4 py-2 rounded-md text-sm font-medium transition-all ${
+              className={`flex-1 sm:flex-none px-3 sm:px-4 py-2 rounded-md text-sm font-medium transition-all ${
                 calendarView === 'list'
                   ? 'bg-slate-700 dark:bg-slate-600 text-white shadow-md'
                   : 'text-gray-600 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-700'
@@ -1240,31 +1248,37 @@ export function Lessons() {
               List
             </button>
           </div>
-          {calendarView === 'list' && (
+          <div className="flex gap-2 flex-wrap">
+            {calendarView === 'list' && (
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setLessonFilter(lessonFilter === 'upcoming' ? 'all' : 'upcoming')}
+                className="flex-1 sm:flex-none whitespace-nowrap"
+              >
+                {lessonFilter === 'upcoming' ? 'Show All' : 'Show Upcoming'}
+              </Button>
+            )}
             <Button
               variant="outline"
-              size="sm"
-              onClick={() => setLessonFilter(lessonFilter === 'upcoming' ? 'all' : 'upcoming')}
+              onClick={() => setShowAddLesson(true)}
+              disabled={groups.length === 0}
+              className="flex-1 sm:flex-none whitespace-nowrap text-sm"
             >
-              {lessonFilter === 'upcoming' ? 'Show All' : 'Show Upcoming'}
+              <Plus size={14} className="sm:w-4 sm:h-4" />
+              <span className="ml-1">Add Lesson</span>
             </Button>
-          )}
-          <Button
-            variant="outline"
-            onClick={() => setShowAddLesson(true)}
-            disabled={groups.length === 0}
-          >
-            <Plus size={16} />
-            Add Lesson
-          </Button>
-          <Button
-            variant="default"
-            onClick={() => setShowRecurringModal(true)}
-            disabled={groups.length === 0}
-          >
-            <Repeat size={16} />
-            Manage Recurring
-          </Button>
+            <Button
+              variant="default"
+              onClick={() => setShowRecurringModal(true)}
+              disabled={groups.length === 0}
+              className="flex-1 sm:flex-none whitespace-nowrap text-sm"
+            >
+              <Repeat size={14} className="sm:w-4 sm:h-4" />
+              <span className="ml-1 hidden sm:inline">Manage Recurring</span>
+              <span className="ml-1 sm:hidden">Recurring</span>
+            </Button>
+          </div>
         </motion.div>
       </motion.div>
 

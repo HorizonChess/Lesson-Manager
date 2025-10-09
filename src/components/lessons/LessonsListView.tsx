@@ -48,7 +48,7 @@ export function LessonsListView({
         >
           <h3 className="font-semibold text-base mb-2 border-b dark:border-gray-700 pb-1.5">{date}</h3>
           <div className="space-y-1.5">
-            {dayLessons.map((lesson, lessonIndex) => {
+            {dayLessons.map((lesson) => {
               const { time: startTime } = formatDateTime(lesson.start_time)
               const { time: endTime } = formatDateTime(lesson.end_time)
 

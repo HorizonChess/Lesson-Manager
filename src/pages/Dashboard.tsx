@@ -203,13 +203,13 @@ ${templateJson}
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div className="flex justify-between items-center">
+      <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-3">
         <h1 className="text-2xl font-bold">Dashboard</h1>
-        <div className="flex items-center gap-4">
-          <ScheduleWizard />
-          <p className="text-gray-600 dark:text-gray-400">
+        <div className="flex flex-col-reverse sm:flex-row sm:items-center gap-2 sm:gap-4">
+          <p className="text-sm sm:text-base text-gray-600 dark:text-gray-400">
             Welcome back, {user?.email?.split('@')[0]}
           </p>
+          <ScheduleWizard />
         </div>
       </div>
 

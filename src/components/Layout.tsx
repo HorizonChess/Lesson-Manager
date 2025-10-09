@@ -57,7 +57,7 @@ export function Layout() {
                 {user && (
                   <div className="flex items-center gap-3">
                     <div className="hidden sm:block text-sm text-gray-600 dark:text-gray-400">
-                      {user.email.split('@')[0]}
+                      {user.email?.split('@')[0]}
                     </div>
                     <div className="h-8 w-8 rounded-full bg-gradient-to-br from-blue-500 to-purple-500 flex items-center justify-center text-white text-sm font-medium">
                       {getUserInitials()}
