@@ -4,6 +4,7 @@ import { useAuth } from '../contexts/AuthContext'
 import { useEffect } from 'react'
 import { Button } from './ui/button'
 import { Toaster } from 'react-hot-toast'
+import { BackgroundPatternModal } from './BackgroundPatternModal'
 import {
   Home,
   School,
@@ -16,6 +17,7 @@ import {
   Languages,
   LogOut
 } from 'lucide-react'
+import '../styles/backgroundPatterns.css'
 
 export function Layout() {
   const { isDarkMode, isRTL, toggleDarkMode, toggleRTL } = useAppStore()
@@ -46,16 +48,29 @@ export function Layout() {
   return (
     <>
       <Toaster position="top-right" />
-      <div className="min-h-screen bg-gradient-to-br from-gray-50 via-white to-gray-100 dark:from-gray-900 dark:via-gray-950 dark:to-black text-gray-900 dark:text-white">
+      {/*
+        Available background patterns (replace class to switch):
+        - bg-pattern-dots (subtle dotted grid)
+        - bg-pattern-grid (geometric grid lines)
+        - bg-pattern-diagonal (diagonal stripes)
+        - bg-pattern-topo (topographic waves)
+        - bg-pattern-hexagon (hexagonal pattern)
+        - bg-pattern-circuit (circuit board tech theme)
+        - bg-pattern-mesh (gradient mesh abstract)
+        - bg-pattern-noise (subtle noise texture)
+        - bg-pattern-waves (flowing wave pattern)
+        - bg-gradient-enhanced (enhanced gradient - default)
+      */}
+      <div className="min-h-screen bg-gradient-enhanced text-gray-900 dark:text-white">
         <header className="sticky top-0 z-40 w-full border-b border-gray-200/50 dark:border-gray-700/50 backdrop-blur-sm bg-white/80 dark:bg-gray-900/80">
           <div className="container mx-auto px-4 sm:px-6 lg:px-8">
             <div className="flex h-16 items-center justify-between">
               <h1 className="text-xl font-bold bg-gradient-to-r from-slate-700 via-slate-800 to-indigo-900 dark:from-cyan-400 dark:via-blue-400 dark:to-indigo-400 bg-clip-text text-transparent [-webkit-background-clip:text] [-webkit-text-fill-color:transparent]">
                 Teacher Scheduler
               </h1>
-              <div className="flex gap-3 items-center">
+              <div className="flex gap-2 items-center">
                 {user && (
-                  <div className="flex items-center gap-3">
+                  <div className="flex items-center gap-2">
                     <div className="hidden sm:block text-sm text-gray-600 dark:text-gray-400">
                       {user.email?.split('@')[0]}
                     </div>
@@ -64,6 +79,7 @@ export function Layout() {
                     </div>
                   </div>
                 )}
+                <BackgroundPatternModal />
                 <Button
                   size="sm"
                   variant="ghost"

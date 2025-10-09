@@ -1,4 +1,5 @@
 import { useEffect, useRef } from 'react'
+import { createPortal } from 'react-dom'
 import { motion, AnimatePresence } from 'framer-motion'
 
 interface ModalProps {
@@ -56,11 +57,11 @@ export function Modal({ isOpen, onClose, title, children, size = 'lg' }: ModalPr
     xl: 'max-w-4xl'
   }
 
-  return (
+  const modalContent = (
     <AnimatePresence>
       {isOpen && (
         <div
-          className="fixed inset-0 z-50 overflow-y-auto"
+          className="fixed inset-0 z-[100] overflow-y-auto"
           aria-labelledby="modal-title"
           role="dialog"
           aria-modal="true"
@@ -71,7 +72,7 @@ export function Modal({ isOpen, onClose, title, children, size = 'lg' }: ModalPr
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             transition={{ duration: 0.2 }}
-            className="fixed inset-0 bg-black bg-opacity-50"
+            className="fixed inset-0 bg-black bg-opacity-50 backdrop-blur-sm"
             onClick={onClose}
             aria-hidden="true"
           />
@@ -85,7 +86,7 @@ export function Modal({ isOpen, onClose, title, children, size = 'lg' }: ModalPr
               exit={{ opacity: 0, scale: 0.95, y: 20 }}
               transition={{ duration: 0.2, ease: 'easeOut' }}
               tabIndex={-1}
-              className={`relative bg-white dark:bg-gray-800 rounded-lg shadow-xl w-full ${sizeClasses[size]} max-h-[90vh] overflow-hidden`}
+              className={`relative z-[101] bg-white dark:bg-gray-800 rounded-lg shadow-2xl w-full ${sizeClasses[size]} max-h-[90vh] overflow-hidden`}
               onClick={(e) => e.stopPropagation()}
             >
           {/* Header */}
@@ -118,4 +119,6 @@ export function Modal({ isOpen, onClose, title, children, size = 'lg' }: ModalPr
       )}
     </AnimatePresence>
   )
+
+  return createPortal(modalContent, document.body)
 }
