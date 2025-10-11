@@ -192,7 +192,7 @@ export function Tasks() {
           <select
             value={statusFilter}
             onChange={(e) => setStatusFilter(e.target.value as 'all' | 'open' | 'completed')}
-            className="px-3 py-2 border border-gray-300 rounded focus:outline-none focus:border-blue-500"
+            className="surface-input px-3 py-2"
           >
             <option value="all">All</option>
             <option value="open">Open</option>
@@ -205,7 +205,7 @@ export function Tasks() {
           <select
             value={linkFilter}
             onChange={(e) => setLinkFilter(e.target.value as 'all' | 'group' | 'lesson' | 'unlinked')}
-            className="px-3 py-2 border border-gray-300 rounded focus:outline-none focus:border-blue-500"
+            className="surface-input px-3 py-2"
           >
             <option value="all">All</option>
             <option value="group">Groups</option>
@@ -223,7 +223,7 @@ export function Tasks() {
 
       {/* Add Task Form */}
       {showAddTask && (
-        <div className="bg-gray-50 dark:bg-gray-800 p-4 rounded-lg">
+        <div className="surface-section-muted p-4">
           <form onSubmit={addTask} className="space-y-4">
             <div>
               <label className="block text-sm font-medium mb-2">Task Title *</label>
@@ -232,7 +232,7 @@ export function Tasks() {
                 value={newTask.title}
                 onChange={(e) => setNewTask({ ...newTask, title: e.target.value })}
                 placeholder="Enter task title"
-                className="w-full px-3 py-2 border border-gray-300 rounded focus:outline-none focus:border-blue-500"
+                className="surface-input w-full px-3 py-2"
                 required
               />
             </div>
@@ -244,7 +244,7 @@ export function Tasks() {
                 onChange={(e) => setNewTask({ ...newTask, description: e.target.value })}
                 placeholder="Task description (optional)"
                 rows={3}
-                className="w-full px-3 py-2 border border-gray-300 rounded focus:outline-none focus:border-blue-500"
+                className="surface-input w-full px-3 py-2"
               />
             </div>
 
@@ -260,7 +260,7 @@ export function Tasks() {
                       lesson_id: '' // Clear lesson if group is selected
                     })
                   }}
-                  className="w-full px-3 py-2 border border-gray-300 rounded focus:outline-none focus:border-blue-500"
+                  className="surface-input w-full px-3 py-2"
                 >
                   <option value="">No group</option>
                   {groups.map(group => (
@@ -282,7 +282,7 @@ export function Tasks() {
                       group_id: '' // Clear group if lesson is selected
                     })
                   }}
-                  className="w-full px-3 py-2 border border-gray-300 rounded focus:outline-none focus:border-blue-500"
+                  className="surface-input w-full px-3 py-2"
                 >
                   <option value="">No lesson</option>
                   {lessons.map(lesson => (
@@ -307,7 +307,7 @@ export function Tasks() {
                   setShowAddTask(false)
                   setNewTask({ title: '', description: '', group_id: '', lesson_id: '' })
                 }}
-                className="bg-gray-300 text-gray-700 px-4 py-2 rounded hover:bg-gray-400"
+                className="surface-chip text-slate-700 px-4 py-2 hover:opacity-85"
               >
                 Cancel
               </button>
@@ -329,7 +329,7 @@ export function Tasks() {
           filteredTasks.map((task) => (
             <div
               key={task.id}
-              className={`bg-white dark:bg-gray-800 border rounded-lg p-4 ${
+              className={`surface-panel p-4 ${
                 task.is_completed ? 'opacity-75' : ''
               }`}
             >
@@ -360,7 +360,7 @@ export function Tasks() {
                           lesson_id: e.target.value ? '' : editTask.lesson_id
                         })
                       }}
-                      className="text-sm px-2 py-1 border border-gray-300 rounded focus:outline-none focus:border-blue-500"
+                      className="surface-input text-sm px-2 py-1"
                     >
                       <option value="">No group</option>
                       {groups.map(group => (
@@ -379,7 +379,7 @@ export function Tasks() {
                           group_id: e.target.value ? '' : editTask.group_id
                         })
                       }}
-                      className="text-sm px-2 py-1 border border-gray-300 rounded focus:outline-none focus:border-blue-500"
+                      className="surface-input text-sm px-2 py-1"
                     >
                       <option value="">No lesson</option>
                       {lessons.map(lesson => (
@@ -415,7 +415,7 @@ export function Tasks() {
                     className={`mt-1 w-5 h-5 rounded border-2 flex items-center justify-center ${
                       task.is_completed
                         ? 'bg-green-500 border-green-500 text-white'
-                        : 'border-gray-300 hover:border-blue-500'
+                        : 'border-white/40 hover:border-blue-400 dark:border-white/15'
                     }`}
                   >
                     {task.is_completed && '✓'}

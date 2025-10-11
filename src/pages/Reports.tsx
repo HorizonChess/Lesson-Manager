@@ -945,7 +945,7 @@ export function Reports() {
       )}
 
       {/* Filters */}
-      <div className="bg-white dark:bg-gray-800 border rounded-lg p-6">
+      <div className="surface-panel p-6">
         <h3 className="text-lg font-semibold mb-4">Filters</h3>
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
           <div>
@@ -953,7 +953,7 @@ export function Reports() {
             <select
               value={selectedSchool}
               onChange={(e) => handleSchoolChange(e.target.value)}
-              className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded focus:outline-none focus:border-blue-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100"
+              className="surface-input w-full px-3 py-2"
             >
               <option value="">All Schools</option>
               {schools.map(school => (
@@ -967,7 +967,7 @@ export function Reports() {
             <select
               value={selectedSubject}
               onChange={(e) => handleSubjectChange(e.target.value)}
-              className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded focus:outline-none focus:border-blue-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100"
+              className="surface-input w-full px-3 py-2"
             >
               <option value="">All Subjects</option>
               {subjects.map(subject => (
@@ -981,7 +981,7 @@ export function Reports() {
             <select
               value={selectedGroup}
               onChange={(e) => setSelectedGroup(e.target.value)}
-              className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded focus:outline-none focus:border-blue-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100"
+              className="surface-input w-full px-3 py-2"
             >
               <option value="">All Groups</option>
               {groups.map(group => (
@@ -996,7 +996,7 @@ export function Reports() {
               type="date"
               value={dateRange.start}
               onChange={(e) => setDateRange({ ...dateRange, start: e.target.value })}
-              className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded focus:outline-none focus:border-blue-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100"
+              className="surface-input w-full px-3 py-2"
             />
           </div>
 
@@ -1006,7 +1006,7 @@ export function Reports() {
               type="date"
               value={dateRange.end}
               onChange={(e) => setDateRange({ ...dateRange, end: e.target.value })}
-              className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded focus:outline-none focus:border-blue-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100"
+              className="surface-input w-full px-3 py-2"
             />
           </div>
         </div>
@@ -1014,7 +1014,7 @@ export function Reports() {
 
       {/* Report Buttons */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-        <div className="bg-white dark:bg-gray-800 border rounded-lg p-6 flex flex-col">
+        <div className="surface-panel p-6 flex flex-col">
           <h3 className="text-lg font-semibold mb-2">Attendance Report</h3>
           <p className="text-sm text-gray-600 mb-4 flex-1">Attendance % computed for a date range; persisted per lesson</p>
           <button
@@ -1026,7 +1026,7 @@ export function Reports() {
           </button>
         </div>
 
-        <div className="bg-white dark:bg-gray-800 border rounded-lg p-6 flex flex-col">
+        <div className="surface-panel p-6 flex flex-col">
           <h3 className="text-lg font-semibold mb-2">Hours Report</h3>
           <p className="text-sm text-gray-600 mb-4 flex-1">Hours taught per school/group/date range (sum non-canceled durations)</p>
           <button
@@ -1038,7 +1038,7 @@ export function Reports() {
           </button>
         </div>
 
-        <div className="bg-white dark:bg-gray-800 border rounded-lg p-6 flex flex-col">
+        <div className="surface-panel p-6 flex flex-col">
           <h3 className="text-lg font-semibold mb-2">Coverage Report</h3>
           <p className="text-sm text-gray-600 mb-4 flex-1">Coverage list: lessons + "covered" text</p>
           <button
@@ -1050,7 +1050,7 @@ export function Reports() {
           </button>
         </div>
 
-        <div className="bg-white dark:bg-gray-800 border rounded-lg p-6 flex flex-col">
+        <div className="surface-panel p-6 flex flex-col">
           <h3 className="text-lg font-semibold mb-2">Expected Salary</h3>
           <p className="text-sm text-gray-600 dark:text-gray-400 mb-4 flex-1">Calculate expected salary based on hours and wage settings</p>
           <button
@@ -1065,7 +1065,7 @@ export function Reports() {
 
       {/* Report Results */}
       {attendanceReport.length > 0 && (
-        <div className="bg-white dark:bg-gray-800 border rounded-lg p-6">
+        <div className="surface-panel p-6">
           <div className="flex justify-between items-center mb-4">
             <h3 className="text-lg font-semibold">Attendance Report</h3>
             <button
@@ -1092,7 +1092,7 @@ export function Reports() {
               </thead>
               <tbody>
                 {attendanceReport.map((row, index) => (
-                  <tr key={index} className="border-b hover:bg-gray-50 dark:hover:bg-gray-700">
+                  <tr key={index} className="border-b hover:bg-white/25 dark:hover:bg-white/10">
                     <td className="py-2 px-3">{row.school}</td>
                     <td className="py-2 px-3">{row.subject}</td>
                     <td className="py-2 px-3">{row.group}</td>
@@ -1116,7 +1116,7 @@ export function Reports() {
       )}
 
       {hoursReport.length > 0 ? (
-        <div className="bg-white dark:bg-gray-800 border rounded-lg p-6">
+        <div className="surface-panel p-6">
           <div className="flex justify-between items-center mb-4">
             <h3 className="text-lg font-semibold">Hours Report</h3>
             <button
@@ -1145,7 +1145,7 @@ export function Reports() {
               <tbody>
                 {hoursReport.map((row, index) => (
                   <>
-                    <tr key={index} className="border-b hover:bg-gray-50 dark:hover:bg-gray-700">
+                    <tr key={index} className="border-b hover:bg-white/25 dark:hover:bg-white/10">
                       <td className="py-2 px-3">{row.school}</td>
                       {hoursReport.some(r => r.subject) && <td className="py-2 px-3">{row.subject || '-'}</td>}
                       {hoursReport.some(r => r.group) && <td className="py-2 px-3">{row.group || '-'}</td>}
@@ -1165,13 +1165,13 @@ export function Reports() {
                       </td>
                     </tr>
                     {expandedRows.has(index) && (
-                      <tr key={`${index}-expanded`} className="bg-gray-50 dark:bg-gray-700">
+                      <tr key={`${index}-expanded`} className="bg-white/15 dark:bg-white/10">
                         <td colSpan={hoursReport.some(r => r.subject) && hoursReport.some(r => r.group) ? 10 : hoursReport.some(r => r.subject) || hoursReport.some(r => r.group) ? 9 : 8} className="py-3 px-3">
-                          <div className="bg-white dark:bg-gray-600 rounded p-3">
+                          <div className="surface-panel rounded p-3">
                             <h4 className="font-medium mb-2 text-sm">Hours by Date:</h4>
                             <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-2">
                               {row.dates.map((dateEntry, dateIndex) => (
-                                <div key={dateIndex} className="flex justify-between bg-gray-100 dark:bg-gray-500 rounded px-2 py-1 text-sm">
+                                <div key={dateIndex} className="flex justify-between bg-white/20 dark:bg-white/10 rounded px-2 py-1 text-sm">
                                   <span>{dateEntry.date}</span>
                                   <span className="font-medium">{dateEntry.hours}h</span>
                                 </div>
@@ -1188,14 +1188,14 @@ export function Reports() {
           </div>
         </div>
       ) : (hoursReport.length === 0 && !loading && (attendanceReport.length > 0 || coverageReport.length > 0)) && (
-        <div className="bg-gray-50 dark:bg-gray-800 border border-gray-200 rounded-lg p-6">
+        <div className="surface-panel p-6">
           <h3 className="text-lg font-semibold mb-2">Hours Report</h3>
           <p className="text-gray-600 dark:text-gray-400">No lessons found in the selected date range or filters. Try adjusting your search criteria or create some lessons first.</p>
         </div>
       )}
 
       {coverageReport.length > 0 && (
-        <div className="bg-white dark:bg-gray-800 border rounded-lg p-6">
+        <div className="surface-panel p-6">
           <div className="flex justify-between items-center mb-4">
             <h3 className="text-lg font-semibold">Coverage Report</h3>
             <button
@@ -1220,7 +1220,7 @@ export function Reports() {
               </thead>
               <tbody>
                 {coverageReport.map((row, index) => (
-                  <tr key={index} className="border-b hover:bg-gray-50 dark:hover:bg-gray-700">
+                  <tr key={index} className="border-b hover:bg-white/25 dark:hover:bg-white/10">
                     <td className="py-2 px-3">{row.lessonDate}</td>
                     <td className="py-2 px-3">{row.school}</td>
                     <td className="py-2 px-3">{row.subject}</td>
@@ -1238,7 +1238,7 @@ export function Reports() {
 
       {/* Salary Report */}
       {salaryReport.length > 0 && (
-        <div className="bg-white dark:bg-gray-800 border rounded-lg p-6">
+        <div className="surface-panel p-6">
           <div className="flex justify-between items-center mb-4">
             <h3 className="text-lg font-semibold">Expected Salary Report</h3>
             <button
@@ -1250,7 +1250,7 @@ export function Reports() {
           </div>
           <div className="overflow-x-auto">
             <table className="w-full">
-              <thead className="bg-gray-50 dark:bg-gray-900">
+              <thead className="bg-white/15 dark:bg-white/10">
                 <tr>
                   <th className="text-left py-2 px-3">School</th>
                   {salaryReport.some(r => r.subject) && <th className="text-left py-2 px-3">Subject</th>}
@@ -1262,7 +1262,7 @@ export function Reports() {
               </thead>
               <tbody>
                 {salaryReport.map((row, index) => (
-                  <tr key={index} className="border-b hover:bg-gray-50 dark:hover:bg-gray-700">
+                  <tr key={index} className="border-b hover:bg-white/25 dark:hover:bg-white/10">
                     <td className="py-2 px-3">{row.school}</td>
                     {salaryReport.some(r => r.subject) && <td className="py-2 px-3">{row.subject || '-'}</td>}
                     {salaryReport.some(r => r.group) && <td className="py-2 px-3">{row.group || '-'}</td>}
@@ -1271,7 +1271,7 @@ export function Reports() {
                     <td className="py-2 px-3 font-semibold">{getCurrencySymbol(currency)}{row.expectedSalary.toFixed(2)}</td>
                   </tr>
                 ))}
-                <tr className="bg-gray-100 dark:bg-gray-900 font-bold">
+                <tr className="bg-white/20 dark:bg-white/10 font-bold">
                   <td className="py-2 px-3" colSpan={salaryReport.some(r => r.group) ? 3 : salaryReport.some(r => r.subject) ? 2 : 1}>Total</td>
                   <td className="py-2 px-3">{salaryReport.reduce((sum, r) => sum + r.totalHours, 0)}</td>
                   <td className="py-2 px-3">-</td>

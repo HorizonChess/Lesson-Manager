@@ -1226,7 +1226,7 @@ export function Lessons() {
           transition={{ duration: 0.3, delay: 0.1 }}
           className="flex flex-col sm:flex-row gap-2 sm:items-center"
         >
-          <div className="flex bg-gray-100 dark:bg-gray-800 rounded-lg p-1 shadow-sm">
+          <div className="surface-section-muted flex rounded-lg p-1 shadow-sm">
             <button
               onClick={() => handleViewChange('calendar')}
               className={`flex-1 sm:flex-none px-3 sm:px-4 py-2 rounded-md text-sm font-medium transition-all ${

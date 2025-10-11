@@ -54,7 +54,7 @@ export function RecurringLessonsModal({
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
-      <div className="flex max-h-[80vh] w-full max-w-2xl flex-col overflow-hidden rounded-lg bg-white shadow-xl dark:bg-gray-800">
+      <div className="surface-modal flex max-h-[80vh] w-full max-w-2xl flex-col overflow-hidden shadow-xl">
         <div className="flex items-center justify-between border-b px-4 py-3">
           <h3 className="text-lg font-bold text-gray-900 dark:text-gray-100">Manage Recurring Lessons</h3>
           <button
@@ -73,7 +73,7 @@ export function RecurringLessonsModal({
               <select
                 value={formData.groupId}
                 onChange={(event) => updateForm({ groupId: event.target.value })}
-                className="w-full rounded border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none dark:border-gray-600 dark:bg-gray-800"
+                className="surface-input w-full px-3 py-2 text-sm"
                 required
               >
                 <option value="">Choose a group...</option>
@@ -87,7 +87,7 @@ export function RecurringLessonsModal({
 
             {formData.groupId && (
               <div className="space-y-4">
-                <div className="rounded bg-gray-50 p-3 dark:bg-gray-700">
+                <div className="surface-section-muted p-3">
                   <div className="font-medium text-gray-900 dark:text-gray-100">{selectedGroup?.name}</div>
                   <div className="text-sm text-gray-600 dark:text-gray-400">
                     {(selectedGroup as any)?.school?.name} / {(selectedGroup as any)?.subject?.name}
@@ -126,7 +126,7 @@ export function RecurringLessonsModal({
                           </div>
 
                           {formData.editingPatternId === pattern.id && (
-                            <div className="space-y-3 rounded border bg-white p-3 dark:border-gray-600 dark:bg-gray-800">
+                            <div className="space-y-3 surface-panel border-0 p-3">
                               <h5 className="text-sm font-medium">Update Timeslot</h5>
                               <div className="grid grid-cols-3 gap-2">
                                 <div>
@@ -134,7 +134,7 @@ export function RecurringLessonsModal({
                                   <select
                                     value={formData.newDay}
                                     onChange={(event) => updateForm({ newDay: event.target.value })}
-                                    className="w-full rounded border border-gray-300 px-2 py-1 text-sm focus:border-blue-500 focus:outline-none dark:border-gray-600 dark:bg-gray-800"
+                                    className="surface-input w-full px-2 py-1 text-sm"
                                   >
                                     <option value="Sunday">Sunday</option>
                                     <option value="Monday">Monday</option>
@@ -151,7 +151,7 @@ export function RecurringLessonsModal({
                                     type="time"
                                     value={formData.newStartTime}
                                     onChange={(event) => updateForm({ newStartTime: event.target.value })}
-                                    className="w-full rounded border border-gray-300 px-2 py-1 text-sm focus:border-blue-500 focus:outline-none dark:border-gray-600 dark:bg-gray-800"
+                                    className="surface-input w-full px-2 py-1 text-sm"
                                   />
                                 </div>
                                 <div>
@@ -160,7 +160,7 @@ export function RecurringLessonsModal({
                                     type="time"
                                     value={formData.newEndTime}
                                     onChange={(event) => updateForm({ newEndTime: event.target.value })}
-                                    className="w-full rounded border border-gray-300 px-2 py-1 text-sm focus:border-blue-500 focus:outline-none dark:border-gray-600 dark:bg-gray-800"
+                                    className="surface-input w-full px-2 py-1 text-sm"
                                   />
                                 </div>
                               </div>
@@ -198,7 +198,7 @@ export function RecurringLessonsModal({
                                 <button
                                   type="button"
                                   onClick={() => updateForm({ editingPatternId: '' })}
-                                  className="rounded bg-gray-300 px-3 py-1 text-sm text-gray-700 hover:bg-gray-400 dark:bg-gray-700 dark:text-gray-300"
+                                  className="surface-chip px-3 py-1 text-sm text-slate-700 dark:text-slate-200 hover:opacity-85"
                                 >
                                   Cancel
                                 </button>
@@ -237,7 +237,7 @@ export function RecurringLessonsModal({
                               className={`rounded border px-3 py-2 transition ${
                                 formData.template === option.value
                                   ? 'border-green-500 bg-green-100 text-green-700'
-                                  : 'border-gray-300 bg-white hover:bg-gray-50'
+                                  : 'border-transparent bg-white/30 hover:bg-white/50 dark:bg-white/5 dark:hover:bg-white/10'
                               }`}
                             >
                               {option.label}
@@ -256,7 +256,7 @@ export function RecurringLessonsModal({
                             type="date"
                             value={formData.startDate}
                             onChange={(event) => updateForm({ startDate: event.target.value })}
-                            className="w-full rounded border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none dark:border-gray-600 dark:bg-gray-800"
+                            className="surface-input w-full px-3 py-2 text-sm"
                           />
                         </div>
                         <div>
@@ -265,7 +265,7 @@ export function RecurringLessonsModal({
                             type="date"
                             value={formData.endDate}
                             onChange={(event) => updateForm({ endDate: event.target.value })}
-                            className="w-full rounded border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none dark:border-gray-600 dark:bg-gray-800"
+                            className="surface-input w-full px-3 py-2 text-sm"
                             placeholder="Optional"
                           />
                         </div>
@@ -280,7 +280,7 @@ export function RecurringLessonsModal({
                             max={52}
                             value={formData.weeks}
                             onChange={(event) => updateForm({ weeks: parseInt(event.target.value, 10) || 1 })}
-                            className="w-full rounded border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none dark:border-gray-600 dark:bg-gray-800"
+                            className="surface-input w-full px-3 py-2 text-sm"
                           />
                         </div>
                       )}
@@ -307,7 +307,7 @@ export function RecurringLessonsModal({
                         <button
                           type="button"
                           onClick={() => onShowCreateFormChange(false)}
-                          className="rounded bg-gray-300 px-4 py-2 text-sm font-medium text-gray-700 transition hover:bg-gray-400 dark:bg-gray-700 dark:text-gray-300"
+                          className="surface-chip px-4 py-2 text-sm font-medium text-slate-700 dark:text-slate-200 hover:opacity-85"
                         >
                           Cancel
                         </button>
@@ -324,7 +324,7 @@ export function RecurringLessonsModal({
           <button
             type="button"
             onClick={onClose}
-            className="rounded bg-gray-500 px-6 py-2 text-sm font-medium text-white transition hover:bg-gray-600"
+            className="surface-panel-strong px-6 py-2 text-sm font-semibold text-slate-800 dark:text-slate-100 hover:opacity-95"
           >
             Close
           </button>

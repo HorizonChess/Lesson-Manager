@@ -85,15 +85,15 @@ export function LessonsRecordModal({
   }
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-      <div className="bg-white dark:bg-gray-800 rounded-lg w-full max-w-4xl max-h-[90vh] overflow-hidden flex flex-col">
+    <div className="fixed inset-0 bg-slate-900/40 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+      <div className="surface-modal w-full max-w-4xl max-h-[90vh] overflow-hidden flex flex-col">
         {/* Header */}
-        <div className="flex justify-between items-center p-4 border-b">
+        <div className="surface-toolbar flex flex-col gap-4 rounded-none border-b border-white/12 px-6 py-5">
           <div className="flex-1">
             <h2 className="text-xl font-bold">
               {currentLesson.group.name} - Lesson Record
             </h2>
-            <p className="text-sm text-gray-500">
+            <p className="text-sm text-slate-500 dark:text-slate-300">
               {currentLesson.group.school.name} • {currentLesson.group.subject.name}
             </p>
 
@@ -130,20 +130,20 @@ export function LessonsRecordModal({
                     type="date"
                     value={editTimeData.date}
                     onChange={(e) => setEditTimeData(prev => ({ ...prev, date: e.target.value }))}
-                    className="text-sm border border-gray-300 rounded px-2 py-1 focus:outline-none focus:border-blue-500"
+                    className="surface-input text-sm px-2 py-1"
                   />
                   <input
                     type="time"
                     value={editTimeData.startTime}
                     onChange={(e) => setEditTimeData(prev => ({ ...prev, startTime: e.target.value }))}
-                    className="text-sm border border-gray-300 rounded px-2 py-1 focus:outline-none focus:border-blue-500"
+                    className="surface-input text-sm px-2 py-1"
                   />
-                  <span className="text-sm text-gray-500">to</span>
+                  <span className="text-sm text-slate-500">to</span>
                   <input
                     type="time"
                     value={editTimeData.endTime}
                     onChange={(e) => setEditTimeData(prev => ({ ...prev, endTime: e.target.value }))}
-                    className="text-sm border border-gray-300 rounded px-2 py-1 focus:outline-none focus:border-blue-500"
+                    className="surface-input text-sm px-2 py-1"
                   />
                   <button
                     onClick={onUpdateLessonTime}
@@ -153,7 +153,7 @@ export function LessonsRecordModal({
                   </button>
                   <button
                     onClick={() => setIsEditingTime(false)}
-                    className="bg-gray-400 text-white px-3 py-1 rounded text-sm hover:bg-gray-500"
+                    className="surface-chip text-sm font-medium px-3 py-1 hover:opacity-85"
                   >
                     Cancel
                   </button>
@@ -163,13 +163,13 @@ export function LessonsRecordModal({
           </div>
           <div className="flex items-center gap-2">
             {/* View Toggle */}
-            <div className="flex bg-gray-100 dark:bg-gray-700 rounded-lg p-1">
+            <div className="surface-section-muted flex rounded-lg p-1">
               <button
                 onClick={() => setLessonViewMode('simple')}
                 className={`px-3 py-1 rounded-md text-xs font-medium transition-colors ${
                   lessonViewMode === 'simple'
-                    ? 'bg-white dark:bg-gray-600 text-gray-900 dark:text-white shadow-sm'
-                    : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white'
+                    ? 'surface-panel-strong text-slate-900 dark:text-white shadow-lg'
+                    : 'text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white'
                 }`}
               >
                 Simple
@@ -178,8 +178,8 @@ export function LessonsRecordModal({
                 onClick={() => setLessonViewMode('advanced')}
                 className={`px-3 py-1 rounded-md text-xs font-medium transition-colors ${
                   lessonViewMode === 'advanced'
-                    ? 'bg-white dark:bg-gray-600 text-gray-900 dark:text-white shadow-sm'
-                    : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white'
+                    ? 'surface-panel-strong text-slate-900 dark:text-white shadow-lg'
+                    : 'text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white'
                 }`}
               >
                 Advanced
@@ -187,7 +187,7 @@ export function LessonsRecordModal({
             </div>
             <button
               onClick={onClose}
-              className="text-gray-500 hover:text-gray-700 text-xl min-w-[44px] min-h-[44px] flex items-center justify-center"
+              className="text-slate-500 hover:text-gray-700 text-xl min-w-[44px] min-h-[44px] flex items-center justify-center"
             >
               ×
             </button>
@@ -195,18 +195,18 @@ export function LessonsRecordModal({
         </div>
 
         {/* Content - Responsive Layout */}
-        <div className="flex-1 overflow-y-auto">
-          <div className={`${lessonViewMode === 'advanced' ? 'md:flex' : ''} h-full`}>
+        <div className="flex-1 overflow-y-auto px-6 pb-6">
+          <div className={`${lessonViewMode === 'advanced' ? 'md:flex md:gap-6 md:space-y-0' : ''} h-full space-y-6`}>
             {/* Previous Lesson Context - Advanced View Only */}
             {lessonViewMode === 'advanced' && (
-              <div className="md:w-80 border-b md:border-b-0 md:border-r bg-gray-50 dark:bg-gray-900/50 p-4">
+              <div className="md:w-80 surface-panel p-4 space-y-3">
                 <h3 className="font-semibold text-sm mb-3">Previous Lesson</h3>
                 {previousLessonData ? (
                   <div className="space-y-3">
                     {previousLessonData.planned && (
                       <div>
-                        <p className="text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">Planned:</p>
-                        <div className="text-sm bg-white dark:bg-gray-800 p-2 rounded border">
+                        <p className="text-xs font-medium text-slate-600 dark:text-slate-300 mb-1">Planned:</p>
+                        <div className="text-sm surface-panel p-2 rounded border">
                           {previousLessonData.planned}
                         </div>
                         <button
@@ -219,21 +219,21 @@ export function LessonsRecordModal({
                     )}
                     {previousLessonData.homework && (
                       <div>
-                        <p className="text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">Homework:</p>
-                        <div className="text-sm bg-white dark:bg-gray-800 p-2 rounded border">
+                        <p className="text-xs font-medium text-slate-600 dark:text-slate-300 mb-1">Homework:</p>
+                        <div className="text-sm surface-panel p-2 rounded border">
                           {previousLessonData.homework}
                         </div>
                       </div>
                     )}
                   </div>
                 ) : (
-                  <p className="text-sm text-gray-500 italic">No previous lesson found</p>
+                  <p className="text-sm text-slate-500 italic">No previous lesson found</p>
                 )}
               </div>
             )}
 
             {/* Lesson Record Form */}
-            <div className="flex-1 p-4">
+            <div className="surface-panel flex-1 p-6 space-y-4">
               <div className="space-y-4">
                 <div>
                   <div className="flex flex-wrap gap-2 items-center mb-2">
@@ -251,7 +251,7 @@ export function LessonsRecordModal({
                     value={recordData.covered}
                     onChange={(e) => setRecordData({ ...recordData, covered: e.target.value })}
                     placeholder="Topics covered, activities completed, progress made..."
-                    className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded focus:outline-none focus:border-blue-500 h-20 md:h-24 resize-none text-sm"
+                    className="surface-input w-full h-20 md:h-24 resize-none text-sm"
                   />
                 </div>
 
@@ -261,7 +261,7 @@ export function LessonsRecordModal({
                     value={recordData.planned}
                     onChange={(e) => setRecordData({ ...recordData, planned: e.target.value })}
                     placeholder="Topics to cover, activities to do, goals for next lesson..."
-                    className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded focus:outline-none focus:border-blue-500 h-20 md:h-24 resize-none text-sm"
+                    className="surface-input w-full h-20 md:h-24 resize-none text-sm"
                   />
                 </div>
 
@@ -271,7 +271,7 @@ export function LessonsRecordModal({
                     value={recordData.homework}
                     onChange={(e) => setRecordData({ ...recordData, homework: e.target.value })}
                     placeholder="Homework assignments, practice exercises, reading..."
-                    className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded focus:outline-none focus:border-blue-500 h-16 md:h-20 resize-none text-sm"
+                    className="surface-input w-full h-16 md:h-20 resize-none text-sm"
                   />
                 </div>
 
@@ -281,12 +281,12 @@ export function LessonsRecordModal({
                     value={recordData.notes}
                     onChange={(e) => setRecordData({ ...recordData, notes: e.target.value })}
                     placeholder="Additional notes, student behavior, important observations..."
-                    className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded focus:outline-none focus:border-blue-500 h-16 md:h-20 resize-none text-sm"
+                    className="surface-input w-full h-16 md:h-20 resize-none text-sm"
                   />
                 </div>
 
                 {/* Materials Section */}
-                <div className="border-t pt-4">
+                <div className="border-t surface-divider pt-4 mt-6">
                   <div className="flex justify-between items-center mb-3">
                     <h3 className="text-lg font-semibold">Lesson Plans ({lessonMaterials[currentRecord?.id]?.length || 0})</h3>
                     <button
@@ -302,12 +302,12 @@ export function LessonsRecordModal({
                       {lessonMaterials[currentRecord.id].map((material) => (
                         <div
                           key={material.id}
-                          className="bg-gray-50 dark:bg-gray-700 p-3 rounded border flex justify-between items-start"
+                          className="surface-panel p-3 flex justify-between items-start"
                         >
                           <div className="flex-1 min-w-0">
                             <div className="font-medium text-sm">{material.title}</div>
                             {material.description && (
-                              <div className="text-xs text-gray-500 mt-1">{material.description}</div>
+                              <div className="text-xs text-slate-500 mt-1">{material.description}</div>
                             )}
                             {material.file_url && (
                               <a
@@ -331,7 +331,7 @@ export function LessonsRecordModal({
                       ))}
                     </div>
                   ) : (
-                    <div className="text-gray-500 italic text-sm bg-gray-50 dark:bg-gray-700 p-3 rounded">
+                    <div className="surface-panel text-slate-600 dark:text-slate-300 italic text-sm p-3">
                       No lesson plans attached. Click "Attach Plans" to add resources to this lesson.
                     </div>
                   )}
@@ -339,14 +339,14 @@ export function LessonsRecordModal({
 
                 {/* Attendance Section */}
                 {groupRoster.length > 0 && (
-                  <div className="border-t pt-4">
+                  <div className="border-t surface-divider pt-4 mt-6">
                     <div className="flex justify-between items-center mb-4">
                       <h3 className="text-lg font-semibold">Attendance</h3>
                       <div className="flex items-center gap-2">
                         <select
                           value={bulkAttendanceStatus}
                           onChange={(e) => setBulkAttendanceStatus(e.target.value as 'present' | 'absent' | 'late')}
-                          className="text-xs border border-gray-300 dark:border-gray-600 rounded px-2 py-1"
+                          className="surface-chip text-xs px-2 py-1"
                         >
                           <option value="present">Present</option>
                           <option value="absent">Absent</option>
@@ -367,7 +367,7 @@ export function LessonsRecordModal({
                         const attendanceStatus = studentAttendance?.status || 'present'
 
                         return (
-                          <div key={student.id} className="p-2 bg-gray-50 dark:bg-gray-800 rounded">
+                          <div key={student.id} className="surface-panel p-2">
                             <div className="flex items-center gap-2 mb-2">
                               <div className="flex-1 font-medium text-sm">
                                 {student.student_name}
@@ -378,7 +378,7 @@ export function LessonsRecordModal({
                                   className={`px-2 py-1 rounded text-xs min-w-[60px] ${
                                     attendanceStatus === 'present'
                                       ? 'bg-green-600 text-white'
-                                      : 'bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-green-100 dark:hover:bg-green-900'
+                                      : 'surface-chip text-green-700 dark:text-green-200 hover:opacity-90'
                                   }`}
                                 >
                                   Present
@@ -388,7 +388,7 @@ export function LessonsRecordModal({
                                   className={`px-2 py-1 rounded text-xs min-w-[60px] ${
                                     attendanceStatus === 'absent'
                                       ? 'bg-red-600 text-white'
-                                      : 'bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-red-100 dark:hover:bg-red-900'
+                                      : 'surface-chip text-red-600 dark:text-red-300 hover:opacity-90'
                                   }`}
                                 >
                                   Absent
@@ -398,7 +398,7 @@ export function LessonsRecordModal({
                                   className={`px-2 py-1 rounded text-xs min-w-[60px] ${
                                     attendanceStatus === 'late'
                                       ? 'bg-yellow-600 text-white'
-                                      : 'bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-yellow-100 dark:hover:bg-yellow-900'
+                                      : 'surface-chip text-amber-600 dark:text-amber-200 hover:opacity-90'
                                   }`}
                                 >
                                   Late
@@ -409,7 +409,7 @@ export function LessonsRecordModal({
                                   setEditingAttendanceNote(student.id)
                                   setAttendanceNoteText(studentAttendance?.note || '')
                                 }}
-                                className="text-gray-500 hover:text-gray-700 text-xs px-1 py-1 rounded"
+                                className="text-slate-500 hover:text-gray-700 text-xs px-1 py-1 rounded"
                                 title="Add note"
                               >
                                 📝
@@ -423,7 +423,7 @@ export function LessonsRecordModal({
                                   value={attendanceNoteText}
                                   onChange={(e) => setAttendanceNoteText(e.target.value)}
                                   placeholder="Add attendance note..."
-                                  className="flex-1 text-xs px-2 py-1 border border-gray-300 dark:border-gray-600 rounded focus:outline-none focus:border-blue-500"
+                                  className="flex-1 surface-input text-xs px-2 py-1"
                                   autoFocus
                                 />
                                 <button
@@ -437,13 +437,13 @@ export function LessonsRecordModal({
                                     setEditingAttendanceNote(null)
                                     setAttendanceNoteText('')
                                   }}
-                                  className="bg-gray-300 text-gray-700 px-2 py-1 rounded text-xs hover:bg-gray-400"
+                                  className="surface-chip text-xs text-slate-700 dark:text-slate-200 px-2 py-1 hover:opacity-90"
                                 >
                                   Cancel
                                 </button>
                               </div>
                             ) : studentAttendance?.note ? (
-                              <div className="text-xs text-gray-500 italic bg-white dark:bg-gray-700 p-1 rounded border">
+                              <div className="text-xs text-slate-500 italic surface-panel p-1">
                                 {studentAttendance.note}
                               </div>
                             ) : null}
@@ -454,7 +454,7 @@ export function LessonsRecordModal({
 
                     {/* Attendance Summary */}
                     {Object.keys(attendance).length > 0 && (
-                      <div className="mt-3 text-sm text-gray-600 dark:text-gray-400">
+                      <div className="mt-3 text-sm text-slate-600 dark:text-slate-300">
                         Present: {Object.values(attendance).filter(a => a.status === 'present').length} •
                         Absent: {Object.values(attendance).filter(a => a.status === 'absent').length} •
                         Late: {Object.values(attendance).filter(a => a.status === 'late').length}
@@ -473,7 +473,7 @@ export function LessonsRecordModal({
         </div>
 
         {/* Footer */}
-        <div className="border-t p-4">
+        <div className="surface-toolbar rounded-none border-t border-white/12 px-6 py-4">
           <div className="flex gap-3">
             <button
               onClick={onSaveLessonRecord}
@@ -483,7 +483,7 @@ export function LessonsRecordModal({
             </button>
             <button
               onClick={onClose}
-              className="bg-gray-300 dark:bg-gray-600 text-gray-700 dark:text-gray-300 px-6 py-3 rounded hover:bg-gray-400 dark:hover:bg-gray-500 min-h-[44px]"
+              className="surface-panel px-6 py-3 min-h-[44px] text-slate-800 dark:text-slate-100 hover:opacity-95"
             >
               Cancel
             </button>

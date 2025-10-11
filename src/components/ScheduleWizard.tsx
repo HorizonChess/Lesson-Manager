@@ -36,7 +36,7 @@ export function ScheduleWizard() {
       <Dialog open={isOpen} onClose={() => {}} className="relative z-50">
         <div className="fixed inset-0 bg-black/30" aria-hidden="true" />
         <div className="fixed inset-0 flex w-screen items-center justify-center p-4">
-          <DialogPanel className="w-full max-w-md bg-white dark:bg-gray-800 rounded-xl shadow-2xl">
+          <DialogPanel className="surface-modal w-full max-w-md">
             <div className="px-6 pt-6">
               <div className="flex items-center justify-between mb-4">
                 <div className="text-sm font-medium text-gray-900 dark:text-white">
@@ -46,7 +46,7 @@ export function ScheduleWizard() {
                   {Math.round(progressPercent)}%
                 </div>
               </div>
-              <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2">
+              <div className="w-full bg-white/30 dark:bg-white/10 rounded-full h-2">
                 <div
                   className="bg-blue-600 h-2 rounded-full transition-all duration-300"
                   style={{ width: `${progressPercent}%` }}
@@ -67,7 +67,7 @@ export function ScheduleWizard() {
               </div>
             </div>
 
-            <div className="flex justify-between items-center px-6 py-4 bg-gray-50 dark:bg-gray-700/50 rounded-b-xl">
+            <div className="surface-toolbar flex justify-between items-center px-6 py-4 rounded-b-xl">
               <button
                 onClick={currentStep === 0 ? closeWizard : goToPreviousStep}
                 className="text-gray-600 dark:text-gray-400 hover:text-gray-800 dark:hover:text-gray-200"

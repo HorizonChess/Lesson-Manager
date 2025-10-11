@@ -1,19 +1,14 @@
-import { useState } from 'react'
+﻿import { useState } from 'react'
 import { Button } from './ui/button'
 import { Card } from './ui/card'
+import { cn } from '../lib/utils'
 import '../styles/backgroundPatterns.css'
 
 const patterns = [
-  { name: 'Enhanced Gradient', class: 'bg-gradient-enhanced', description: 'Subtle gradient with radial accents - Modern & Clean' },
-  { name: 'Dotted Grid', class: 'bg-pattern-dots', description: 'Professional dotted pattern - Minimal & Elegant' },
-  { name: 'Grid Lines', class: 'bg-pattern-grid', description: 'Geometric grid pattern - Technical & Precise' },
-  { name: 'Diagonal Stripes', class: 'bg-pattern-diagonal', description: 'Diagonal line pattern - Dynamic & Energetic' },
-  { name: 'Topographic', class: 'bg-pattern-topo', description: 'Organic wave contours - Natural & Flowing' },
-  { name: 'Hexagonal', class: 'bg-pattern-hexagon', description: 'Hexagonal geometry - Modern & Structured' },
-  { name: 'Circuit Board', class: 'bg-pattern-circuit', description: 'Tech-inspired circuit - Digital & Connected' },
-  { name: 'Gradient Mesh', class: 'bg-pattern-mesh', description: 'Abstract color mesh - Creative & Vibrant' },
-  { name: 'Noise Texture', class: 'bg-pattern-noise', description: 'Subtle noise grain - Premium & Refined' },
-  { name: 'Flowing Waves', class: 'bg-pattern-waves', description: 'Radial wave pattern - Calm & Organic' },
+  { name: 'Enhanced Gradient', class: 'bg-gradient-enhanced', description: 'Soft multi-hue gradient with radial glow accents' },
+  { name: 'Wavescape', class: 'bg-asset-wave', description: 'Wave illustration with ambient overlay' },
+  { name: 'Playful Pattern', class: 'bg-asset-pattern', description: 'Geometric pattern pairing light and dark variants' },
+  { name: 'Aurora Abstract', class: 'bg-asset-abstract', description: 'Vibrant abstract blend with glass friendly contrast' }
 ]
 
 export function BackgroundPatternShowcase() {
@@ -26,29 +21,23 @@ export function BackgroundPatternShowcase() {
   return (
     <div className="space-y-6">
       <div>
-        <h2 className="text-2xl font-bold mb-2">Background Pattern Showcase</h2>
-        <p className="text-gray-600 dark:text-gray-400">
-          Preview different background patterns. Click on a pattern to see it applied below.
+        <h2 className="text-2xl font-bold mb-2">Background Options</h2>
+        <p className="text-slate-600 dark:text-slate-300">
+          These are the curated backgrounds available inside the app. Select one to preview how it pairs with the glass surfaces.
         </p>
       </div>
 
-      {/* Pattern Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
         {patterns.map((pattern) => (
           <Card
             key={pattern.class}
-            className={`overflow-hidden cursor-pointer transition-all hover:shadow-lg ${
-              selectedPattern === pattern.class ? 'ring-2 ring-blue-500' : ''
-            }`}
+            className={cn('overflow-hidden cursor-pointer transition hover:-translate-y-0.5 hover:shadow-2xl', selectedPattern === pattern.class && 'ring-2 ring-blue-400')}
             onClick={() => setSelectedPattern(pattern.class)}
           >
-            {/* Pattern Preview */}
-            <div className={`h-32 ${pattern.class} border-b dark:border-gray-700`} />
-
-            {/* Pattern Info */}
+            <div className={cn('h-28 border-b border-white/20 dark:border-white/10', pattern.class)} />
             <div className="p-4">
-              <h3 className="font-semibold text-sm mb-1">{pattern.name}</h3>
-              <p className="text-xs text-gray-600 dark:text-gray-400 mb-3">
+              <h3 className="font-semibold text-sm mb-1 text-slate-900 dark:text-slate-100">{pattern.name}</h3>
+              <p className="text-xs text-slate-600 dark:text-slate-300 mb-4">
                 {pattern.description}
               </p>
               <Button
@@ -67,40 +56,34 @@ export function BackgroundPatternShowcase() {
         ))}
       </div>
 
-      {/* Full Preview */}
       <div>
         <h3 className="text-lg font-semibold mb-3">Full Screen Preview</h3>
-        <div className={`${selectedPattern} rounded-lg border dark:border-gray-700 p-8 min-h-96 flex items-center justify-center`}>
-          <Card className="max-w-md w-full bg-white/80 dark:bg-gray-800/80 backdrop-blur-sm">
-            <div className="p-6">
-              <h4 className="text-xl font-bold mb-2">Sample Content</h4>
-              <p className="text-gray-600 dark:text-gray-400 mb-4">
-                This is how your content will look over the selected background pattern.
-                The pattern is subtle enough to not distract from the content.
+        <div className={cn('rounded-2xl border border-white/20 p-8 min-h-96 flex items-center justify-center', selectedPattern)}>
+          <Card className="max-w-md w-full">
+            <div className="p-6 space-y-3">
+              <h4 className="text-xl font-bold">Sample Content</h4>
+              <p className="text-slate-600 dark:text-slate-300">
+                This demonstrates the contrast of cards, chips, and form controls relative to the selected background.
               </p>
-              <div className="space-y-2">
-                <div className="h-8 bg-gray-200 dark:bg-gray-700 rounded animate-pulse" />
-                <div className="h-8 bg-gray-200 dark:bg-gray-700 rounded animate-pulse w-3/4" />
-                <div className="h-8 bg-gray-200 dark:bg-gray-700 rounded animate-pulse w-1/2" />
+              <div className="flex flex-wrap gap-2">
+                <span className="surface-chip">Attendance</span>
+                <span className="surface-chip">Scheduling</span>
+                <span className="surface-chip">Analytics</span>
+              </div>
+              <div className="grid grid-cols-3 gap-3 pt-2">
+                <div className="h-10 surface-panel animate-pulse" />
+                <div className="h-10 surface-panel animate-pulse" />
+                <div className="h-10 surface-panel animate-pulse" />
               </div>
             </div>
           </Card>
         </div>
       </div>
 
-      {/* Instructions */}
-      <Card className="bg-blue-50 dark:bg-blue-950/30 border-blue-200 dark:border-blue-900">
-        <div className="p-4">
-          <h4 className="font-semibold text-blue-900 dark:text-blue-200 mb-2">
-            How to Apply a Pattern
-          </h4>
-          <ol className="text-sm text-blue-800 dark:text-blue-300 space-y-1 list-decimal list-inside">
-            <li>Choose your favorite pattern from the grid above</li>
-            <li>Copy the class name by clicking the button</li>
-            <li>Open <code className="bg-blue-100 dark:bg-blue-900 px-1 rounded">src/components/Layout.tsx</code></li>
-            <li>Replace the <code className="bg-blue-100 dark:bg-blue-900 px-1 rounded">bg-gradient-enhanced</code> class on line 63</li>
-            <li>Save and see the changes!</li>
-          </ol>
+      <Card className="surface-panel border border-blue-200/60 dark:border-blue-400/40">
+        <div className="p-4 space-y-1 text-sm text-slate-700 dark:text-slate-200">
+          <p>To apply one of these backgrounds manually, update the class on the <code className="px-1 rounded bg-white/60 dark:bg-white/10">min-h-screen</code> container inside <code className="px-1 rounded bg-white/60 dark:bg-white/10">src/components/Layout.tsx</code>.</p>
+          <p>Changes made through the UI are stored in <code className="px-1 rounded bg-white/60 dark:bg-white/10">localStorage</code>.</p>
         </div>
       </Card>
     </div>

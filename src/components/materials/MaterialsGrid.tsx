@@ -32,7 +32,7 @@ export function MaterialsGrid({
 }: MaterialsGridProps) {
   if (materials.length === 0) {
     return (
-      <div className="col-span-full rounded-lg border border-dashed border-gray-300 bg-white py-12 text-center text-sm text-gray-500 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-300">
+      <div className="surface-panel col-span-full border border-dashed border-white/40 py-12 text-center text-sm text-slate-600 dark:text-slate-300">
         {allCount === 0
           ? 'No lesson plans yet. Add your first lesson plan to get started!'
           : 'No lesson plans match the current filters.'}
@@ -100,7 +100,7 @@ function MaterialCard({
   }
 
   return (
-    <div className="rounded-lg border border-gray-200 bg-white p-4 shadow-sm dark:border-gray-700 dark:bg-gray-800">
+    <div className="surface-panel p-4">
       {isEditing ? (
         <div className="space-y-3">
           <input

@@ -50,19 +50,13 @@ export function Layout() {
       <Toaster position="top-right" />
       {/*
         Available background patterns (replace class to switch):
-        - bg-pattern-dots (subtle dotted grid)
-        - bg-pattern-grid (geometric grid lines)
-        - bg-pattern-diagonal (diagonal stripes)
-        - bg-pattern-topo (topographic waves)
-        - bg-pattern-hexagon (hexagonal pattern)
-        - bg-pattern-circuit (circuit board tech theme)
-        - bg-pattern-mesh (gradient mesh abstract)
-        - bg-pattern-noise (subtle noise texture)
-        - bg-pattern-waves (flowing wave pattern)
         - bg-gradient-enhanced (enhanced gradient - default)
+        - bg-asset-wave (illustrated wave background)
+        - bg-asset-pattern (light/dark geometric pattern)
+        - bg-asset-abstract (aurora abstract blend)
       */}
-      <div className="min-h-screen bg-gradient-enhanced text-gray-900 dark:text-white">
-        <header className="sticky top-0 z-40 w-full border-b border-gray-200/50 dark:border-gray-700/50 backdrop-blur-sm bg-white/80 dark:bg-gray-900/80">
+      <div className="min-h-screen bg-gradient-enhanced text-slate-900 dark:text-slate-100">
+        <header className="surface-topbar sticky top-0 z-40 w-full rounded-none">
           <div className="container mx-auto px-4 sm:px-6 lg:px-8">
             <div className="flex h-16 items-center justify-between">
               <h1 className="text-xl font-bold bg-gradient-to-r from-slate-700 via-slate-800 to-indigo-900 dark:from-cyan-400 dark:via-blue-400 dark:to-indigo-400 bg-clip-text text-transparent [-webkit-background-clip:text] [-webkit-text-fill-color:transparent]">
@@ -111,7 +105,7 @@ export function Layout() {
           </div>
         </header>
       
-      <nav className="border-b border-gray-200 dark:border-gray-700 bg-white/50 dark:bg-gray-900/50 backdrop-blur-sm">
+      <nav className="surface-topbar rounded-none border-t border-white/20 dark:border-white/10">
         <div className="container mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex space-x-8 overflow-x-auto scrollbar-hide">
             <NavLink

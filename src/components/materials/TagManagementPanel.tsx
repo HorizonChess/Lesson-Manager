@@ -48,7 +48,7 @@ export function TagManagementPanel({
   }
 
   return (
-    <div className="rounded-lg bg-gray-50 p-4 dark:bg-gray-800">
+    <div className="surface-section p-4">
       <div className="mb-3 flex items-center justify-between">
         <button
           type="button"
@@ -63,7 +63,7 @@ export function TagManagementPanel({
       {!collapsedSections.has('tags-root') && (
         <div className="space-y-4">
           {showAddTag && (
-            <form onSubmit={onAddTag} className="space-y-3 rounded-lg border border-gray-200 bg-white p-4 dark:border-gray-700 dark:bg-gray-900">
+            <form onSubmit={onAddTag} className="surface-panel space-y-3 p-4">
               <div>
                 <label htmlFor="tag-name" className="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-300">
                   Tag name
@@ -74,7 +74,7 @@ export function TagManagementPanel({
                   value={newTagName}
                   onChange={handleNameChange}
                   placeholder="e.g., Grammar, Reading comprehension"
-                  className="w-full rounded border border-gray-300 px-3 py-2 text-sm shadow-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-100"
+                  className="surface-input w-full px-3 py-2 text-sm"
                   required
                 />
               </div>
@@ -87,7 +87,7 @@ export function TagManagementPanel({
                   id="tag-subject"
                   value={newTagSubject}
                   onChange={handleSubjectChange}
-                  className="w-full rounded border border-gray-300 px-3 py-2 text-sm shadow-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-100"
+                  className="surface-input w-full px-3 py-2 text-sm"
                 >
                   <option value="">General (not subject-specific)</option>
                   {subjects.map((subject) => {
@@ -111,7 +111,7 @@ export function TagManagementPanel({
                 <button
                   type="button"
                   onClick={handleCancel}
-                  className="rounded bg-gray-200 px-4 py-2 text-sm font-medium text-gray-700 transition hover:bg-gray-300 focus:outline-none focus:ring-2 focus:ring-gray-400 focus:ring-offset-2 dark:bg-gray-700 dark:text-gray-300"
+                  className="surface-chip text-sm font-medium px-4 py-2 transition hover:opacity-85"
                 >
                   Cancel
                 </button>
@@ -182,9 +182,10 @@ function TagSection({
   badgeVariant = 'general'
 }: TagSectionProps) {
   const isCollapsed = collapsedSections.has(sectionId)
+  const badgeBase = 'surface-chip text-xs';
   const badgeClass = badgeVariant === 'subject'
-    ? 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200'
-    : 'bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-200'
+    ? `${badgeBase} text-blue-700 dark:text-blue-200`
+    : `${badgeBase} text-slate-700 dark:text-slate-200`
 
   return (
     <div>
@@ -202,7 +203,7 @@ function TagSection({
           {tags.map((tag) => (
             <span
               key={tag.id}
-              className={`inline-flex items-center gap-2 rounded-full px-3 py-1 text-xs ${badgeClass}`}
+              className={`inline-flex items-center gap-2 px-3 py-1 ${badgeClass}`}
             >
               {tag.name}
               <button

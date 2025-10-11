@@ -35,7 +35,7 @@ export function MaterialCreateForm({
   }
 
   return (
-    <div className="rounded-lg bg-gray-50 p-4 dark:bg-gray-800">
+    <div className="surface-section p-4">
       <form onSubmit={onSubmit} className="space-y-4">
         <div>
           <label htmlFor="material-title" className="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-300">
@@ -47,7 +47,7 @@ export function MaterialCreateForm({
             value={title}
             onChange={handleInputChange('title')}
             placeholder="Lesson plan title"
-            className="w-full rounded border border-gray-300 px-3 py-2 text-sm shadow-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-100"
+            className="surface-input w-full px-3 py-2 text-sm"
             required
           />
         </div>
@@ -62,7 +62,7 @@ export function MaterialCreateForm({
             onChange={handleInputChange('description')}
             placeholder="Lesson plan description"
             rows={3}
-            className="w-full rounded border border-gray-300 px-3 py-2 text-sm shadow-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-100"
+            className="surface-input w-full px-3 py-2 text-sm"
           />
         </div>
 
@@ -76,7 +76,7 @@ export function MaterialCreateForm({
             value={fileUrl}
             onChange={handleInputChange('file_url')}
             placeholder="https://example.com/file.pdf"
-            className="w-full rounded border border-gray-300 px-3 py-2 text-sm shadow-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-100"
+            className="surface-input w-full px-3 py-2 text-sm"
           />
         </div>
 
@@ -109,7 +109,7 @@ export function MaterialCreateForm({
           <button
             type="button"
             onClick={onCancel}
-            className="rounded bg-gray-200 px-4 py-2 text-sm font-medium text-gray-700 transition hover:bg-gray-300 focus:outline-none focus:ring-2 focus:ring-gray-400 focus:ring-offset-2 dark:bg-gray-700 dark:text-gray-300"
+            className="surface-chip px-4 py-2 text-sm font-medium transition hover:opacity-85"
           >
             Cancel
           </button>

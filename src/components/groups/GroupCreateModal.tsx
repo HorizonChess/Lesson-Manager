@@ -108,9 +108,9 @@ export function GroupCreateModal({ isOpen, schools, subjects, onClose, onCreate 
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
-      <div className="w-full max-w-xl rounded-lg bg-white shadow-xl dark:bg-gray-800">
+      <div className="w-full max-w-xl surface-modal shadow-xl">
         <form onSubmit={handleSubmit} className="flex flex-col">
-          <div className="border-b px-6 py-4">
+          <div className="border-b border-white/15 bg-white/20 px-6 py-4 backdrop-blur-md dark:border-white/10 dark:bg-white/5">
             <div className="flex items-start justify-between">
               <div>
                 <h2 className="text-xl font-semibold text-gray-900 dark:text-gray-100">Create new group</h2>
@@ -144,7 +144,7 @@ export function GroupCreateModal({ isOpen, schools, subjects, onClose, onCreate 
                   value={name}
                   onChange={(event) => setName(event.target.value)}
                   placeholder="e.g., Grade 7 - Advanced"
-                  className="rounded-md border border-gray-300 px-3 py-2 text-sm shadow-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500 dark:border-gray-600 dark:bg-gray-900 dark:text-gray-100"
+                  className="surface-input rounded-md px-3 py-2 text-sm"
                   required
                 />
               </label>
@@ -154,7 +154,7 @@ export function GroupCreateModal({ isOpen, schools, subjects, onClose, onCreate 
                 <select
                   value={schoolId}
                   onChange={(event) => setSchoolId(event.target.value)}
-                  className="rounded-md border border-gray-300 px-3 py-2 text-sm shadow-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500 dark:border-gray-600 dark:bg-gray-900 dark:text-gray-100"
+                  className="surface-input rounded-md px-3 py-2 text-sm"
                   required
                 >
                   <option value="">Select a school</option>
@@ -171,7 +171,7 @@ export function GroupCreateModal({ isOpen, schools, subjects, onClose, onCreate 
                 <select
                   value={subjectId}
                   onChange={(event) => setSubjectId(event.target.value)}
-                  className="rounded-md border border-gray-300 px-3 py-2 text-sm shadow-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500 dark:border-gray-600 dark:bg-gray-900 dark:text-gray-100"
+                  className="surface-input rounded-md px-3 py-2 text-sm"
                   required
                   disabled={!schoolId}
                 >
@@ -208,7 +208,7 @@ export function GroupCreateModal({ isOpen, schools, subjects, onClose, onCreate 
                       <select
                         value={slot.day}
                         onChange={(event) => handleTimeslotChange(index, 'day', event.target.value)}
-                        className="rounded-md border border-gray-300 px-3 py-2 text-sm shadow-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500 dark:border-gray-600 dark:bg-gray-900 dark:text-gray-100"
+                        className="surface-input rounded-md px-3 py-2 text-sm"
                       >
                         <option value="">Day</option>
                         {dayOptions.map((day) => (
@@ -222,21 +222,21 @@ export function GroupCreateModal({ isOpen, schools, subjects, onClose, onCreate 
                         type="time"
                         value={slot.startTime}
                         onChange={(event) => handleTimeslotChange(index, 'startTime', event.target.value)}
-                        className="rounded-md border border-gray-300 px-3 py-2 text-sm shadow-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500 dark:border-gray-600 dark:bg-gray-900 dark:text-gray-100"
+                        className="surface-input rounded-md px-3 py-2 text-sm"
                       />
 
                       <input
                         type="time"
                         value={slot.endTime}
                         onChange={(event) => handleTimeslotChange(index, 'endTime', event.target.value)}
-                        className="rounded-md border border-gray-300 px-3 py-2 text-sm shadow-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500 dark:border-gray-600 dark:bg-gray-900 dark:text-gray-100"
+                        className="surface-input rounded-md px-3 py-2 text-sm"
                       />
 
                       {timeslots.length > 1 && (
                         <button
                           type="button"
                           onClick={() => removeTimeslot(index)}
-                          className="self-center rounded-md border border-gray-200 px-2 py-1 text-xs font-medium text-gray-600 transition hover:border-red-300 hover:text-red-600 focus:outline-none dark:border-gray-700 dark:text-gray-300 dark:hover:border-red-500 dark:hover:text-red-400"
+                          className="self-center surface-chip text-xs font-medium text-red-600 dark:text-red-400 hover:opacity-90"
                         >
                           Remove
                         </button>
@@ -255,7 +255,7 @@ export function GroupCreateModal({ isOpen, schools, subjects, onClose, onCreate 
                 resetForm()
                 onClose()
               }}
-              className="rounded-md border border-gray-300 px-4 py-2 text-sm font-medium text-gray-700 transition hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 dark:border-gray-600 dark:text-gray-300 dark:hover:bg-gray-700"
+              className="surface-panel border-0 px-4 py-2 text-sm font-medium text-slate-700 transition hover:bg-white/60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-400 focus-visible:ring-offset-2 dark:text-slate-200 dark:hover:bg-white/10"
             >
               Cancel
             </button>

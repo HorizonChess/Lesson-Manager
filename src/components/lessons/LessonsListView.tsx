@@ -44,7 +44,7 @@ export function LessonsListView({
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.3, delay: groupIndex * 0.1 }}
-          className="bg-white dark:bg-gray-800 border dark:border-gray-700 rounded-lg p-3"
+          className="surface-panel p-3"
         >
           <h3 className="font-semibold text-base mb-2 border-b dark:border-gray-700 pb-1.5">{date}</h3>
           <div className="space-y-1.5">
@@ -58,7 +58,7 @@ export function LessonsListView({
                   className={`flex items-center gap-3 p-2.5 rounded transition-all hover:shadow-sm ${
                     lesson.is_cancelled
                       ? 'bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800'
-                      : 'bg-gray-50 dark:bg-gray-700/50'
+                      : 'bg-white/15 dark:bg-white/10'
                   }`}
                 >
                   <div className={`flex-1 min-w-0 ${lesson.is_cancelled ? 'opacity-60 line-through' : ''}`}>

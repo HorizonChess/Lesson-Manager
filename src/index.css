@@ -1,4 +1,6 @@
-@import "tailwindcss";
+﻿@import "tailwindcss";
+
+@import "./styles/themeSurfaces.css";
 
 @custom-variant dark (&:where(.dark, .dark *));
 
@@ -93,3 +95,4 @@ h6 {
 .dark ::-webkit-scrollbar-thumb:hover {
   background: #6b7280;
 }
+

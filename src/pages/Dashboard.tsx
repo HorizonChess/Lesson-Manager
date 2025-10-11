@@ -249,7 +249,7 @@ ${templateJson}
       )}
 
       {/* Today's Overview */}
-      <div className="bg-white dark:bg-gray-800 border dark:border-gray-700 rounded-lg p-6">
+      <div className="surface-panel p-6">
         <h2 className="text-lg font-semibold mb-4">Today's Schedule</h2>
         {todayLessons.length > 0 ? (
           <div className="space-y-3">
@@ -286,19 +286,19 @@ ${templateJson}
 
       {/* Quick Stats */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-        <div className="bg-white dark:bg-gray-800 border dark:border-gray-700 rounded-lg p-4">
+        <div className="surface-panel p-4">
           <div className="text-2xl font-bold text-blue-600">{stats.schools}</div>
           <div className="text-sm text-gray-600 dark:text-gray-400">Schools</div>
         </div>
-        <div className="bg-white dark:bg-gray-800 border dark:border-gray-700 rounded-lg p-4">
+        <div className="surface-panel p-4">
           <div className="text-2xl font-bold text-green-600">{stats.groups}</div>
           <div className="text-sm text-gray-600 dark:text-gray-400">Groups</div>
         </div>
-        <div className="bg-white dark:bg-gray-800 border dark:border-gray-700 rounded-lg p-4">
+        <div className="surface-panel p-4">
           <div className="text-2xl font-bold text-purple-600">{stats.thisWeekLessons}</div>
           <div className="text-sm text-gray-600 dark:text-gray-400">This Week</div>
         </div>
-        <div className="bg-white dark:bg-gray-800 border dark:border-gray-700 rounded-lg p-4">
+        <div className="surface-panel p-4">
           <div className="text-2xl font-bold text-orange-600">{stats.pendingTasks}</div>
           <div className="text-sm text-gray-600 dark:text-gray-400">Pending Tasks</div>
         </div>
@@ -308,7 +308,7 @@ ${templateJson}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
         <Link
           to="/schools"
-          className="bg-white dark:bg-gray-800 border dark:border-gray-700 rounded-lg p-4 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
+          className="surface-panel p-4 transition-colors hover:bg-white/30 dark:hover:bg-white/15"
         >
           <div className="flex items-center justify-between mb-2">
             <h3 className="font-semibold">School Overview</h3>
@@ -324,7 +324,7 @@ ${templateJson}
 
         <Link
           to="/lessons"
-          className="bg-white dark:bg-gray-800 border dark:border-gray-700 rounded-lg p-4 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
+          className="surface-panel p-4 transition-colors hover:bg-white/30 dark:hover:bg-white/15"
         >
           <div className="flex items-center justify-between mb-2">
             <h3 className="font-semibold">Lessons</h3>
@@ -340,7 +340,7 @@ ${templateJson}
 
         <Link
           to="/tasks"
-          className="bg-white dark:bg-gray-800 border dark:border-gray-700 rounded-lg p-4 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
+          className="surface-panel p-4 transition-colors hover:bg-white/30 dark:hover:bg-white/15"
         >
           <div className="flex items-center justify-between mb-2">
             <h3 className="font-semibold">Tasks</h3>
@@ -358,7 +358,7 @@ ${templateJson}
 
         <Link
           to="/lesson-plans"
-          className="bg-white dark:bg-gray-800 border dark:border-gray-700 rounded-lg p-4 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
+          className="surface-panel p-4 transition-colors hover:bg-white/30 dark:hover:bg-white/15"
         >
           <div className="flex items-center justify-between mb-2">
             <h3 className="font-semibold">Lesson Plans</h3>
@@ -379,7 +379,7 @@ ${templateJson}
       {(recentTasks.length > 0 || recentMaterials.length > 0) && (
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           {recentTasks.length > 0 && (
-            <div className="bg-white dark:bg-gray-800 border dark:border-gray-700 rounded-lg p-4">
+            <div className="surface-panel p-4">
               <h3 className="font-semibold mb-3">Recent Tasks</h3>
               <div className="space-y-2">
                 {recentTasks.map(task => (
@@ -398,7 +398,7 @@ ${templateJson}
           )}
 
           {recentMaterials.length > 0 && (
-            <div className="bg-white dark:bg-gray-800 border dark:border-gray-700 rounded-lg p-4">
+            <div className="surface-panel p-4">
               <h3 className="font-semibold mb-3">Recent Lesson Plans</h3>
               <div className="space-y-2">
                 {recentMaterials.map(material => (

@@ -1,6 +1,7 @@
-import { useEffect, useRef } from 'react'
+﻿import { useEffect, useRef } from 'react'
 import { createPortal } from 'react-dom'
 import { motion, AnimatePresence } from 'framer-motion'
+import { cn } from '../lib/utils'
 
 interface ModalProps {
   isOpen: boolean
@@ -17,15 +18,11 @@ export function Modal({ isOpen, onClose, title, children, size = 'lg' }: ModalPr
   // Handle focus management
   useEffect(() => {
     if (isOpen) {
-      // Store the currently focused element
       previousFocusRef.current = document.activeElement as HTMLElement
-
-      // Focus the modal when it opens
       setTimeout(() => {
         modalRef.current?.focus()
       }, 0)
     } else if (previousFocusRef.current) {
-      // Restore focus when modal closes
       previousFocusRef.current.focus()
     }
   }, [isOpen])
@@ -40,7 +37,6 @@ export function Modal({ isOpen, onClose, title, children, size = 'lg' }: ModalPr
 
     if (isOpen) {
       document.addEventListener('keydown', handleEscape)
-      // Prevent body scroll when modal is open
       document.body.style.overflow = 'hidden'
     }
 
@@ -66,18 +62,16 @@ export function Modal({ isOpen, onClose, title, children, size = 'lg' }: ModalPr
           role="dialog"
           aria-modal="true"
         >
-          {/* Backdrop */}
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             transition={{ duration: 0.2 }}
-            className="fixed inset-0 bg-black bg-opacity-50 backdrop-blur-sm"
+            className="fixed inset-0 bg-slate-950/45 backdrop-blur"
             onClick={onClose}
             aria-hidden="true"
           />
 
-          {/* Modal */}
           <div className="flex min-h-screen items-center justify-center p-4">
             <motion.div
               ref={modalRef}
@@ -86,33 +80,31 @@ export function Modal({ isOpen, onClose, title, children, size = 'lg' }: ModalPr
               exit={{ opacity: 0, scale: 0.95, y: 20 }}
               transition={{ duration: 0.2, ease: 'easeOut' }}
               tabIndex={-1}
-              className={`relative z-[101] bg-white dark:bg-gray-800 rounded-lg shadow-2xl w-full ${sizeClasses[size]} max-h-[90vh] overflow-hidden`}
+              className={cn(
+                'relative z-[101] surface-modal w-full overflow-hidden focus:outline-none',
+                sizeClasses[size]
+              )}
               onClick={(e) => e.stopPropagation()}
             >
-          {/* Header */}
-          <div className="flex items-center justify-between p-6 border-b border-gray-200 dark:border-gray-700">
-            <h2
-              id="modal-title"
-              className="text-xl font-semibold text-gray-900 dark:text-white"
-            >
-              {title}
-            </h2>
-            <button
-              type="button"
-              onClick={onClose}
-              className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500 rounded-lg p-2"
-              aria-label="Close modal"
-            >
-              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-              </svg>
-            </button>
-          </div>
+              <div className="surface-toolbar flex items-center justify-between gap-4 rounded-none border-b border-white/12 px-6 py-5 text-slate-900 dark:text-white">
+                <h2 id="modal-title" className="text-xl font-semibold">
+                  {title}
+                </h2>
+                <button
+                  type="button"
+                  onClick={onClose}
+                  className="inline-flex h-9 w-9 items-center justify-center rounded-full text-current transition hover:bg-white/40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-blue-400 dark:hover:bg-white/10"
+                  aria-label="Close modal"
+                >
+                  <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                  </svg>
+                </button>
+              </div>
 
-          {/* Content */}
-          <div className="flex-1 overflow-y-auto max-h-[calc(90vh-120px)]">
-            {children}
-          </div>
+              <div className="flex-1 overflow-y-auto max-h-[calc(90vh-120px)] px-6 pb-6">
+                {children}
+              </div>
             </motion.div>
           </div>
         </div>

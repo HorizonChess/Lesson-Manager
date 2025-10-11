@@ -27,17 +27,17 @@ export function PreviewStep({ wizard }: PreviewStepProps) {
         </p>
       </div>
 
-      <div className="flex items-center justify-between bg-gray-100 dark:bg-gray-700/50 rounded-lg p-2 text-xs">
+      <div className="surface-section-muted flex items-center justify-between rounded-lg p-2 text-xs">
         <div className="flex items-center gap-2">
           <button
             onClick={() => setPreviewMode('summary')}
-            className={`px-3 py-1 rounded ${previewMode === 'summary' ? 'bg-white dark:bg-gray-800 shadow font-medium' : ''}`}
+            className={`surface-chip px-3 py-1 text-[11px] ${previewMode === 'summary' ? 'font-semibold' : 'opacity-70 hover:opacity-100'}`}
           >
             Summary view
           </button>
           <button
             onClick={() => setPreviewMode('detailed')}
-            className={`px-3 py-1 rounded ${previewMode === 'detailed' ? 'bg-white dark:bg-gray-800 shadow font-medium' : ''}`}
+            className={`surface-chip px-3 py-1 text-[11px] ${previewMode === 'detailed' ? 'font-semibold' : 'opacity-70 hover:opacity-100'}`}
           >
             Detailed view
           </button>
@@ -56,7 +56,7 @@ export function PreviewStep({ wizard }: PreviewStepProps) {
           const slots = scheduleDetails.slots
 
           return (
-            <div key={schoolIndex} className="border border-gray-200 dark:border-gray-700 rounded-lg">
+            <div key={schoolIndex} className="surface-panel">
               <button
                 onClick={() => toggleSchoolPreview(schoolIndex)}
                 className="w-full px-4 py-3 flex justify-between items-center text-left"
@@ -96,7 +96,7 @@ export function PreviewStep({ wizard }: PreviewStepProps) {
                   </div>
 
                   {previewMode === 'summary' ? (
-                    <div className="bg-gray-100 dark:bg-gray-800 rounded-lg p-3 text-xs space-y-1">
+                    <div className="surface-section-muted rounded-lg p-3 text-xs space-y-1">
                       <div>Groups: {school.groupCount}</div>
                       <div>Time window: {school.startTime} - {school.endTime}</div>
                       <div>Expected lessons: {(scheduleDetails.slots.length * 36)}</div>
@@ -112,7 +112,7 @@ export function PreviewStep({ wizard }: PreviewStepProps) {
                         const periodCount = scheduleDetails.distribution[groupIndex] || 1
 
                         return (
-                          <div key={groupIndex} className="border border-gray-200 dark:border-gray-700 rounded-lg p-2 flex gap-3 items-center">
+                          <div key={groupIndex} className="surface-section-muted p-2 flex gap-3 items-center">
                             <div className="w-10 h-10 rounded-full bg-blue-100 dark:bg-blue-900/30 flex items-center justify-center text-blue-700 dark:text-blue-200 font-semibold">
                               {groupIndex + 1}
                             </div>
@@ -122,7 +122,7 @@ export function PreviewStep({ wizard }: PreviewStepProps) {
                                   value={storedName}
                                   onChange={(e) => updateGroupName(school.name, groupIndex, e.target.value)}
                                   placeholder={`Group ${groupIndex + 1}`}
-                                  className="w-40 text-sm border border-gray-300 rounded px-2 py-1 focus:outline-none focus:border-blue-500 dark:bg-gray-800 dark:border-gray-600"
+                                  className="surface-input w-40 text-sm px-2 py-1"
                                 />
                               ) : (
                                 <div className="text-sm font-medium text-gray-800 dark:text-gray-100">{displayName}</div>

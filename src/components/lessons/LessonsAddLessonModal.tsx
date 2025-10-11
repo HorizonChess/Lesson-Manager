@@ -70,7 +70,7 @@ export function LessonsAddLessonModal({
   }
 
   return (
-    <div className="bg-gray-50 dark:bg-gray-800 p-6 rounded-lg">
+    <div className="surface-section p-6">
       <form onSubmit={handleSubmit} className="space-y-4">
         <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
           <div>

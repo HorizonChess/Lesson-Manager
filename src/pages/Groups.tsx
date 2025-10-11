@@ -162,7 +162,7 @@ export function Groups() {
       )}
 
       {loading ? (
-        <div className="rounded-lg border border-gray-200 bg-white p-8 text-center text-sm text-gray-500 shadow-sm dark:border-gray-700 dark:bg-gray-800 dark:text-gray-300">
+        <div className="surface-panel p-8 text-center text-sm text-slate-500 dark:text-slate-300">
           Loading School Overview...
         </div>
       ) : (

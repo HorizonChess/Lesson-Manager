@@ -376,7 +376,7 @@ export function GroupOverview({
 
             {/* Add Student Form */}
             {showAddStudent && (
-              <div className="mb-4 bg-gray-50 dark:bg-gray-700 p-4 rounded-lg">
+              <div className="mb-4 surface-section-muted p-4 rounded-lg">
                 <form onSubmit={addStudent} className="space-y-4">
                   <div>
                     <label className="block text-sm font-medium mb-2">Student Name</label>
@@ -385,7 +385,7 @@ export function GroupOverview({
                       value={newStudentName}
                       onChange={(e) => setNewStudentName(e.target.value)}
                       placeholder="Enter student name"
-                      className="w-full px-3 py-2 border border-gray-300 rounded focus:outline-none focus:border-blue-500"
+                      className="surface-input w-full px-3 py-2"
                       required
                       autoFocus
                     />
@@ -418,7 +418,7 @@ export function GroupOverview({
                 {roster.map((student) => (
                   <div
                     key={student.id}
-                    className="flex justify-between items-center bg-gray-50 dark:bg-gray-700 p-3 rounded"
+                    className="flex justify-between items-center surface-section-muted p-3 rounded"
                   >
                     {editingStudent === student.id ? (
                       <div className="flex gap-2 items-center flex-1">
@@ -506,7 +506,7 @@ export function GroupOverview({
                     type="date"
                     value={dateFilter.start}
                     onChange={(e) => setDateFilter({ ...dateFilter, start: e.target.value })}
-                    className="px-3 py-1 border border-gray-300 rounded text-sm focus:outline-none focus:border-blue-500"
+                    className="surface-input px-3 py-1 text-sm"
                   />
                 </div>
                 <div className="flex items-center gap-2">
@@ -515,7 +515,7 @@ export function GroupOverview({
                     type="date"
                     value={dateFilter.end}
                     onChange={(e) => setDateFilter({ ...dateFilter, end: e.target.value })}
-                    className="px-3 py-1 border border-gray-300 rounded text-sm focus:outline-none focus:border-blue-500"
+                    className="surface-input px-3 py-1 text-sm"
                   />
                 </div>
               </div>
@@ -579,7 +579,7 @@ export function GroupOverview({
                       const attendancePercentage = attendance.length > 0 ? Math.round((presentStudents.length / attendance.length) * 100) : 0
 
                       return (
-                        <div key={lesson.id} className="bg-white dark:bg-gray-800 border rounded-lg p-4">
+                        <div key={lesson.id} className="surface-panel p-4">
                           <div className="flex justify-between items-center mb-3">
                             <div>
                               <h4 className="font-medium">
@@ -601,7 +601,7 @@ export function GroupOverview({
                           {attendance.length > 0 && (
                             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-2">
                               {attendance.map(record => (
-                                <div key={record.id} className="flex items-center justify-between bg-gray-50 dark:bg-gray-700 p-2 rounded">
+                                <div key={record.id} className="flex items-center justify-between surface-section-muted p-2 rounded">
                                   <span className="text-sm font-medium">{record.student_name}</span>
                                   <span className={`px-2 py-1 rounded text-xs font-medium ${
                                     record.status === 'present' ? 'bg-green-100 text-green-800' :
@@ -933,7 +933,7 @@ export function GroupOverview({
                     type="text"
                     value={editGroupName}
                     onChange={(e) => setEditGroupName(e.target.value)}
-                    className="w-full px-3 py-2 border border-gray-300 rounded focus:outline-none focus:border-blue-500"
+                    className="surface-input w-full px-3 py-2"
                   />
                 ) : (
                   <div className="text-gray-900 dark:text-white font-medium">{group.name}</div>
@@ -946,7 +946,7 @@ export function GroupOverview({
                   <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                     School
                   </label>
-                  <div className="text-gray-900 dark:text-white bg-gray-50 dark:bg-gray-700 p-2 rounded">
+                  <div className="text-gray-900 dark:text-white surface-section-muted p-2 rounded">
                     {school.name}
                   </div>
                 </div>
@@ -954,7 +954,7 @@ export function GroupOverview({
                   <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                     Subject
                   </label>
-                  <div className="text-gray-900 dark:text-white bg-gray-50 dark:bg-gray-700 p-2 rounded">
+                  <div className="text-gray-900 dark:text-white surface-section-muted p-2 rounded">
                     {subject.name}
                   </div>
                 </div>
@@ -988,7 +988,7 @@ export function GroupOverview({
                           <select
                             value={slot.day}
                             onChange={(e) => updateTimeslot(index, 'day', e.target.value)}
-                            className="px-3 py-2 border border-gray-300 rounded focus:outline-none focus:border-blue-500"
+                            className="surface-input px-3 py-2"
                           >
                             <option value="">Select Day</option>
                             <option value="Monday">Monday</option>
@@ -1003,13 +1003,13 @@ export function GroupOverview({
                             type="time"
                             value={slot.startTime}
                             onChange={(e) => updateTimeslot(index, 'startTime', e.target.value)}
-                            className="px-3 py-2 border border-gray-300 rounded focus:outline-none focus:border-blue-500"
+                            className="surface-input px-3 py-2"
                           />
                           <input
                             type="time"
                             value={slot.endTime}
                             onChange={(e) => updateTimeslot(index, 'endTime', e.target.value)}
-                            className="px-3 py-2 border border-gray-300 rounded focus:outline-none focus:border-blue-500"
+                            className="surface-input px-3 py-2"
                           />
                           <Button
                             onClick={() => removeTimeslot(index)}
@@ -1027,12 +1027,12 @@ export function GroupOverview({
                   <div className="space-y-1">
                     {group.timeslots && group.timeslots.length > 0 ? (
                       group.timeslots.map((slot: any, index: number) => (
-                        <div key={index} className="text-sm bg-gray-50 dark:bg-gray-700 p-3 rounded">
+                        <div key={index} className="text-sm surface-section-muted p-3 rounded">
                           <strong>{slot.day}</strong> {slot.startTime} - {slot.endTime}
                         </div>
                       ))
                     ) : (
-                      <div className="text-gray-500 text-sm italic bg-gray-50 dark:bg-gray-700 p-3 rounded">
+                      <div className="text-gray-500 text-sm italic surface-section-muted p-3 rounded">
                         No schedule set
                       </div>
                     )}
@@ -1078,7 +1078,7 @@ export function GroupOverview({
   return (
     <div className="flex flex-col h-full">
       {/* Tab Navigation */}
-      <div className="border-b border-gray-200 dark:border-gray-700">
+      <div className="border-b border-white/20 dark:border-white/10">
         <nav className="flex space-x-8 px-6" aria-label="Group tabs">
           {tabs.map((tab) => (
             <button
@@ -1087,7 +1087,7 @@ export function GroupOverview({
               className={`py-4 px-1 border-b-2 font-medium text-sm whitespace-nowrap focus:outline-none focus:ring-2 focus:ring-blue-500 ${
                 currentActiveTab === tab.id
                   ? 'border-blue-500 text-blue-600 dark:text-blue-400'
-                  : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300 dark:text-gray-400 dark:hover:text-gray-300'
+                  : 'border-transparent text-slate-500 hover:text-slate-700 hover:border-white/40 dark:text-slate-300 dark:hover:text-slate-100'
               }`}
               aria-selected={currentActiveTab === tab.id}
               role="tab"
@@ -1107,9 +1107,9 @@ export function GroupOverview({
       {/* Lesson Record Modal */}
       {openLessonRecord && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white dark:bg-gray-800 rounded-lg w-full max-w-4xl max-h-[90vh] overflow-hidden flex flex-col">
+          <div className="surface-modal w-full max-w-4xl max-h-[90vh] overflow-hidden flex flex-col">
             {/* Header */}
-            <div className="flex justify-between items-center p-4 border-b">
+            <div className="surface-toolbar flex justify-between items-center rounded-none border-b border-white/12 px-6 py-5">
               <div className="flex-1">
                 <h2 className="text-xl font-bold">
                   {(() => {
@@ -1134,7 +1134,7 @@ export function GroupOverview({
             </div>
 
             {/* Content */}
-            <div className="flex-1 overflow-y-auto p-4">
+            <div className="flex-1 overflow-y-auto px-6 pb-6 space-y-6">
               <div className="space-y-4">
                 <div>
                   <label className="block text-sm font-medium mb-2">What was covered today?</label>
@@ -1142,7 +1142,7 @@ export function GroupOverview({
                     value={recordData.covered}
                     onChange={(e) => setRecordData({ ...recordData, covered: e.target.value })}
                     placeholder="Topics covered, activities completed, progress made..."
-                    className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded focus:outline-none focus:border-blue-500 h-20 resize-none text-sm"
+                    className="surface-input w-full px-3 py-2 h-20 resize-none text-sm"
                   />
                 </div>
 
@@ -1152,7 +1152,7 @@ export function GroupOverview({
                     value={recordData.planned}
                     onChange={(e) => setRecordData({ ...recordData, planned: e.target.value })}
                     placeholder="Topics to cover, activities to do, goals for next lesson..."
-                    className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded focus:outline-none focus:border-blue-500 h-20 resize-none text-sm"
+                    className="surface-input w-full px-3 py-2 h-20 resize-none text-sm"
                   />
                 </div>
 
@@ -1162,7 +1162,7 @@ export function GroupOverview({
                     value={recordData.homework}
                     onChange={(e) => setRecordData({ ...recordData, homework: e.target.value })}
                     placeholder="Homework assignments, practice exercises, reading..."
-                    className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded focus:outline-none focus:border-blue-500 h-16 resize-none text-sm"
+                    className="surface-input w-full px-3 py-2 h-16 resize-none text-sm"
                   />
                 </div>
 
@@ -1172,7 +1172,7 @@ export function GroupOverview({
                     value={recordData.notes}
                     onChange={(e) => setRecordData({ ...recordData, notes: e.target.value })}
                     placeholder="Additional notes, student behavior, important observations..."
-                    className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded focus:outline-none focus:border-blue-500 h-16 resize-none text-sm"
+                    className="surface-input w-full px-3 py-2 h-16 resize-none text-sm"
                   />
                 </div>
 
@@ -1188,7 +1188,7 @@ export function GroupOverview({
                         const attendanceStatus = studentAttendance?.status || 'present'
 
                         return (
-                          <div key={student.id} className="p-2 bg-gray-50 dark:bg-gray-800 rounded">
+                          <div key={student.id} className="p-2 surface-section-muted rounded">
                             <div className="flex items-center gap-2 mb-2">
                               <div className="flex-1 font-medium text-sm">
                                 {student.student_name}
@@ -1234,7 +1234,7 @@ export function GroupOverview({
                             </div>
 
                             {studentAttendance?.note && (
-                              <div className="text-xs text-gray-500 italic bg-white dark:bg-gray-700 p-1 rounded border">
+                              <div className="surface-section-muted text-xs text-slate-600 dark:text-slate-300 italic p-1">
                                 {studentAttendance.note}
                               </div>
                             )}

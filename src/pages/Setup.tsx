@@ -353,7 +353,7 @@ export function Setup() {
 
       {/* Add School Form */}
       {showAddSchool && (
-        <div className="bg-gray-50 dark:bg-gray-800 p-4 rounded-lg">
+        <div className="surface-section-muted p-4">
           <form onSubmit={addSchool} className="space-y-4">
             <div>
               <label className="block text-sm font-medium mb-2">School Name</label>
@@ -379,7 +379,7 @@ export function Setup() {
                   setShowAddSchool(false)
                   setNewSchoolName('')
                 }}
-                className="bg-gray-300 text-gray-700 px-4 py-2 rounded hover:bg-gray-400"
+                className="surface-chip text-slate-700 px-4 py-2 hover:opacity-85"
               >
                 Cancel
               </button>
@@ -396,7 +396,7 @@ export function Setup() {
           </div>
         ) : (
           schools.map((school) => (
-            <div key={school.id} className="bg-white dark:bg-gray-800 border rounded-lg">
+            <div key={school.id} className="surface-panel">
               {/* School Level */}
               <div className="p-4 border-b">
                 <div className="flex items-center justify-between">
@@ -479,7 +479,7 @@ export function Setup() {
 
                 {/* Add Subject Form */}
                 {showAddSubject === school.id && (
-                  <div className="mt-4 p-3 bg-gray-50 rounded">
+                  <div className="surface-section-muted mt-4 p-3">
                     <form onSubmit={addSubject} className="flex gap-2">
                       <input
                         type="text"
@@ -501,7 +501,7 @@ export function Setup() {
                           setShowAddSubject('')
                           setNewSubjectName('')
                         }}
-                        className="bg-gray-300 text-gray-700 px-3 py-2 rounded hover:bg-gray-400"
+                        className="surface-chip text-slate-700 px-3 py-2 hover:opacity-85"
                       >
                         Cancel
                       </button>
@@ -600,7 +600,7 @@ export function Setup() {
 
                         {/* Add Group Form */}
                         {showAddGroup === subject.id && (
-                          <div className="mt-2 p-3 bg-gray-50 rounded ml-6">
+                          <div className="surface-section-muted mt-2 p-3 ml-6">
                             <form onSubmit={addGroup} className="flex gap-2">
                               <input
                                 type="text"
@@ -622,7 +622,7 @@ export function Setup() {
                                   setShowAddGroup('')
                                   setNewGroupName('')
                                 }}
-                                className="bg-gray-300 text-gray-700 px-3 py-2 rounded hover:bg-gray-400"
+                                className="surface-chip text-slate-700 px-3 py-2 hover:opacity-85"
                               >
                                 Cancel
                               </button>
@@ -720,7 +720,7 @@ export function Setup() {
 
                                   {/* Roster Management */}
                                   {(expandedGroups.has(group.id) || showRoster === group.id) && (
-                                    <div className="mt-3 p-3 bg-gray-50 rounded ml-6">
+                                    <div className="surface-section-muted mt-3 p-3 ml-6">
                                       <div className="flex justify-between items-center mb-3">
                                         <h5 className="font-medium text-sm">Student Roster ({group.roster_count})</h5>
                                       </div>

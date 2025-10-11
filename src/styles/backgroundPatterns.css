@@ -1,187 +1,91 @@
-/* Modern Background Patterns for App */
+﻿/* Curated background options used across the app */
 
-/* Dotted Grid Pattern - Subtle and Professional */
-.bg-pattern-dots {
-  background-color: #f0f4ff;
-  background-image: radial-gradient(circle, #cbd5e1 1.5px, transparent 1.5px);
-  background-size: 24px 24px;
+:root {
+  --app-background-base-light: #f1f5f9;
+  --app-background-base-dark: #020617;
 }
 
-.dark .bg-pattern-dots {
-  background-color: #0f172a;
-  background-image: radial-gradient(circle, #1e293b 1px, transparent 1px);
-  background-size: 24px 24px;
-}
-
-/* Geometric Grid Pattern - Modern Tech Feel */
-.bg-pattern-grid {
-  background-color: #fafafa;
-  background-image:
-    linear-gradient(#cbd5e1 1.5px, transparent 1.5px),
-    linear-gradient(90deg, #cbd5e1 1.5px, transparent 1.5px);
-  background-size: 50px 50px;
-}
-
-.dark .bg-pattern-grid {
-  background-color: #020617;
-  background-image:
-    linear-gradient(#1e293b 1.5px, transparent 1.5px),
-    linear-gradient(90deg, #1e293b 1.5px, transparent 1.5px);
-  background-size: 50px 50px;
-}
-
-/* Diagonal Lines Pattern - Dynamic */
-.bg-pattern-diagonal {
-  background-color: #f8fafc;
-  background-image: repeating-linear-gradient(
-    45deg,
-    transparent,
-    transparent 35px,
-    #cbd5e1 35px,
-    #cbd5e1 37px
-  );
-}
-
-.dark .bg-pattern-diagonal {
-  background-color: #0f172a;
-  background-image: repeating-linear-gradient(
-    45deg,
-    transparent,
-    transparent 35px,
-    #1e293b 35px,
-    #1e293b 37px
-  );
-}
-
-/* Topographic Pattern - Elegant Waves */
-.bg-pattern-topo {
-  background-color: #f0f4ff;
-  background-image:
-    radial-gradient(circle at 20% 50%, transparent 0%, transparent 50%, rgba(147, 197, 253, 0.4) 50.5%, transparent 51%),
-    radial-gradient(circle at 80% 70%, transparent 0%, transparent 60%, rgba(196, 181, 253, 0.3) 60.5%, transparent 61%),
-    radial-gradient(circle at 40% 80%, transparent 0%, transparent 45%, rgba(147, 197, 253, 0.3) 45.5%, transparent 46%);
-  background-size: 600px 600px, 700px 700px, 500px 500px;
-  background-position: 0 0, 100px 100px, 200px 50px;
-}
-
-.dark .bg-pattern-topo {
-  background-color: #0f172a;
-  background-image:
-    radial-gradient(circle at 20% 50%, transparent 0%, transparent 50%, rgba(30, 41, 59, 0.4) 50.5%, transparent 51%),
-    radial-gradient(circle at 80% 70%, transparent 0%, transparent 60%, rgba(30, 41, 59, 0.4) 60.5%, transparent 61%),
-    radial-gradient(circle at 40% 80%, transparent 0%, transparent 45%, rgba(30, 41, 59, 0.4) 45.5%, transparent 46%);
-  background-size: 600px 600px, 700px 700px, 500px 500px;
-  background-position: 0 0, 100px 100px, 200px 50px;
-}
-
-/* Hexagonal Pattern - Geometric Modern */
-.bg-pattern-hexagon {
-  background-color: #ffffff;
-  background-image:
-    radial-gradient(circle at 50% 0%, rgba(229, 231, 235, 0.4) 0%, transparent 50%),
-    radial-gradient(circle at 0% 50%, rgba(229, 231, 235, 0.4) 0%, transparent 50%),
-    radial-gradient(circle at 100% 50%, rgba(229, 231, 235, 0.4) 0%, transparent 50%);
-  background-size: 80px 140px;
-  background-position: 0 0, 0 0, 40px 70px;
-}
-
-.dark .bg-pattern-hexagon {
-  background-color: #020617;
-  background-image:
-    radial-gradient(circle at 50% 0%, rgba(30, 41, 59, 0.5) 0%, transparent 50%),
-    radial-gradient(circle at 0% 50%, rgba(30, 41, 59, 0.5) 0%, transparent 50%),
-    radial-gradient(circle at 100% 50%, rgba(30, 41, 59, 0.5) 0%, transparent 50%);
-  background-size: 80px 140px;
-  background-position: 0 0, 0 0, 40px 70px;
-}
-
-/* Circuit Board Pattern - Tech Theme */
-.bg-pattern-circuit {
-  background-color: #eff6ff;
-  background-image:
-    linear-gradient(90deg, #cbd5e1 1px, transparent 1px),
-    linear-gradient(180deg, #cbd5e1 1px, transparent 1px),
-    radial-gradient(circle at 20% 30%, #93c5fd 2.5px, transparent 2.5px),
-    radial-gradient(circle at 60% 70%, #93c5fd 2.5px, transparent 2.5px),
-    radial-gradient(circle at 80% 20%, #93c5fd 2.5px, transparent 2.5px);
-  background-size: 100px 100px, 100px 100px, 200px 200px, 250px 250px, 300px 300px;
-  background-position: 0 0, 0 0, 0 0, 50px 50px, 100px 0;
-}
-
-.dark .bg-pattern-circuit {
-  background-color: #0f172a;
-  background-image:
-    linear-gradient(90deg, #1e293b 1px, transparent 1px),
-    linear-gradient(180deg, #1e293b 1px, transparent 1px),
-    radial-gradient(circle at 20% 30%, #1e3a8a 2px, transparent 2px),
-    radial-gradient(circle at 60% 70%, #1e3a8a 2px, transparent 2px),
-    radial-gradient(circle at 80% 20%, #1e3a8a 2px, transparent 2px);
-  background-size: 100px 100px, 100px 100px, 200px 200px, 250px 250px, 300px 300px;
-  background-position: 0 0, 0 0, 0 0, 50px 50px, 100px 0;
-}
-
-/* Gradient Mesh - Modern Abstract */
-.bg-pattern-mesh {
-  background:
-    linear-gradient(135deg, #f9fafb 0%, transparent 50%),
-    linear-gradient(45deg, transparent 50%, #eff6ff 100%),
-    linear-gradient(90deg, #fef3c7 0%, transparent 100%),
-    radial-gradient(ellipse at 20% 30%, rgba(239, 246, 255, 0.5) 0%, transparent 50%),
-    radial-gradient(ellipse at 80% 70%, rgba(254, 243, 199, 0.3) 0%, transparent 50%),
-    #ffffff;
-}
-
-.dark .bg-pattern-mesh {
-  background:
-    linear-gradient(135deg, #0f172a 0%, transparent 50%),
-    linear-gradient(45deg, transparent 50%, #1e3a8a 100%),
-    linear-gradient(90deg, #78350f 0%, transparent 100%),
-    radial-gradient(ellipse at 20% 30%, rgba(30, 58, 138, 0.3) 0%, transparent 50%),
-    radial-gradient(ellipse at 80% 70%, rgba(120, 53, 15, 0.2) 0%, transparent 50%),
-    #020617;
-}
-
-/* Subtle Noise Pattern - Premium Feel */
-.bg-pattern-noise {
-  background-color: #f9fafb;
-  background-image:
-    linear-gradient(to bottom, rgba(255, 255, 255, 0.8), rgba(249, 250, 251, 0.9)),
-    url("data:image/svg+xml,%3Csvg viewBox='0 0 400 400' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)' opacity='0.05'/%3E%3C/svg%3E");
-}
-
-.dark .bg-pattern-noise {
-  background-color: #0f172a;
-  background-image:
-    linear-gradient(to bottom, rgba(15, 23, 42, 0.95), rgba(2, 6, 23, 0.98)),
-    url("data:image/svg+xml,%3Csvg viewBox='0 0 400 400' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)' opacity='0.08'/%3E%3C/svg%3E");
-}
-
-/* Wave Pattern - Flowing and Organic */
-.bg-pattern-waves {
-  background-color: #f9fafb;
-  background-image:
-    repeating-radial-gradient(circle at 0% 0%, transparent 0, transparent 40px, rgba(229, 231, 235, 0.4) 40px, rgba(229, 231, 235, 0.4) 80px),
-    repeating-radial-gradient(circle at 100% 100%, transparent 0, transparent 40px, rgba(219, 234, 254, 0.3) 40px, rgba(219, 234, 254, 0.3) 80px);
-}
-
-.dark .bg-pattern-waves {
-  background-color: #0f172a;
-  background-image:
-    repeating-radial-gradient(circle at 0% 0%, transparent 0, transparent 40px, rgba(30, 41, 59, 0.5) 40px, rgba(30, 41, 59, 0.5) 80px),
-    repeating-radial-gradient(circle at 100% 100%, transparent 0, transparent 40px, rgba(30, 58, 138, 0.3) 40px, rgba(30, 58, 138, 0.3) 80px);
-}
-
-/* Combination: Enhanced Current Gradient with Pattern Overlay */
 .bg-gradient-enhanced {
-  background:
+  background-color: var(--app-background-base-light);
+  background-image:
     radial-gradient(circle at 20% 20%, rgba(59, 130, 246, 0.08) 0%, transparent 50%),
     radial-gradient(circle at 80% 80%, rgba(139, 92, 246, 0.08) 0%, transparent 50%),
     linear-gradient(135deg, #f0f4ff 0%, #e0e7ff 15%, #fef3c7 30%, #fce7f3 50%, #dbeafe 70%, #e0e7ff 85%, #f0f9ff 100%);
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
 }
 
 .dark .bg-gradient-enhanced {
-  background:
-    radial-gradient(circle at 20% 20%, rgba(59, 130, 246, 0.12) 0%, transparent 50%),
-    radial-gradient(circle at 80% 80%, rgba(139, 92, 246, 0.12) 0%, transparent 50%),
+  background-color: var(--app-background-base-dark);
+  background-image:
+    radial-gradient(circle at 20% 20%, rgba(59, 130, 246, 0.18) 0%, transparent 50%),
+    radial-gradient(circle at 80% 80%, rgba(139, 92, 246, 0.16) 0%, transparent 50%),
     linear-gradient(135deg, #0f172a 0%, #1e1b4b 15%, #1e3a8a 30%, #1e293b 50%, #0f172a 70%, #1e1b4b 85%, #020617 100%);
+}
+
+.bg-asset-wave {
+  background-color: #e0f2fe;
+  background-image:
+    linear-gradient(135deg, rgba(255, 255, 255, 0.55), rgba(255, 255, 255, 0.1)),
+    url('../assets/backgrounds/wave-glass.jpg');
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
+  background-attachment: fixed;
+}
+
+.dark .bg-asset-wave {
+  background-color: #0f172a;
+  background-image:
+    linear-gradient(135deg, rgba(15, 23, 42, 0.8), rgba(30, 64, 175, 0.55)),
+    url('../assets/backgrounds/wave-glass.jpg');
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
+  background-attachment: fixed;
+}
+
+.bg-asset-pattern {
+  background-color: #eef2ff;
+  background-image:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.85), rgba(224, 231, 255, 0.65)),
+    url('../assets/backgrounds/pattern-light.png');
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
+  background-attachment: fixed;
+}
+
+.dark .bg-asset-pattern {
+  background-color: #111827;
+  background-image:
+    linear-gradient(180deg, rgba(15, 23, 42, 0.9), rgba(30, 64, 175, 0.65)),
+    url('../assets/backgrounds/pattern-dark.png');
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
+  background-attachment: fixed;
+}
+
+.bg-asset-abstract {
+  background-color: #faf5ff;
+  background-image:
+    linear-gradient(135deg, rgba(255, 255, 255, 0.75), rgba(251, 207, 232, 0.45)),
+    url('../assets/backgrounds/abstract-light.png');
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
+  background-attachment: fixed;
+}
+
+.dark .bg-asset-abstract {
+  background-color: #1e1b4b;
+  background-image:
+    linear-gradient(135deg, rgba(15, 23, 42, 0.88), rgba(88, 28, 135, 0.6)),
+    url('../assets/backgrounds/abstract-dark.png');
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
+  background-attachment: fixed;
 }

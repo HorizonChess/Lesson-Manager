@@ -653,7 +653,7 @@ export function Schools() {
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             placeholder="Search schools, subjects, or groups..."
-            className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 dark:bg-gray-800 dark:border-gray-600 dark:text-gray-100"
+            className="surface-input w-full pl-10 pr-4 py-2"
           />
           {searchQuery && (
             <Button
@@ -704,7 +704,7 @@ export function Schools() {
             animate={{ opacity: 1, height: 'auto' }}
             exit={{ opacity: 0, height: 0 }}
             transition={{ duration: 0.2 }}
-            className="bg-gray-50 dark:bg-gray-800 p-4 rounded-lg overflow-hidden"
+            className="surface-section p-4 overflow-hidden"
           >
             <form onSubmit={handleAddSchool} className="space-y-4">
             <div>
@@ -732,7 +732,7 @@ export function Schools() {
                   setShowAddSchool(false)
                   setNewSchoolName('')
                 }}
-                className="bg-gray-300 text-gray-700 px-4 py-2 rounded hover:bg-gray-400"
+                className="surface-chip text-slate-700 px-4 py-2 hover:opacity-85"
               >
                 Cancel
               </button>
@@ -763,11 +763,11 @@ export function Schools() {
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.3, delay: index * 0.05 }}
-                className="rounded-lg border border-gray-200 bg-white shadow-sm hover:shadow-md hover:-translate-y-0.5 transition-all duration-200 dark:border-gray-700 dark:bg-gray-800"
+                className="surface-panel hover:-translate-y-0.5 transition-all duration-200"
               >
                 {/* School Header */}
                 <div
-                  className="p-3 sm:p-4 cursor-pointer bg-gray-50/50 hover:bg-gray-100/50 transition-colors rounded-t-lg border-b border-gray-200 dark:bg-gray-800/50 dark:hover:bg-gray-700/50 dark:border-gray-700"
+                  className="p-3 sm:p-4 cursor-pointer bg-white/15 hover:bg-white/25 transition-colors rounded-t-lg border-b border-gray-200 dark:bg-white/10 dark:hover:bg-white/15 dark:border-gray-700"
                   onClick={() => toggleSchoolCollapse(school.id)}
                 >
                   <div className="flex flex-col sm:flex-row sm:justify-between gap-3">
@@ -877,7 +877,7 @@ export function Schools() {
                       <div className="px-3 sm:px-6 pb-4 sm:pb-6">
                     {/* Add Subject Form */}
                     {showAddSubject === school.id && (
-                      <div className="mb-4 bg-gray-50 dark:bg-gray-700 p-4 rounded-lg">
+                      <div className="surface-section-muted mb-4 p-4">
                         <form onSubmit={(e) => handleAddSubject(e, school.id)} className="space-y-4">
                           <div>
                             <label className="block text-sm font-medium mb-2">Subject Name</label>
@@ -907,7 +907,7 @@ export function Schools() {
                                 setShowAddSubject(null)
                                 setNewSubjectName('')
                               }}
-                              className="bg-gray-300 text-gray-700 px-4 py-2 rounded hover:bg-gray-400"
+                              className="surface-chip text-slate-700 px-4 py-2 hover:opacity-85"
                             >
                               Cancel
                             </button>
@@ -927,10 +927,10 @@ export function Schools() {
                           const subjectGroups = getSchoolSubjectGroups(school.id, subject.id)
 
                           return (
-                            <div key={subject.id} className="rounded-md border border-gray-200/60 bg-white/50 shadow-sm hover:shadow-md hover:-translate-y-0.5 transition-all duration-200 dark:border-gray-700/60 dark:bg-gray-800/50">
+                            <div key={subject.id} className="surface-section-muted hover:-translate-y-0.5 transition-all duration-200">
                               {/* Subject Header */}
                               <div
-                                className="p-2.5 sm:p-3 cursor-pointer hover:bg-gray-50/50 transition-colors rounded-t-md dark:hover:bg-gray-700/50"
+                                className="p-2.5 sm:p-3 cursor-pointer hover:bg-white/15 transition-colors rounded-t-md dark:hover:bg-white/15"
                                 onClick={() => toggleSubjectCollapse(school.id, subject.id)}
                               >
                                 <div className="flex flex-col sm:flex-row sm:justify-between gap-2">
@@ -1024,7 +1024,7 @@ export function Schools() {
                                 <div className="px-2 sm:px-4 pb-3 sm:pb-4">
                                   {/* Add Group Form */}
                                   {showAddGroup?.schoolId === school.id && showAddGroup?.subjectId === subject.id && (
-                                    <div className="mb-3 bg-white dark:bg-gray-800 p-3 rounded">
+                                    <div className="surface-section-muted mb-3 p-3">
                                       <form onSubmit={(e) => handleAddGroup(e, school.id, subject.id)} className="space-y-3">
                                         <div>
                                           <label className="block text-sm font-medium mb-1">Group Name</label>
@@ -1108,7 +1108,7 @@ export function Schools() {
                                               setNewGroupName('')
                                               setNewGroupTimeslots([])
                                             }}
-                                            className="bg-gray-300 text-gray-700 px-3 py-1 rounded text-xs hover:bg-gray-400"
+                                            className="surface-chip text-xs text-slate-700 px-3 py-1 hover:opacity-85"
                                           >
                                             Cancel
                                           </button>
@@ -1123,7 +1123,7 @@ export function Schools() {
                                       <p className="text-gray-500 text-sm italic">No groups yet</p>
                                     ) : (
                                       subjectGroups.filter(groupMatchesSearch).map((group) => (
-                                        <div key={group.id} className="bg-gray-50 p-2 sm:p-2.5 rounded-md border border-gray-300/40 shadow-sm hover:shadow-md hover:-translate-y-0.5 transition-all duration-200 dark:bg-gray-700/50 dark:border-gray-600/40">
+                                        <div key={group.id} className="surface-panel p-2 sm:p-2.5 hover:-translate-y-0.5 transition-all duration-200">
                                           <div className="flex flex-col sm:flex-row sm:justify-between gap-2 mb-2">
                                             <div className="flex-1 min-w-0">
                                               <div className="flex items-start gap-1.5 sm:gap-2">
@@ -1177,7 +1177,7 @@ export function Schools() {
 
                                           {/* Add Student Form */}
                                           {showAddStudent === group.id && (
-                                            <div className="mb-2 bg-gray-50 dark:bg-gray-700 p-2 rounded">
+                                            <div className="surface-section-muted mb-2 p-2">
                                               <form onSubmit={(e) => handleAddStudent(e, group.id)}>
                                                 <div className="flex gap-1">
                                                   <input
@@ -1201,7 +1201,7 @@ export function Schools() {
                                                       setShowAddStudent(null)
                                                       setNewStudentName('')
                                                     }}
-                                                    className="bg-gray-300 text-gray-700 px-2 py-1 rounded text-xs hover:bg-gray-400"
+                                                    className="surface-chip text-xs text-slate-700 px-2 py-1 hover:opacity-85"
                                                   >
                                                     Cancel
                                                   </button>
@@ -1214,7 +1214,7 @@ export function Schools() {
                                           {rostersByGroup[group.id] && rostersByGroup[group.id].length > 0 && (
                                             <div className="mt-2">
                                               <div
-                                                className="flex items-center gap-1 cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-600 p-1 rounded"
+                                                className="surface-section-muted flex items-center gap-1 cursor-pointer p-1 hover:opacity-95"
                                                 onClick={() => toggleGroupCollapse(group.id)}
                                               >
                                                 <div className="text-orange-600 dark:text-orange-400">
@@ -1232,7 +1232,7 @@ export function Schools() {
                                                   {rostersByGroup[group.id].map((student) => (
                                                     <div
                                                       key={student.id}
-                                                      className="flex justify-between items-center bg-gray-50 dark:bg-gray-700 p-1 rounded text-xs"
+                                                      className="surface-section-muted flex justify-between items-center p-1 text-xs"
                                                     >
                                                       {editingStudent === student.id ? (
                                                         <div className="flex gap-1 items-center flex-1">
@@ -1352,7 +1352,7 @@ export function Schools() {
               <p className="text-gray-500 italic">No subjects yet. Add a subject when creating a group.</p>
             ) : (
               allSubjects.map((subject) => (
-                <div key={subject.id} className="flex justify-between items-center bg-gray-50 dark:bg-gray-700 p-3 rounded">
+                <div key={subject.id} className="surface-section-muted flex justify-between items-center p-3">
                   {editingSubject === subject.id ? (
                     <div className="flex gap-2 items-center flex-1">
                       <input

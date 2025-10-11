@@ -49,7 +49,7 @@ export function ScheduleWizardStepContent({ wizard }: ScheduleWizardStepContentP
             </p>
           </div>
           <div className="space-y-3">
-            <label className="flex items-center p-3 border rounded-lg cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-700">
+            <label className="surface-section-muted flex items-center p-3 cursor-pointer transition hover:opacity-95">
               <input
                 type="radio"
                 name="existing-data"
@@ -62,7 +62,7 @@ export function ScheduleWizardStepContent({ wizard }: ScheduleWizardStepContentP
                 <div className="text-xs text-gray-500 dark:text-gray-400">I'll add to your current schedule</div>
               </div>
             </label>
-            <label className="flex items-center p-3 border rounded-lg cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-700">
+            <label className="surface-section-muted flex items-center p-3 cursor-pointer transition hover:opacity-95">
               <input
                 type="radio"
                 name="existing-data"
@@ -124,7 +124,7 @@ export function ScheduleWizardStepContent({ wizard }: ScheduleWizardStepContentP
                     newSchools[index].name = e.target.value
                     setSchools(newSchools)
                   }}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-blue-500"
+                  className="surface-input w-full px-3 py-2"
                   placeholder={`Enter name for school ${index + 1}`}
                 />
               </div>
@@ -146,7 +146,7 @@ export function ScheduleWizardStepContent({ wizard }: ScheduleWizardStepContentP
             </p>
           </div>
           <div className="space-y-3">
-            <label className="flex items-center p-3 border rounded-lg cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-700">
+            <label className="surface-section-muted flex items-center p-3 cursor-pointer transition hover:opacity-95">
               <input
                 type="radio"
                 name="group-naming"
@@ -159,7 +159,7 @@ export function ScheduleWizardStepContent({ wizard }: ScheduleWizardStepContentP
                 <div className="text-xs text-gray-500 dark:text-gray-400">Groups will be named automatically (Group 1, Group 2, ...)</div>
               </div>
             </label>
-            <label className="flex items-center p-3 border rounded-lg cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-700">
+            <label className="surface-section-muted flex items-center p-3 cursor-pointer transition hover:opacity-95">
               <input
                 type="radio"
                 name="group-naming"

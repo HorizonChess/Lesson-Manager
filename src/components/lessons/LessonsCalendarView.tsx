@@ -70,8 +70,8 @@ export function LessonsCalendarView<TLesson = unknown>({
     : { week: true }
 
   return (
-    <div className="bg-white dark:bg-gray-800 rounded-lg border overflow-hidden">
-      <div className="flex justify-between items-center p-3 bg-gray-50 dark:bg-gray-700 border-b">
+    <div className="surface-panel overflow-hidden">
+      <div className="surface-toolbar flex justify-between items-center p-3 rounded-none border-b border-white/20">
         <div className="flex items-center gap-2">
           <button
             onClick={onPreviousWeek}

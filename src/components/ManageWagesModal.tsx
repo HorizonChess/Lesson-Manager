@@ -222,7 +222,7 @@ export function ManageWagesModal({ isOpen, onClose, userId }: ManageWagesModalPr
                 min="0"
                 value={defaultRate}
                 onChange={(e) => setDefaultRate(e.target.value)}
-                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded focus:outline-none focus:border-blue-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100"
+                className="surface-input w-full px-3 py-2"
                 placeholder="0.00"
               />
             </div>
@@ -231,7 +231,7 @@ export function ManageWagesModal({ isOpen, onClose, userId }: ManageWagesModalPr
               <select
                 value={currency}
                 onChange={(e) => setCurrency(e.target.value)}
-                className="px-3 py-2 border border-gray-300 dark:border-gray-600 rounded focus:outline-none focus:border-blue-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100"
+                className="surface-input w-full px-3 py-2"
               >
                 <option value="NIS">NIS (₪)</option>
                 <option value="USD">USD ($)</option>
@@ -270,14 +270,14 @@ export function ManageWagesModal({ isOpen, onClose, userId }: ManageWagesModalPr
           </div>
 
           {showAddForm && (
-            <div className="bg-gray-50 dark:bg-gray-900 border rounded-lg p-4 mb-4">
+            <div className="surface-section-muted p-4 mb-4">
               <div className="space-y-4">
                 <div>
                   <label className="block text-sm font-medium mb-2">Exception Type</label>
                   <select
                     value={exceptionType}
                     onChange={(e) => setExceptionType(e.target.value as 'school' | 'group')}
-                    className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded focus:outline-none focus:border-blue-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100"
+                    className="surface-input w-full px-3 py-2"
                   >
                     <option value="school">School</option>
                     <option value="group">Group</option>
@@ -290,7 +290,7 @@ export function ManageWagesModal({ isOpen, onClose, userId }: ManageWagesModalPr
                     <select
                       value={selectedSchoolId}
                       onChange={(e) => setSelectedSchoolId(e.target.value)}
-                      className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded focus:outline-none focus:border-blue-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100"
+                      className="surface-input w-full px-3 py-2"
                     >
                       <option value="">Select a school...</option>
                       {schools.map(school => (
@@ -306,7 +306,7 @@ export function ManageWagesModal({ isOpen, onClose, userId }: ManageWagesModalPr
                     <select
                       value={selectedGroupId}
                       onChange={(e) => setSelectedGroupId(e.target.value)}
-                      className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded focus:outline-none focus:border-blue-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100"
+                      className="surface-input w-full px-3 py-2"
                     >
                       <option value="">Select a group...</option>
                       {groups.map(group => (
@@ -326,7 +326,7 @@ export function ManageWagesModal({ isOpen, onClose, userId }: ManageWagesModalPr
                     min="0"
                     value={exceptionRate}
                     onChange={(e) => setExceptionRate(e.target.value)}
-                    className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded focus:outline-none focus:border-blue-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100"
+                    className="surface-input w-full px-3 py-2"
                     placeholder="0.00"
                   />
                 </div>
@@ -352,7 +352,7 @@ export function ManageWagesModal({ isOpen, onClose, userId }: ManageWagesModalPr
               exceptions.map(exception => (
                 <div
                   key={exception.id}
-                  className="flex justify-between items-center p-4 bg-gray-50 dark:bg-gray-900 border rounded-lg"
+                  className="surface-section-muted flex justify-between items-center p-4"
                 >
                   <div>
                     <div className="font-medium">

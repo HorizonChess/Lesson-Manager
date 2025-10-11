@@ -68,7 +68,7 @@ export function SchoolConfigStep({ wizard }: SchoolConfigStepProps) {
           <select
             value={school.dayOfWeek || 'Monday'}
             onChange={(e) => updateSchool(draft => { draft.dayOfWeek = e.target.value })}
-            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-blue-500"
+            className="surface-input w-full px-3 py-2"
           >
             {['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Sunday'].map(day => (
               <option key={day} value={day}>{day}</option>
@@ -85,7 +85,7 @@ export function SchoolConfigStep({ wizard }: SchoolConfigStepProps) {
               type="time"
               value={school.startTime || '08:00'}
               onChange={(e) => updateSchool(draft => { draft.startTime = e.target.value })}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-blue-500"
+              className="surface-input w-full px-3 py-2"
             />
           </div>
           <div>
@@ -96,7 +96,7 @@ export function SchoolConfigStep({ wizard }: SchoolConfigStepProps) {
               type="time"
               value={school.endTime || '13:30'}
               onChange={(e) => updateSchool(draft => { draft.endTime = e.target.value })}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-blue-500"
+              className="surface-input w-full px-3 py-2"
             />
           </div>
         </div>
@@ -113,7 +113,7 @@ export function SchoolConfigStep({ wizard }: SchoolConfigStepProps) {
             onChange={(e) => updateSchool(draft => {
               draft.groupCount = parseInt(e.target.value, 10) || 6
             })}
-            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-blue-500"
+            className="surface-input w-full px-3 py-2"
           />
         </div>
 
@@ -179,7 +179,7 @@ export function SchoolConfigStep({ wizard }: SchoolConfigStepProps) {
                 type="date"
                 value={school.startDate || ''}
                 onChange={(e) => updateSchool(draft => { draft.startDate = e.target.value })}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-blue-500"
+                className="surface-input w-full px-3 py-2"
               />
             </div>
             <div>
@@ -190,7 +190,7 @@ export function SchoolConfigStep({ wizard }: SchoolConfigStepProps) {
                 type="date"
                 value={school.endDate || ''}
                 onChange={(e) => updateSchool(draft => { draft.endDate = e.target.value })}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-blue-500"
+                className="surface-input w-full px-3 py-2"
               />
             </div>
           </div>
@@ -225,7 +225,7 @@ export function SchoolConfigStep({ wizard }: SchoolConfigStepProps) {
         </label>
 
         {school.showAdvancedOptions && (
-          <div className="mt-3 space-y-2 bg-white dark:bg-gray-800 rounded p-3 border border-blue-200 dark:border-blue-700">
+          <div className="surface-section-muted mt-3 space-y-2 p-3 border border-blue-200/60 dark:border-blue-500/50">
             <div className="text-xs text-gray-500 dark:text-gray-400">
               {extraSelectionLimit > 0
                 ? `Select up to ${extraSelectionLimit} group${extraSelectionLimit === 1 ? '' : 's'} to receive extra periods.`
@@ -298,7 +298,7 @@ export function SchoolConfigStep({ wizard }: SchoolConfigStepProps) {
         </label>
 
         {school.enableMultiPeriodCustomization && (
-          <div className="mt-3 space-y-3 bg-white dark:bg-gray-800 rounded p-3 border border-blue-200 dark:border-blue-700">
+          <div className="surface-section-muted mt-3 space-y-3 p-3 border border-blue-200/60 dark:border-blue-500/50">
             <div className="flex items-center justify-between text-xs text-gray-500 dark:text-gray-400">
               <span>Total periods available: {totalAvailablePeriods}</span>
               <button
@@ -327,7 +327,7 @@ export function SchoolConfigStep({ wizard }: SchoolConfigStepProps) {
                           base[index] = newValue
                           draft.customGroupDurations = base
                         })}
-                        className="border border-gray-300 rounded px-2 py-1 text-sm focus:outline-none focus:border-blue-500"
+                        className="surface-input px-2 py-1 text-sm"
                       >
                         {Array.from({ length: optionsRange }, (_, optionIndex) => optionIndex + 1).map(optionValue => (
                           <option key={optionValue} value={optionValue}>{optionValue}</option>

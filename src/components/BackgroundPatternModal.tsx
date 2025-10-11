@@ -1,7 +1,8 @@
-import { useState, useEffect } from 'react'
+﻿import { useState, useEffect } from 'react'
 import { Modal } from './Modal'
 import { Button } from './ui/button'
 import { Palette } from 'lucide-react'
+import { cn } from '../lib/utils'
 import '../styles/backgroundPatterns.css'
 
 interface Pattern {
@@ -11,47 +12,55 @@ interface Pattern {
 }
 
 const patterns: Pattern[] = [
-  { name: 'Enhanced Gradient', class: 'bg-gradient-enhanced', description: 'Colorful gradient blend' },
-  { name: 'Dotted Grid', class: 'bg-pattern-dots', description: 'Subtle dotted pattern' },
-  { name: 'Grid Lines', class: 'bg-pattern-grid', description: 'Geometric grid' },
-  { name: 'Diagonal Stripes', class: 'bg-pattern-diagonal', description: 'Dynamic diagonal lines' },
-  { name: 'Topographic', class: 'bg-pattern-topo', description: 'Wave contours' },
-  { name: 'Hexagonal', class: 'bg-pattern-hexagon', description: 'Hexagonal geometry' },
-  { name: 'Circuit Board', class: 'bg-pattern-circuit', description: 'Tech circuit pattern' },
-  { name: 'Gradient Mesh', class: 'bg-pattern-mesh', description: 'Abstract mesh' },
-  { name: 'Noise Texture', class: 'bg-pattern-noise', description: 'Subtle noise grain' },
-  { name: 'Flowing Waves', class: 'bg-pattern-waves', description: 'Radial waves' },
+  { name: 'Enhanced Gradient', class: 'bg-gradient-enhanced', description: 'Soft multi-hue gradient with subtle glow' },
+  { name: 'Wavescape', class: 'bg-asset-wave', description: 'Illustrated wave background with glass overlay' },
+  { name: 'Playful Pattern', class: 'bg-asset-pattern', description: 'Geometric pattern with paired light/dark variants' },
+  { name: 'Aurora Abstract', class: 'bg-asset-abstract', description: 'Vibrant abstract blend with gentle grain' }
 ]
+
+const defaultPattern = patterns[0].class
+
+const legacyClasses = [
+  'bg-pattern-dots',
+  'bg-pattern-grid',
+  'bg-pattern-diagonal',
+  'bg-pattern-topo',
+  'bg-pattern-hexagon',
+  'bg-pattern-circuit',
+  'bg-pattern-mesh',
+  'bg-pattern-noise',
+  'bg-pattern-waves'
+]
+
+const removableClasses = patterns.map((p) => p.class)
 
 export function BackgroundPatternModal() {
   const [isOpen, setIsOpen] = useState(false)
-  const [currentPattern, setCurrentPattern] = useState<string>('bg-gradient-enhanced')
-  const [previewPattern, setPreviewPattern] = useState<string>('bg-gradient-enhanced')
+  const [currentPattern, setCurrentPattern] = useState<string>(defaultPattern)
+  const [previewPattern, setPreviewPattern] = useState<string>(defaultPattern)
 
-  // Load saved pattern on mount
   useEffect(() => {
     const saved = localStorage.getItem('background-pattern')
-    if (saved) {
-      setCurrentPattern(saved)
-      setPreviewPattern(saved)
-      applyPatternToBody(saved)
-    }
+    const fallback = patterns.find((pattern) => pattern.class === saved) ?? patterns[0]
+    setCurrentPattern(fallback.class)
+    setPreviewPattern(fallback.class)
+    applyPatternToShell(fallback.class)
   }, [])
 
-  const applyPatternToBody = (patternClass: string) => {
-    const mainDiv = document.querySelector('.min-h-screen') as HTMLElement
-    if (mainDiv) {
-      // Remove all pattern classes
-      patterns.forEach(p => mainDiv.classList.remove(p.class))
-      // Add new pattern
-      mainDiv.classList.add(patternClass)
-    }
+  const applyPatternToShell = (patternClass: string) => {
+    const mainShell = document.querySelector('.min-h-screen') as HTMLElement | null
+    if (!mainShell) return
+
+    ;[...legacyClasses, ...removableClasses].forEach((value) => {
+      mainShell.classList.remove(value)
+    })
+    mainShell.classList.add(patternClass)
   }
 
   const handleApply = () => {
     setCurrentPattern(previewPattern)
     localStorage.setItem('background-pattern', previewPattern)
-    applyPatternToBody(previewPattern)
+    applyPatternToShell(previewPattern)
     setIsOpen(false)
   }
 
@@ -71,58 +80,64 @@ export function BackgroundPatternModal() {
         <Palette size={18} />
       </Button>
 
-      <Modal isOpen={isOpen} onClose={handleCancel} title="Background Pattern" size="xl">
-        <div className="p-6 space-y-4">
-          <p className="text-sm text-gray-600 dark:text-gray-400">
-            Choose a background pattern for your app. Changes are saved automatically.
+      <Modal isOpen={isOpen} onClose={handleCancel} title="Background"
+        size="xl"
+      >
+        <div className="p-6 space-y-6">
+          <p className="text-sm text-slate-600 dark:text-slate-300">
+            Choose one of the curated background treatments. They pair with the glass surfaces automatically.
           </p>
 
-          {/* Pattern Grid */}
-          <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 max-h-80 overflow-y-auto pr-2">
-            {patterns.map((pattern) => (
-              <button
-                key={pattern.class}
-                onClick={() => setPreviewPattern(pattern.class)}
-                className={`text-left rounded-lg border-2 transition-all hover:shadow-md ${
-                  previewPattern === pattern.class
-                    ? 'border-blue-500 shadow-md'
-                    : 'border-gray-200 dark:border-gray-700'
-                }`}
-              >
-                {/* Pattern Preview */}
-                <div className={`h-20 ${pattern.class} rounded-t-lg border-b dark:border-gray-700`} />
-
-                {/* Pattern Info */}
-                <div className="p-3">
-                  <h3 className="font-medium text-sm mb-1">{pattern.name}</h3>
-                  <p className="text-xs text-gray-600 dark:text-gray-400">
-                    {pattern.description}
-                  </p>
-                </div>
-              </button>
-            ))}
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 max-h-80 overflow-y-auto pr-2">
+            {patterns.map((pattern) => {
+              const isSelected = previewPattern === pattern.class
+              return (
+                <button
+                  key={pattern.class}
+                  type="button"
+                  onClick={() => setPreviewPattern(pattern.class)}
+                  className={cn(
+                    'surface-panel text-left transition hover:-translate-y-0.5 hover:shadow-xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-400',
+                    isSelected && 'ring-2 ring-blue-400'
+                  )}
+                >
+                  <div className={cn('h-24 border-b border-white/10 dark:border-white/10 rounded-t-xl', pattern.class)} />
+                  <div className="p-4">
+                    <h3 className="font-medium text-sm mb-1 text-slate-900 dark:text-slate-100">{pattern.name}</h3>
+                    <p className="text-xs text-slate-600 dark:text-slate-300">
+                      {pattern.description}
+                    </p>
+                  </div>
+                </button>
+              )
+            })}
           </div>
 
-          {/* Live Preview */}
-          <div className="border-t dark:border-gray-700 pt-4">
-            <h4 className="text-sm font-medium mb-2">Preview</h4>
-            <div className={`${previewPattern} rounded-lg border dark:border-gray-700 p-6 min-h-32 flex items-center justify-center`}>
-              <div className="bg-white/80 dark:bg-gray-800/80 backdrop-blur-sm rounded-lg p-4 shadow-md">
-                <h5 className="font-semibold mb-1">Sample Content</h5>
-                <p className="text-sm text-gray-600 dark:text-gray-400">
-                  This is how your app will look with this background.
-                </p>
+          <div className="space-y-3">
+            <h4 className="text-sm font-medium text-slate-900 dark:text-slate-100">Live preview</h4>
+            <div className={cn('rounded-2xl border border-white/20 p-6 min-h-32 flex items-center justify-center', previewPattern)}>
+              <div className="surface-panel max-w-sm w-full shadow-lg">
+                <div className="p-4 space-y-2">
+                  <h5 className="font-semibold">Sample Content</h5>
+                  <p className="text-sm text-slate-600 dark:text-slate-300">
+                    This is how your primary surfaces will sit over the selected background.
+                  </p>
+                  <div className="flex gap-2">
+                    <span className="surface-chip">Students</span>
+                    <span className="surface-chip">Lessons</span>
+                    <span className="surface-chip">Reports</span>
+                  </div>
+                </div>
               </div>
             </div>
           </div>
 
-          {/* Action Buttons */}
-          <div className="flex gap-2 justify-end pt-2 border-t dark:border-gray-700">
+          <div className="flex gap-2 justify-end pt-2 border-t border-white/10 dark:border-white/5">
             <Button variant="outline" onClick={handleCancel}>
               Cancel
             </Button>
             <Button onClick={handleApply}>
-              Apply Background
+              Apply background
             </Button>
           </div>
         </div>
