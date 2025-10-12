@@ -431,45 +431,8 @@ export function Lessons() {
     }
   }
 
-  const saveLessonRecord = async () => {
-    if (!openLessonRecord) return
-
-    try {
-      const updatedRecord = await updateLessonRecordMutation({
-        lessonId: openLessonRecord,
-        covered: recordData.covered,
-        planned: recordData.planned,
-        homework: recordData.homework,
-        notes: recordData.notes
-      })
-
-      setLessonRecords({
-        ...lessonRecords,
-        [openLessonRecord]: updatedRecord
-      })
-
-      setOpenLessonRecord(null)
-      setRecordData({ covered: '', planned: '', homework: '', notes: '' })
-    } catch (err: any) {
-      setError(err.message)
-    }
-  }
-
-  const copyPlannedToCovered = () => {
-    setRecordData({
-      ...recordData,
-      covered: recordData.planned
-    })
-  }
-
-  const copyPreviousToCovered = () => {
-    if (previousLessonData?.planned) {
-      setRecordData({
-        ...recordData,
-        covered: previousLessonData.planned
-      })
-    }
-  }
+  // Removed saveLessonRecord, copyPlannedToCovered, copyPreviousToCovered
+  // These are now handled internally by LessonsRecordModal
 
   const markAllAttendance = async (status: 'present' | 'absent' | 'late') => {
     if (!openLessonRecord) return
@@ -1371,8 +1334,7 @@ export function Lessons() {
         openLessonRecord={openLessonRecord}
         lessons={lessons}
         lessonRecords={lessonRecords}
-        recordData={recordData}
-        setRecordData={setRecordData}
+        initialRecordData={recordData}
         lessonViewMode={lessonViewMode}
         setLessonViewMode={setLessonViewMode}
         isEditingTime={isEditingTime}
@@ -1404,14 +1366,28 @@ export function Lessons() {
           setEditTimeData({ date: '', startTime: '', endTime: '' })
         }}
         onUpdateLessonTime={updateLessonTime}
-        onCopyPlannedToCovered={copyPlannedToCovered}
-        onCopyPreviousToCovered={copyPreviousToCovered}
+        onSaveRecord={async (data) => {
+          if (!openLessonRecord) return
+
+          const updatedRecord = await updateLessonRecordMutation({
+            lessonId: openLessonRecord,
+            covered: data.covered,
+            planned: data.planned,
+            homework: data.homework,
+            notes: data.notes
+          })
+
+          setLessonRecords({
+            ...lessonRecords,
+            [openLessonRecord]: updatedRecord
+          })
+          setRecordData(data)
+        }}
         onMarkAllAttendance={markAllAttendance}
         onUpdateStudentAttendance={updateStudentAttendance}
         onSaveAttendanceNote={saveAttendanceNote}
         onOpenMaterialSelector={openMaterialSelector}
         onRemoveMaterial={removeMaterial}
-        onSaveLessonRecord={saveLessonRecord}
       />
 
       {/* Material Selector Modal */}

@@ -206,7 +206,7 @@ ${templateJson}
       <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-3">
         <h1 className="text-2xl font-bold">Dashboard</h1>
         <div className="flex flex-col-reverse sm:flex-row sm:items-center gap-2 sm:gap-4">
-          <p className="text-sm sm:text-base text-gray-600 dark:text-gray-400">
+          <p className="text-sm sm:text-base text-soft">
             Welcome back, {user?.email?.split('@')[0]}
           </p>
           <ScheduleWizard />
@@ -280,7 +280,7 @@ ${templateJson}
             ))}
           </div>
         ) : (
-          <p className="text-gray-600 dark:text-gray-400">No lessons scheduled for today</p>
+          <p className="text-soft">No lessons scheduled for today</p>
         )}
       </div>
 
@@ -288,19 +288,19 @@ ${templateJson}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
         <div className="surface-panel p-4">
           <div className="text-2xl font-bold text-blue-600">{stats.schools}</div>
-          <div className="text-sm text-gray-600 dark:text-gray-400">Schools</div>
+          <div className="text-sm text-soft">Schools</div>
         </div>
         <div className="surface-panel p-4">
           <div className="text-2xl font-bold text-green-600">{stats.groups}</div>
-          <div className="text-sm text-gray-600 dark:text-gray-400">Groups</div>
+          <div className="text-sm text-soft">Groups</div>
         </div>
         <div className="surface-panel p-4">
           <div className="text-2xl font-bold text-purple-600">{stats.thisWeekLessons}</div>
-          <div className="text-sm text-gray-600 dark:text-gray-400">This Week</div>
+          <div className="text-sm text-soft">This Week</div>
         </div>
         <div className="surface-panel p-4">
           <div className="text-2xl font-bold text-orange-600">{stats.pendingTasks}</div>
-          <div className="text-sm text-gray-600 dark:text-gray-400">Pending Tasks</div>
+          <div className="text-sm text-soft">Pending Tasks</div>
         </div>
       </div>
 
@@ -314,10 +314,10 @@ ${templateJson}
             <h3 className="font-semibold">School Overview</h3>
             <div className="text-blue-600">→</div>
           </div>
-          <p className="text-sm text-gray-600 dark:text-gray-400">
+          <p className="text-sm text-soft">
             {stats.schools} schools, {stats.subjects} subjects
           </p>
-          <p className="text-xs text-gray-500 dark:text-gray-400 mt-2">
+          <p className="text-xs text-soft-muted mt-2">
             Manage structure & groups
           </p>
         </Link>
@@ -330,10 +330,10 @@ ${templateJson}
             <h3 className="font-semibold">Lessons</h3>
             <div className="text-green-600">→</div>
           </div>
-          <p className="text-sm text-gray-600 dark:text-gray-400">
+          <p className="text-sm text-soft">
             {stats.completedLessons} of {stats.totalLessons} with records
           </p>
-          <p className="text-xs text-gray-500 dark:text-gray-400 mt-2">
+          <p className="text-xs text-soft-muted mt-2">
             Schedule & lesson records
           </p>
         </Link>
@@ -346,11 +346,11 @@ ${templateJson}
             <h3 className="font-semibold">Tasks</h3>
             <div className="text-orange-600">→</div>
           </div>
-          <p className="text-sm text-gray-600 dark:text-gray-400">
+          <p className="text-sm text-soft">
             {stats.pendingTasks} pending
           </p>
           {recentTasks.length > 0 && (
-            <p className="text-xs text-gray-500 dark:text-gray-400 mt-1 truncate">
+            <p className="text-xs text-soft-muted mt-1 truncate">
               Latest: {recentTasks[0].title}
             </p>
           )}
@@ -364,11 +364,11 @@ ${templateJson}
             <h3 className="font-semibold">Lesson Plans</h3>
             <div className="text-purple-600">→</div>
           </div>
-          <p className="text-sm text-gray-600 dark:text-gray-400">
+          <p className="text-sm text-soft">
             {recentMaterials.length} recent plans
           </p>
           {recentMaterials.length > 0 && (
-            <p className="text-xs text-gray-500 dark:text-gray-400 mt-1 truncate">
+            <p className="text-xs text-soft-muted mt-1 truncate">
               Latest: {recentMaterials[0].title}
             </p>
           )}

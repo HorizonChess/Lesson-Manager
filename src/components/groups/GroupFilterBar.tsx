@@ -19,9 +19,9 @@ export function GroupFilterBar({
   onSelectSubject,
   onOpenCreate
 }: GroupFilterBarProps) {
-  const filteredSubjects = selectedSchoolId
-    ? subjects.filter(subject => subject.school_id === selectedSchoolId)
-    : []
+  // Note: Subjects are now global. Filtering by school requires school_subjects junction data.
+  // For now, show all subjects when a school is selected
+  const filteredSubjects = selectedSchoolId ? subjects : []
 
   return (
     <div className="flex flex-col gap-6 md:flex-row md:items-end md:justify-between">

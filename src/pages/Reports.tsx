@@ -1016,7 +1016,7 @@ export function Reports() {
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
         <div className="surface-panel p-6 flex flex-col">
           <h3 className="text-lg font-semibold mb-2">Attendance Report</h3>
-          <p className="text-sm text-gray-600 mb-4 flex-1">Attendance % computed for a date range; persisted per lesson</p>
+          <p className="text-sm text-soft mb-4 flex-1">Attendance % computed for a date range; persisted per lesson</p>
           <button
             onClick={generateAttendanceReport}
             disabled={loading}
@@ -1028,7 +1028,7 @@ export function Reports() {
 
         <div className="surface-panel p-6 flex flex-col">
           <h3 className="text-lg font-semibold mb-2">Hours Report</h3>
-          <p className="text-sm text-gray-600 mb-4 flex-1">Hours taught per school/group/date range (sum non-canceled durations)</p>
+          <p className="text-sm text-soft mb-4 flex-1">Hours taught per school/group/date range (sum non-canceled durations)</p>
           <button
             onClick={generateHoursReport}
             disabled={loading}
@@ -1040,7 +1040,7 @@ export function Reports() {
 
         <div className="surface-panel p-6 flex flex-col">
           <h3 className="text-lg font-semibold mb-2">Coverage Report</h3>
-          <p className="text-sm text-gray-600 mb-4 flex-1">Coverage list: lessons + "covered" text</p>
+          <p className="text-sm text-soft mb-4 flex-1">Coverage list: lessons + "covered" text</p>
           <button
             onClick={generateCoverageReport}
             disabled={loading}
@@ -1052,7 +1052,7 @@ export function Reports() {
 
         <div className="surface-panel p-6 flex flex-col">
           <h3 className="text-lg font-semibold mb-2">Expected Salary</h3>
-          <p className="text-sm text-gray-600 dark:text-gray-400 mb-4 flex-1">Calculate expected salary based on hours and wage settings</p>
+          <p className="text-sm text-soft dark:text-soft mb-4 flex-1">Calculate expected salary based on hours and wage settings</p>
           <button
             onClick={generateSalaryReport}
             disabled={loading}
@@ -1190,7 +1190,7 @@ export function Reports() {
       ) : (hoursReport.length === 0 && !loading && (attendanceReport.length > 0 || coverageReport.length > 0)) && (
         <div className="surface-panel p-6">
           <h3 className="text-lg font-semibold mb-2">Hours Report</h3>
-          <p className="text-gray-600 dark:text-gray-400">No lessons found in the selected date range or filters. Try adjusting your search criteria or create some lessons first.</p>
+          <p className="text-soft dark:text-soft">No lessons found in the selected date range or filters. Try adjusting your search criteria or create some lessons first.</p>
         </div>
       )}
 

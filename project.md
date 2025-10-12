@@ -4,7 +4,7 @@
 - **Goal:** Single-teacher scheduler that manages schools, subjects, groups, lessons, schedule, lesson records, materials, attendance, tasks, and reports. Mobile-friendly, offline aware, RTL-ready. No calendar conflict detection in scope.
 - **Out of scope (MVP):** Calendar conflict detection, external calendar sync, multi-user collaboration.
 - **Tech stack:** React + TypeScript + Vite, TanStack Query, light client state (Zustand or RTK), Tailwind. Backend via Supabase (Auth, Postgres, Storage, RLS). Offline cache through IndexedDB. All dates stored in UTC and rendered local.
-- **Core entities:** user, school, subject, group, lesson, lesson record, roster item, attendance, material, lesson material join, tag, material tag join, task.
+- **Core entities:** user, school, subject, group, lesson, lesson record, roster item, attendance, material, lesson material join, tag, material tag join, task, wage_setting, wage_exception.
 - **Key invariants:**
   - Each group belongs to exactly one school and one subject.
   - Each lesson belongs to one group.
@@ -17,7 +17,8 @@
   - School Overview (groups timeline, roster, settings).
   - Materials library (tagged resources attachable to lesson records).
   - Tasks list (filterable, linkable to groups/lessons).
-  - Reports (attendance percent, hours taught, coverage list).
+  - Reports (attendance percent, hours taught, coverage list, wage tracking).
+  - Wage Management (default hourly rate, per-school/per-group rate overrides, academic hour calculation, salary projections).
 - **Non-functional:** Offline-first for 14 days with resilient write-behind sync, RTL support, accessible touch targets, RLS per user, optional device lock.
 
 ## Terminology
@@ -98,6 +99,21 @@ Create a new component when:
 - **View Transitions**: Added loading spinner during Calendar ↔ List view switch
 - **List View**: Sequential stagger animations for day groups (100ms intervals)
 - **Calendar Events**: Fixed layout - removed duplicate timestamp, school name top-right
+
+### Glass Morphism Design System (October 2025)
+- **Complete UI Overhaul**: Introduced `src/styles/themeSurfaces.css` with comprehensive glass morphism primitives
+- **Surface Classes**: `surface-panel`, `surface-modal`, `surface-toolbar`, `surface-input`, `surface-chip`, `surface-body` with consistent backdrop-filter and blur effects
+- **Text Tokens**: `text-soft`, `text-soft-muted` for theme-responsive typography
+- **Dark Mode Support**: Full light/dark theme with opacity adjustments and proper color inheritance
+- **Background Patterns**: Asset-based backgrounds (`bg-asset-wave`, `bg-asset-pattern`, `bg-asset-abstract`) with BackgroundPatternModal for user selection
+- **Reusable Modal Component**: `src/components/Modal.tsx` with framer-motion animations, proper focus management, and accessibility
+
+### Wage Tracking System (October 2025)
+- **ManageWagesModal**: Full wage configuration UI with default hourly rate and currency selection
+- **Rate Exceptions**: Per-school and per-group hourly rate overrides for flexible compensation modeling
+- **Academic Hours**: Smart calculation (30-60min = 1hr, 61-110min = 2hr, pattern continues) in Reports page
+- **Salary Reports**: Hours taught breakdown by school/subject/group with expected salary calculations
+- **Database Schema**: `wage_settings` table (user_id, default_hourly_rate, currency) and `wage_exceptions` table (school_id, group_id, hourly_rate)
 
 ## Active Refactor Checklist (Phase A)
 - [done] Schedule wizard UI renders through `ScheduleWizardStepContent` plus panels in `src/components/schedule-wizard/`, while `useScheduleWizard` keeps the business logic (complete).

@@ -452,7 +452,7 @@ export function GroupOverview({
                           }}
                           variant="ghost"
                           size="sm"
-                          className="text-gray-600 hover:text-gray-700"
+                          className="text-soft hover:text-soft dark:hover:text-slate-100"
                         >
                           ✕
                         </Button>
@@ -486,7 +486,7 @@ export function GroupOverview({
                 ))}
               </div>
             ) : (
-              <div className="text-center py-8 text-gray-500">
+              <div className="text-center py-8 text-soft-muted">
                 <p className="text-lg">No students in this group yet</p>
                 <p className="text-sm">Click "Add Student" to get started</p>
               </div>
@@ -532,7 +532,7 @@ export function GroupOverview({
                 <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
               </div>
             ) : lessons.length === 0 ? (
-              <div className="text-center py-12 text-gray-500">
+              <div className="text-center py-12 text-soft-muted">
                 <p className="text-lg">No lessons found in the selected date range</p>
                 <p className="text-sm mt-2">Try adjusting the date filter or check the Lessons page to create lessons for this group</p>
               </div>
@@ -552,15 +552,15 @@ export function GroupOverview({
                       <>
                         <div className="bg-blue-50 dark:bg-blue-900/20 p-4 rounded-lg">
                           <div className="text-2xl font-bold text-blue-600 dark:text-blue-400">{totalLessons}</div>
-                          <div className="text-sm text-gray-600 dark:text-gray-400">Total Lessons</div>
+                          <div className="text-sm text-soft">Total Lessons</div>
                         </div>
                         <div className="bg-green-50 dark:bg-green-900/20 p-4 rounded-lg">
                           <div className="text-2xl font-bold text-green-600 dark:text-green-400">{lessonsWithAttendance}</div>
-                          <div className="text-sm text-gray-600 dark:text-gray-400">With Attendance</div>
+                          <div className="text-sm text-soft">With Attendance</div>
                         </div>
                         <div className="bg-purple-50 dark:bg-purple-900/20 p-4 rounded-lg">
                           <div className="text-2xl font-bold text-purple-600 dark:text-purple-400">{averageAttendance}%</div>
-                          <div className="text-sm text-gray-600 dark:text-gray-400">Average Attendance</div>
+                          <div className="text-sm text-soft">Average Attendance</div>
                         </div>
                       </>
                     )
@@ -579,13 +579,13 @@ export function GroupOverview({
                       const attendancePercentage = attendance.length > 0 ? Math.round((presentStudents.length / attendance.length) * 100) : 0
 
                       return (
-                        <div key={lesson.id} className="surface-panel p-4">
+                        <div key={lesson.id} className="surface-body p-4">
                           <div className="flex justify-between items-center mb-3">
                             <div>
                               <h4 className="font-medium">
                                 {lessonDate.toLocaleDateString('en-GB')} - {lessonDate.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                               </h4>
-                              <div className="text-sm text-gray-500">
+                              <div className="text-sm text-soft-muted">
                                 {presentStudents.length}/{attendance.length} present ({attendancePercentage}%)
                               </div>
                             </div>
@@ -616,7 +616,7 @@ export function GroupOverview({
                           )}
 
                           {attendance.length === 0 && (
-                            <div className="text-center py-4 text-gray-500 italic">
+                            <div className="text-center py-4 text-soft-muted italic">
                               No attendance data recorded for this lesson
                             </div>
                           )}
@@ -626,7 +626,7 @@ export function GroupOverview({
                 </div>
 
                 {lessons.filter(l => lessonRecords[l.id]).length === 0 && (
-                  <div className="text-center py-8 text-gray-500">
+                  <div className="text-center py-8 text-soft-muted">
                     <p className="text-lg">No attendance data available</p>
                     <p className="text-sm mt-2">Attendance is recorded when you view lesson records. Visit the Lessons page to start recording attendance.</p>
                   </div>
@@ -642,7 +642,7 @@ export function GroupOverview({
             <div className="flex justify-between items-center mb-6">
               <h3 className="text-lg font-medium">Lessons for {group.name}</h3>
               <div className="flex items-center gap-2">
-                <span className="text-sm text-gray-500">
+                <span className="text-sm text-soft-muted">
                   Total: {lessons.length} | Active: {lessons.filter(l => !l.is_cancelled).length}
                 </span>
               </div>
@@ -659,7 +659,7 @@ export function GroupOverview({
                 <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
               </div>
             ) : lessons.length === 0 ? (
-              <div className="text-center py-12 text-gray-500">
+              <div className="text-center py-12 text-soft-muted">
                 <p className="text-lg">No lessons scheduled for this group</p>
                 <p className="text-sm mt-2">Go to the Lessons page to create lessons or generate recurring lessons for this group</p>
               </div>
@@ -689,7 +689,7 @@ export function GroupOverview({
                                   <div className="font-medium">
                                     {lessonDate.toLocaleDateString('en-GB')} - {lessonDate.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })} to {endDate.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                                   </div>
-                                  <div className="text-sm text-gray-600">
+                                  <div className="text-sm text-soft">
                                     {hasRecord ? '✅ Has lesson record' : '⚠️ No lesson record yet'}
                                   </div>
                                 </div>
@@ -765,27 +765,27 @@ export function GroupOverview({
                                     <div className="mt-2 space-y-1 text-sm">
                                       {record.covered && (
                                         <div>
-                                          <span className="font-medium text-gray-600">Covered:</span>
-                                          <span className="ml-2 text-gray-700">{record.covered.substring(0, 100)}{record.covered.length > 100 ? '...' : ''}</span>
+                                          <span className="font-medium text-soft">Covered:</span>
+                                          <span className="ml-2 text-soft">{record.covered.substring(0, 100)}{record.covered.length > 100 ? '...' : ''}</span>
                                         </div>
                                       )}
                                       {record.planned && (
                                         <div>
-                                          <span className="font-medium text-gray-600">Planned Next:</span>
-                                          <span className="ml-2 text-gray-700">{record.planned.substring(0, 100)}{record.planned.length > 100 ? '...' : ''}</span>
+                                          <span className="font-medium text-soft">Planned Next:</span>
+                                          <span className="ml-2 text-soft">{record.planned.substring(0, 100)}{record.planned.length > 100 ? '...' : ''}</span>
                                         </div>
                                       )}
                                       {record.homework && (
                                         <div>
-                                          <span className="font-medium text-gray-600">Homework:</span>
-                                          <span className="ml-2 text-gray-700">{record.homework.substring(0, 100)}{record.homework.length > 100 ? '...' : ''}</span>
+                                          <span className="font-medium text-soft">Homework:</span>
+                                          <span className="ml-2 text-soft">{record.homework.substring(0, 100)}{record.homework.length > 100 ? '...' : ''}</span>
                                         </div>
                                       )}
                                     </div>
                                   )}
 
                                   {!hasRecord && !lesson.is_cancelled && (
-                                    <div className="mt-1 text-sm text-gray-500 italic">
+                                    <div className="mt-1 text-sm text-soft-muted italic">
                                       No lesson record - Go to Lessons page to add record and attendance
                                     </div>
                                   )}
@@ -861,7 +861,7 @@ export function GroupOverview({
                     >
                       📚 Go to Lessons Page
                     </Button>
-                    <div className="text-sm text-gray-500 px-4 py-2">
+                    <div className="text-sm text-soft-muted px-4 py-2">
                       Create new lessons, lesson records, and manage attendance from the Lessons page
                     </div>
                   </div>
@@ -925,7 +925,7 @@ export function GroupOverview({
             <div className="space-y-6">
               {/* Group Name */}
               <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                <label className="block text-sm font-medium text-soft mb-2">
                   Group Name
                 </label>
                 {editingGroup ? (
@@ -936,25 +936,25 @@ export function GroupOverview({
                     className="surface-input w-full px-3 py-2"
                   />
                 ) : (
-                  <div className="text-gray-900 dark:text-white font-medium">{group.name}</div>
+                  <div className="text-soft font-medium">{group.name}</div>
                 )}
               </div>
 
               {/* School & Subject (Read-only) */}
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                  <label className="block text-sm font-medium text-soft mb-2">
                     School
                   </label>
-                  <div className="text-gray-900 dark:text-white surface-section-muted p-2 rounded">
+                  <div className="text-soft surface-section-muted p-2 rounded">
                     {school.name}
                   </div>
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                  <label className="block text-sm font-medium text-soft mb-2">
                     Subject
                   </label>
-                  <div className="text-gray-900 dark:text-white surface-section-muted p-2 rounded">
+                  <div className="text-soft surface-section-muted p-2 rounded">
                     {subject.name}
                   </div>
                 </div>
@@ -963,7 +963,7 @@ export function GroupOverview({
               {/* Schedule */}
               <div>
                 <div className="flex justify-between items-center mb-2">
-                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
+                  <label className="block text-sm font-medium text-soft">
                     Schedule
                   </label>
                   {editingGroup && (
@@ -981,7 +981,7 @@ export function GroupOverview({
                 {editingGroup ? (
                   <div className="space-y-2">
                     {editGroupTimeslots.length === 0 ? (
-                      <p className="text-gray-500 text-sm italic">No timeslots added yet</p>
+                      <p className="text-soft-muted text-sm italic">No timeslots added yet</p>
                     ) : (
                       editGroupTimeslots.map((slot, index) => (
                         <div key={index} className="grid grid-cols-4 gap-2 items-center">
@@ -1032,7 +1032,7 @@ export function GroupOverview({
                         </div>
                       ))
                     ) : (
-                      <div className="text-gray-500 text-sm italic surface-section-muted p-3 rounded">
+                      <div className="text-soft-muted text-sm italic surface-section-muted p-3 rounded">
                         No schedule set
                       </div>
                     )}
@@ -1045,11 +1045,11 @@ export function GroupOverview({
                 <h4 className="text-md font-medium mb-2">Group Statistics</h4>
                 <div className="grid grid-cols-2 gap-4 text-sm">
                   <div>
-                    <span className="text-gray-500">Students:</span>
+                    <span className="text-soft-muted">Students:</span>
                     <span className="ml-2 font-medium">{roster.length}</span>
                   </div>
                   <div>
-                    <span className="text-gray-500">Weekly Hours:</span>
+                    <span className="text-soft-muted">Weekly Hours:</span>
                     <span className="ml-2 font-medium">
                       {group.timeslots ?
                         group.timeslots.reduce((total: number, slot: any) => {
@@ -1087,7 +1087,7 @@ export function GroupOverview({
               className={`py-4 px-1 border-b-2 font-medium text-sm whitespace-nowrap focus:outline-none focus:ring-2 focus:ring-blue-500 ${
                 currentActiveTab === tab.id
                   ? 'border-blue-500 text-blue-600 dark:text-blue-400'
-                  : 'border-transparent text-slate-500 hover:text-slate-700 hover:border-white/40 dark:text-slate-300 dark:hover:text-slate-100'
+                  : 'border-transparent text-soft-muted hover:text-soft hover:border-white/40 dark:text-slate-300 dark:hover:text-slate-100'
               }`}
               aria-selected={currentActiveTab === tab.id}
               role="tab"
@@ -1234,7 +1234,7 @@ export function GroupOverview({
                             </div>
 
                             {studentAttendance?.note && (
-                              <div className="surface-section-muted text-xs text-slate-600 dark:text-slate-300 italic p-1">
+                              <div className="surface-section-muted text-xs text-soft dark:text-slate-300 italic p-1">
                                 {studentAttendance.note}
                               </div>
                             )}
@@ -1248,7 +1248,7 @@ export function GroupOverview({
                       const currentRecord = lessonRecords[openLessonRecord]
                       const currentAttendanceArray = currentRecord ? attendanceData[currentRecord.id] || [] : []
                       return currentAttendanceArray.length > 0 && (
-                        <div className="mt-3 text-sm text-gray-600 dark:text-gray-400">
+                        <div className="mt-3 text-sm text-soft">
                           Present: {currentAttendanceArray.filter(a => a.status === 'present').length} •
                           Absent: {currentAttendanceArray.filter(a => a.status === 'absent').length} •
                           Late: {currentAttendanceArray.filter(a => a.status === 'late').length}
