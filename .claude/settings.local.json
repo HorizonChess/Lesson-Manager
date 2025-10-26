@@ -24,7 +24,11 @@
       "Bash(timeout 30 npx tsc --noEmit)",
       "Bash(cat:*)",
       "Bash(python:*)",
-      "Bash(grep:*)"
+      "Bash(grep:*)",
+      "Bash(npx playwright open:*)",
+      "Bash(node:*)",
+      "Bash(npm --version)",
+      "Bash(npm search:*)"
     ],
     "deny": [],
     "ask": []

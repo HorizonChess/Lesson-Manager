@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useMemo } from 'react'
 import moment from 'moment'
 import { Modal } from '../Modal'
 import { Button } from '../ui/button'
@@ -80,20 +80,50 @@ export function LessonsRecordModal({
     }
   }, [isOpen, openLessonRecord, initialRecordData])
 
-  if (!isOpen || !openLessonRecord) {
+  // Memoize lesson lookup to prevent searching array on every render
+  const currentLesson = useMemo(
+    () => lessons.find(l => l.id === openLessonRecord),
+    [lessons, openLessonRecord]
+  )
+
+  // Memoize current record lookup
+  const currentRecord = useMemo(
+    () => (openLessonRecord ? lessonRecords[openLessonRecord] : null),
+    [lessonRecords, openLessonRecord]
+  )
+
+  // Memoize date formatting to prevent recalculation on every render
+  const { lessonDate, startTime, endTime } = useMemo(() => {
+    if (!currentLesson) return { lessonDate: '', startTime: '', endTime: '' }
+    return {
+      lessonDate: moment(currentLesson.start_time).format('dddd, MMMM Do YYYY'),
+      startTime: moment(currentLesson.start_time).format('HH:mm'),
+      endTime: moment(currentLesson.end_time).format('HH:mm')
+    }
+  }, [currentLesson])
+
+  // Memoize attendance statistics to prevent 4 filter operations on every render
+  const attendanceStats = useMemo(() => {
+    const presentCount = Object.values(attendance).filter(a => a.status === 'present').length
+    const absentCount = Object.values(attendance).filter(a => a.status === 'absent').length
+    const lateCount = Object.values(attendance).filter(a => a.status === 'late').length
+    const attendanceRate = groupRoster.length > 0
+      ? Math.round(((presentCount + lateCount) / groupRoster.length) * 100)
+      : 0
+    return { presentCount, absentCount, lateCount, attendanceRate }
+  }, [attendance, groupRoster.length])
+
+  if (!isOpen || !openLessonRecord || !currentLesson) {
     return null
   }
 
-  const currentLesson = lessons.find(l => l.id === openLessonRecord)
-  const currentRecord = lessonRecords[openLessonRecord]
-
-  if (!currentLesson) {
-    return null
-  }
-
-  const lessonDate = moment(currentLesson.start_time).format('dddd, MMMM Do YYYY')
-  const startTime = moment(currentLesson.start_time).format('HH:mm')
-  const endTime = moment(currentLesson.end_time).format('HH:mm')
+  console.log('🎨 Modal Rendering:', {
+    lesson: currentLesson.group.name,
+    viewMode: lessonViewMode,
+    hasAttendance: Object.keys(attendance).length > 0,
+    rosterSize: groupRoster.length,
+    memoizedStats: attendanceStats
+  })
 
   const handleCopyPlannedToCovered = () => {
     setLocalRecordData({
@@ -497,12 +527,12 @@ export function LessonsRecordModal({
                 {/* Attendance Summary */}
                 {Object.keys(attendance).length > 0 && (
                   <div className="mt-3 text-sm text-soft pt-3 border-t border-white/10">
-                    Present: {Object.values(attendance).filter(a => a.status === 'present').length} •
-                    Absent: {Object.values(attendance).filter(a => a.status === 'absent').length} •
-                    Late: {Object.values(attendance).filter(a => a.status === 'late').length}
+                    Present: {attendanceStats.presentCount} •
+                    Absent: {attendanceStats.absentCount} •
+                    Late: {attendanceStats.lateCount}
                     {groupRoster.length > 0 && (
                       <span className="ml-2 font-medium">
-                        ({Math.round((Object.values(attendance).filter(a => a.status === 'present' || a.status === 'late').length / groupRoster.length) * 100)}% attended)
+                        ({attendanceStats.attendanceRate}% attended)
                       </span>
                     )}
                   </div>

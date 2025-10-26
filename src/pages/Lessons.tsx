@@ -131,6 +131,9 @@ export function Lessons() {
 
   // Materials states
   const [materials, setMaterials] = useState<Material[]>([])
+
+  // Cached rosters for all groups
+  const [rosters, setRosters] = useState<Record<string, RosterItem[]>>({})
   const [lessonMaterials, setLessonMaterials] = useState<Record<string, Material[]>>({})
   const [showMaterialSelector, setShowMaterialSelector] = useState(false)
   const [selectedMaterials, setSelectedMaterials] = useState<string[]>([])
@@ -145,12 +148,13 @@ export function Lessons() {
     try {
       setLoading(true)
 
-      const [groupsData, lessonsRaw, recordsByLesson, materialsData, lessonMaterialsMap] = await Promise.all([
+      const [groupsData, lessonsRaw, recordsByLesson, materialsData, lessonMaterialsMap, rostersData] = await Promise.all([
         fetchGroupsWithDetails(),
         fetchLessonsWithGroups(),
         fetchLessonRecordsMap(),
         fetchMaterialsList(),
-        fetchLessonMaterialsMap()
+        fetchLessonMaterialsMap(),
+        fetchRosters()
       ])
 
       const lessonsToDelete: string[] = []
@@ -183,6 +187,7 @@ export function Lessons() {
       setLessonRecords(recordsByLesson)
       setMaterials(materialsData)
       setLessonMaterials(materialsByLessonRecord)
+      setRosters(rostersData)
     } catch (err: any) {
       setError(err.message)
     } finally {
@@ -357,48 +362,82 @@ export function Lessons() {
   }
 
   const openLessonRecordForm = async (lessonId: string) => {
+    console.time('⏱️ TOTAL: Modal Open')
+    console.time('⏱️ Step 1: Find lesson + prepare data')
+
     try {
       const currentLesson = lessons.find(l => l.id === lessonId)
       if (!currentLesson) return
 
-      // 1. Get or create lesson record (essential for modal to open)
-      let record = lessonRecords[lessonId]
-      if (!record) {
-        record = await ensureLessonRecord(lessonId)
-        setLessonRecords(prev => ({ ...prev, [lessonId]: record }))
-      }
+      // 1. Check if we already have the record in memory
+      const existingRecord = lessonRecords[lessonId]
 
-      // 2. Load basic form data immediately
-      setRecordData({
-        covered: record.covered || '',
-        planned: record.planned || '',
-        homework: record.homework || '',
-        notes: record.notes || ''
-      })
-
-      // 3. Set mobile-first default and open modal immediately
       const isMobile = window.innerWidth < 768
+
+      console.timeEnd('⏱️ Step 1: Find lesson + prepare data')
+      console.time('⏱️ Step 2: Set state to open modal')
+
+      // 2. Open modal IMMEDIATELY with cached data or empty fields (no blocking!)
       setLessonViewMode(isMobile ? 'simple' : 'advanced')
+      setRecordData({
+        covered: existingRecord?.covered || '',
+        planned: existingRecord?.planned || '',
+        homework: existingRecord?.homework || '',
+        notes: existingRecord?.notes || ''
+      })
       setOpenLessonRecord(lessonId)
 
-      // 4. Load advanced data in background (don't block modal opening)
-      loadAdvancedModalData(currentLesson, record)
+      console.timeEnd('⏱️ Step 2: Set state to open modal')
+      console.log('✅ Modal state set - should be visible now (+ animation time)')
+      console.timeEnd('⏱️ TOTAL: Modal Open')
+
+      // 3. Fetch/create record in background (non-blocking)
+      if (!existingRecord) {
+        console.time('⏱️ Background: ensureLessonRecord')
+        ensureLessonRecord(lessonId)
+          .then(record => {
+            console.timeEnd('⏱️ Background: ensureLessonRecord')
+            setLessonRecords(prev => ({ ...prev, [lessonId]: record }))
+            // Update form data if the record has content
+            if (record.covered || record.planned || record.homework || record.notes) {
+              setRecordData({
+                covered: record.covered || '',
+                planned: record.planned || '',
+                homework: record.homework || '',
+                notes: record.notes || ''
+              })
+            }
+            // Load advanced data after record is ready
+            loadAdvancedModalData(currentLesson, record)
+          })
+          .catch(err => {
+            console.error('Error ensuring lesson record:', err)
+            setError('Failed to load lesson record')
+          })
+      } else {
+        // Record exists, load advanced data immediately
+        loadAdvancedModalData(currentLesson, existingRecord)
+      }
 
     } catch (err: any) {
       setError(err.message)
+      console.timeEnd('⏱️ TOTAL: Modal Open')
     }
   }
 
   const loadAdvancedModalData = async (currentLesson: NormalizedLesson, record: LessonRecord) => {
-    try {
-      // Load advanced data in parallel without blocking modal
-      const [rostersData, attendanceData] = await Promise.all([
-        fetchRosters(), // Gets all rosters, we'll filter for this group
-        record.id ? fetchAttendanceForRecord(record.id) : Promise.resolve([])
-      ])
+    console.time('⏱️ Advanced Data: Total')
+    console.time('⏱️ Advanced Data: Fetch attendance')
 
-      // Filter roster data for current group
-      const groupRosterData = rostersData[currentLesson.group_id] || []
+    try {
+      // Load attendance data (rosters are already cached at page level)
+      const attendanceData = record.id ? await fetchAttendanceForRecord(record.id) : []
+
+      console.timeEnd('⏱️ Advanced Data: Fetch attendance')
+      console.time('⏱️ Advanced Data: Process data')
+
+      // Use cached roster data for current group
+      const groupRosterData = rosters[currentLesson.group_id] || []
 
       // Convert attendance array to map by roster_item_id
       const attendanceMap = (attendanceData as any[]).reduce<Record<string, Attendance>>((acc, att) => {
@@ -420,13 +459,23 @@ export function Lessons() {
         ? lessonRecords[previousLesson.id]
         : null
 
+      console.timeEnd('⏱️ Advanced Data: Process data')
+      console.log('📊 Advanced Data Loaded:', {
+        rosterSize: groupRosterData.length,
+        attendanceRecords: Object.keys(attendanceMap).length,
+        hasPreviousLesson: !!previousRecord
+      })
+
       // Update state with loaded data
       setGroupRoster(groupRosterData)
       setAttendance(attendanceMap)
       setPreviousLessonData(previousRecord)
 
+      console.timeEnd('⏱️ Advanced Data: Total')
+
     } catch (err: any) {
       console.error('Error loading advanced modal data:', err)
+      console.timeEnd('⏱️ Advanced Data: Total')
       // Don't set error state here as modal is already open and functional
     }
   }

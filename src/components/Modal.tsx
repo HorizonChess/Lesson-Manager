@@ -66,7 +66,7 @@ export function Modal({ isOpen, onClose, title, children, size = 'lg' }: ModalPr
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            transition={{ duration: 0.2 }}
+            transition={{ duration: 0.12 }}
             className="fixed inset-0 bg-slate-950/45 backdrop-blur"
             onClick={onClose}
             aria-hidden="true"
@@ -75,10 +75,10 @@ export function Modal({ isOpen, onClose, title, children, size = 'lg' }: ModalPr
           <div className="flex min-h-screen items-center justify-center p-4">
             <motion.div
               ref={modalRef}
-              initial={{ opacity: 0, scale: 0.95, y: 20 }}
+              initial={{ opacity: 0, scale: 0.97, y: 10 }}
               animate={{ opacity: 1, scale: 1, y: 0 }}
-              exit={{ opacity: 0, scale: 0.95, y: 20 }}
-              transition={{ duration: 0.2, ease: 'easeOut' }}
+              exit={{ opacity: 0, scale: 0.97, y: 10 }}
+              transition={{ duration: 0.12, ease: 'easeOut' }}
               tabIndex={-1}
               className={cn(
                 'relative z-[101] surface-modal w-full overflow-hidden focus:outline-none',
