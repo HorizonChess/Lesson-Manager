@@ -31,7 +31,7 @@ export function LessonMaterialSelector({
   }
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-[110] p-4">
       <div className="surface-modal w-full max-w-2xl max-h-[70vh] overflow-hidden flex flex-col">
         <div className="surface-toolbar flex justify-between items-center rounded-none border-b border-white/20 px-4 py-4">
           <h3 className="text-lg font-bold">Select Lesson Plans to Attach</h3>
