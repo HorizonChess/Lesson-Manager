@@ -148,4 +148,202 @@ Create a new component when:
 - Milestones M0 through M11 delivered (project skeleton, auth, schools and subjects CRUD, groups and roster, lessons and scheduling, lesson records, attendance, lesson plans, tasks, dashboard/reports upgrades, Israeli calendar, drag-and-drop enhancements, schedule wizard).
 - Detailed play-by-play for earlier milestones remains available in repository history if needed.
 
+---
+
+## Historical Documentation Archive
+
+This section consolidates detailed implementation notes from docs/*.md files for reference. For active testing and planning, see the Current Status section above.
+
+### Manual Testing Checklist
+
+**Baseline Flows** (as of Oct 2025):
+- ✅ Auth: login, logout, session persistence
+- ✅ Dashboard: daily/weekly view renders without errors
+- ✅ Schedule Wizard: full new-user path (no existing data) completes successfully
+- ✅ Schedule Wizard: existing data path respects keep/remove choice
+- ✅ Schedule Wizard: smart analysis renders and navigation footer stays visible on long configurations
+- ✅ Lessons page: create single lesson, edit, cancel, restore
+- ✅ Lessons page: recurring generation and cancellation
+- ✅ Materials library: create/edit/delete material, attach to lesson record
+- ⏳ Attendance workflow: bulk mark, individual override, notes persist
+- ⏳ Reports page: attendance / hours / coverage filters operate
+- ⏳ Offline cache smoke test (airplane mode for cached flows)
+
+**Regression Guardrails**:
+- Run `npm run lint`, `npm run build` before handoff
+- Verify Supabase migrations if modified
+- Check TypeScript compilation
+
+### Refactor Timeline (Phase A - Complete)
+
+**Sept 18, 2025 - Service Layer Sweep**:
+- Centralized Supabase access for all pages (dashboard, groups, roster, lessons, subjects, schools)
+- Created page orchestrators: `lessonsPage.ts`, `materials.ts`, `groupsPage.ts`, `setupPage.ts`, `tasksPage.ts`
+- Split wizard orchestration into `useScheduleWizard` hook with math in `src/lib/scheduling/index.ts`
+- Staged `lessonsMutations.ts` for calendar workflows
+
+**Sept 19, 2025 - Mutations & View Splits**:
+- Lessons calendar routes all CRUD through `lessonsMutations.ts`
+- Tasks page uses `tasksPage.ts` service
+- Extracted schedule wizard UI into `ScheduleWizardStepContent` + view panels
+- Lifted calendar/list views into `LessonsCalendarView.tsx` and `LessonsListView.tsx`
+- Normalized lesson data handling, resolved all TypeScript errors
+
+**Sept 19, 2025 (evening) - School Overview & Materials Decomposition**:
+- Extracted School Overview filters, summary grid, creation modal into `src/components/groups/`
+- Materials library now uses dedicated components (`MaterialsHeader`, `MaterialsFilters`, `TagManagementPanel`, etc.)
+
+**Sept 20, 2025 - Lessons Page Decomposition**:
+- ✅ Extracted `LessonMaterialSelector` - clean material attachment UI
+- ✅ Extracted `LessonsAddLessonModal` - calendar slot selection with validation
+- ✅ Fixed `RecurringLessonsModal` - corrected logic to use form timeslots instead of database timeslots (Playwright confirmed)
+- ✅ Extracted `LessonsRecordModal` (~435 lines) - final large component with attendance/editing/materials
+
+**Phase A Result**: All Lessons page components successfully extracted with proper TypeScript interfaces and service integration.
+
+### Subjects Architecture Evolution
+
+**Sept 30, 2025 - Global Subjects (Migration 003)**:
+- Transformed subjects from school-specific to global reusable entities
+- Created `school_subjects` junction table linking schools to subjects
+- Removed `school_id` column from subjects, consolidated duplicates
+- UI: "Manage Subjects" button for global management, "Add Subject" with two modes (select existing / create new)
+
+**Sept 30, 2025 - Deduplication**:
+- Implemented tag-like behavior for subject names
+- School-level edit: typing existing subject name reassigns school to that subject
+- Global edit: prevents duplicate names with error message
+- Created `merge-duplicate-subjects.ts` script
+
+**Oct 1, 2025 - Architecture Simplification (Migration 005)**:
+- Added `user_id` column to subjects (direct ownership)
+- Dropped `school_subjects` junction table
+- Simplified RLS policies to `user_id = auth.uid()`
+- Complete rebuild of Schools.tsx (~1000 lines, down from 1404)
+- Subjects now derived from groups
+
+**Oct 3, 2025 - Architecture Correction (Migration 006)**:
+- Restored `school_subjects` junction table for proper attribution
+- Correct pattern: Subjects work like tags (global entities) with school-based attribution via junction table
+- Matches Materials/Tags pattern exactly
+- Subjects appear under a school ONLY if attributed via junction table
+- Service layer functions: `assignSubjectToSchool()`, `removeSubjectFromSchool()`, `fetchSchoolSubjectAssignments()`
+
+**Final Schema**:
+```
+subjects: id, name, user_id, created_at, updated_at
+school_subjects: id, school_id, subject_id, created_at (UNIQUE: school_id + subject_id)
+groups: id, school_id, subject_id, name, timeslots, created_at, updated_at
+```
+
+### UI Modernization Timeline
+
+**Oct 3-4, 2025 - Schools Page Modernization**:
+
+**Phase 1**: UI Foundation
+- Created `src/components/ui/` directory (button, card, badge, input)
+- Installed: class-variance-authority, clsx, tailwind-merge
+- Following shadcn/ui patterns
+
+**Phase 2**: Schools Page Styling
+- Removed all colored gradients → neutral white/gray backgrounds
+- Reduced spacing (35% vertical space reduction)
+- Replaced all buttons with Button component (outline/ghost variants)
+- Color preserved ONLY in icons (blue/purple/orange for hierarchy)
+- Added hover effects (`hover:shadow-md hover:-translate-y-0.5`)
+
+**Phase 3-4**: Space Optimization & Functional Enhancements
+- Added responsive max-width container (max-w-7xl)
+- Fixed group modal tab switching bug
+- Modernized all GroupOverview buttons
+- Fixed group ordering (chronological by schedule)
+- Added subject inline editing within schools
+- Search functionality with hierarchical filtering
+- Expand/Collapse All controls
+
+**Phase 5-6**: Animations & Polish
+- Installed framer-motion and react-hot-toast
+- Toast notifications for all CRUD operations
+- Staggered entrance animations (50ms cascade)
+- Smooth collapse/expand (0.3s easeInOut)
+- Modal animations (backdrop fade + slide up)
+- Schools collapsed by default
+
+**Oct 4, 2025 - App-Wide UI Modernization**:
+
+**Phase 1**: Core Infrastructure & Dark Mode Fix
+- Dark mode persistence with zustand
+- System preference detection
+- Installed @tailwindcss/forms
+- Minimal gradients configured
+- **CRITICAL FIX**: Added `@custom-variant dark` directive to index.css (Tailwind v4 requirement)
+
+**Phase 2**: Layout & Navigation
+- Glassmorphism header with backdrop-blur
+- Navigation icons (lucide-react)
+- User initials avatar
+- Global toaster in Layout
+- Gradient text logo (blue → purple replaced with slate → indigo for light, cyan → blue for dark)
+
+**Phase 3**: Reusable UI Components
+- Created: Input, Textarea, Select, Switch, Label components
+- Consistent design system (rounded-lg, focus rings, error states)
+- Full dark mode support
+
+**Phase 4-5**: Lessons Page Modernization
+- Complete calendar CSS rewrite (100+ lines)
+- Opacity-based borders, smooth transitions
+- Dark mode: Rich slate-950 background
+- List view: 35% space reduction, 2-line layout, icon-only buttons
+- Button dark mode variants with scale animations
+- Alert boxes dark mode
+
+**Oct 5, 2025 - Lessons Page Animations**:
+- Framer-motion animations matching Schools overview
+- View transition loading state (200ms delay with spinner)
+- Stagger animations for list view (100ms intervals)
+- Fixed calendar border alignment with pseudo-elements
+- Unified border colors and weights (all 1px)
+
+**Oct 26, 2025 - Lessons Performance Optimization**:
+- **Problem**: Modal took 300-600ms to open due to blocking database calls
+- **Fix #1**: Modal opens immediately (<50ms), database calls run in background
+- **Fix #2**: Added 4 `useMemo` hooks to eliminate 120+ filter operations per render
+- **Fix #3**: Roster data cached at page-level (fetched once on load)
+- **Fix #4**: Reduced animation duration from 200ms → 120ms (40% faster)
+- **Result**: Modal open 80% faster, typing lag 95% faster, render performance 100% faster
+- See `docs/lessons-performance-fixes.md` for detailed analysis
+
+### Glass Morphism Design System (October 2025)
+
+**Complete UI Overhaul**:
+- `src/styles/themeSurfaces.css` with comprehensive glass morphism primitives
+- Surface classes: `surface-panel`, `surface-modal`, `surface-toolbar`, `surface-input`, `surface-chip`, `surface-body`
+- Text tokens: `text-soft`, `text-soft-muted`
+- Asset-based backgrounds: `bg-asset-wave`, `bg-asset-pattern`, `bg-asset-abstract`
+- BackgroundPatternModal for user selection
+- Reusable Modal component with framer-motion animations
+
+### Rollout Plan (Phases B-D)
+
+**Phase B - Scheduling Productivity Enhancements**:
+1. Partner-school templates (schema + wizard picker)
+2. Bulk roster import + period preferences (CSV/Excel)
+3. Exact-time scheduling mode (toggle in wizard)
+4. Schedule audit log / undo (`schedule_batches` table)
+
+**Phase C - Curriculum & Lesson Alignment**:
+1. Unified lesson/material templates (structured fields, auto-fill)
+2. School-level management overhaul (date-based cancellation, per-school controls)
+
+**Phase D - Visual & UX Refresh**:
+1. Design system adoption (tokens layer, shared components)
+2. Micro-interactions & accessibility (focus states, reduced motion, screen-reader labels, keyboard traps elimination)
+3. Axe audits and keyboard-only walkthrough
+
+**Ongoing**:
+- Update `docs/manual-test-plan.md` after each milestone
+- Log findings in PROJECT.md
+- Keep commits scoped per step, run automated checks before handoff
+
 
