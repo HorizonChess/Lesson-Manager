@@ -37,7 +37,7 @@ export function LessonMaterialSelector({
           <h3 className="text-lg font-bold">Select Lesson Plans to Attach</h3>
           <button
             onClick={handleClose}
-            className="text-gray-500 hover:text-gray-700 text-xl"
+            className="text-soft hover:text-gray-900 dark:hover:text-white text-xl transition-colors"
           >
             ×
           </button>
@@ -45,9 +45,9 @@ export function LessonMaterialSelector({
 
         <div className="flex-1 overflow-y-auto p-4">
           {materials.length === 0 ? (
-            <div className="text-center py-8 text-gray-500">
-              <p>No lesson plans found in your library.</p>
-              <p className="text-sm mt-2">Visit the Lesson Plans page to create lesson plans first.</p>
+            <div className="text-center py-8">
+              <p className="text-slate-800 dark:text-slate-200">No lesson plans found in your library.</p>
+              <p className="text-sm text-slate-700 dark:text-slate-300 mt-2">Visit the Lesson Plans page to create lesson plans first.</p>
             </div>
           ) : (
             <div className="space-y-2">
@@ -69,12 +69,12 @@ export function LessonMaterialSelector({
                     className="mt-1 h-4 w-4"
                   />
                   <div className="flex-1 min-w-0">
-                    <div className="font-medium">{material.title}</div>
+                    <div className="font-medium text-slate-900 dark:text-slate-100">{material.title}</div>
                     {material.description && (
-                      <div className="text-sm text-gray-500 mt-1">{material.description}</div>
+                      <div className="text-sm text-slate-800 dark:text-slate-200 mt-1">{material.description}</div>
                     )}
                     {material.file_url && (
-                      <div className="text-xs text-blue-600 mt-1">Has attached file</div>
+                      <div className="text-xs text-blue-800 dark:text-blue-200 mt-1 font-semibold">Has attached file</div>
                     )}
                   </div>
                 </label>

@@ -281,6 +281,12 @@ export function LessonsCalendarView<TLesson = unknown>({
                 background-color: #78350f !important;
                 background-image: repeating-linear-gradient(45deg, transparent, transparent 10px, rgba(255,255,255,.1) 10px, rgba(255,255,255,.1) 20px) !important;
               }
+              .rbc-today {
+                background-color: rgba(59, 130, 246, 0.08) !important;
+              }
+              .dark .rbc-today {
+                background-color: rgba(59, 130, 246, 0.15) !important;
+              }
             `
           }}
         />

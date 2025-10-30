@@ -60,7 +60,7 @@ export function RecurringLessonsModal({
           <button
             type="button"
             onClick={onClose}
-            className="text-xl text-gray-500 transition hover:text-gray-700"
+            className="text-xl text-slate-600 dark:text-slate-300 transition-colors hover:text-slate-900 dark:hover:text-white hover:scale-110"
           >
             x
           </button>
@@ -73,12 +73,12 @@ export function RecurringLessonsModal({
               <select
                 value={formData.groupId}
                 onChange={(event) => updateForm({ groupId: event.target.value })}
-                className="surface-input w-full px-3 py-2 text-sm"
+                className="surface-input w-full px-3 py-2 text-sm text-gray-900 dark:text-gray-100"
                 required
               >
-                <option value="">Choose a group...</option>
+                <option value="" className="text-gray-900 dark:text-gray-100 bg-white dark:bg-slate-800">Choose a group...</option>
                 {groups.map((group) => (
-                  <option key={group.id} value={group.id}>
+                  <option key={group.id} value={group.id} className="text-gray-900 dark:text-gray-100 bg-white dark:bg-slate-800">
                     {group.name} ({(group as any).school?.name} / {(group as any).subject?.name})
                   </option>
                 ))}
@@ -242,7 +242,7 @@ export function RecurringLessonsModal({
                             >
                               {option.label}
                               {option.value !== 'custom' && (
-                                <span className="block text-xs text-gray-500">{option.weeks} weeks</span>
+                                <span className="block text-xs text-slate-700 dark:text-slate-300">{option.weeks} weeks</span>
                               )}
                             </button>
                           ))}
@@ -324,7 +324,7 @@ export function RecurringLessonsModal({
           <button
             type="button"
             onClick={onClose}
-            className="surface-panel-strong px-6 py-2 text-sm font-semibold text-slate-800 dark:text-slate-100 hover:opacity-95"
+            className="surface-panel-strong px-6 py-2 text-sm font-semibold text-slate-800 dark:text-slate-100 hover:opacity-95 hover:scale-105 transition-all"
           >
             Close
           </button>

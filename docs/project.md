@@ -70,6 +70,48 @@ Create a new component when:
 - **Before**: 800-line `Lessons.tsx` with embedded modals and direct Supabase calls
 - **After**: Clean `Lessons.tsx` orchestrator + extracted `LessonsRecordModal`, `RecurringLessonsModal` components using service layer
 
+### Text Color & Visibility Guidelines
+
+**Critical**: All text must be visible in both light and dark modes on glass morphism surfaces.
+
+#### Semantic Color Classes (from `themeSurfaces.css`)
+
+Use these **theme-aware** classes instead of hardcoded gray/slate colors:
+
+| Class | Light Mode | Dark Mode | Use Case |
+|-------|------------|-----------|----------|
+| `text-soft` | `rgba(15, 23, 42, 0.7)` | `rgba(226, 232, 240, 0.72)` | Secondary text, labels, descriptions |
+| `text-soft-muted` | `rgba(71, 85, 105, 0.6)` | `rgba(203, 213, 225, 0.55)` | Tertiary text, hints, placeholders |
+| (surface inherit) | `rgba(15, 23, 42, 0.82)` | `rgba(226, 232, 240, 0.92)` | Primary text (auto-inherited on `.surface-*` elements) |
+
+#### Common Patterns
+
+```tsx
+// ❌ DON'T: Hardcoded colors without dark mode
+<p className="text-gray-500">Description</p>
+
+// ✅ DO: Use semantic classes
+<p className="text-soft-muted">Description</p>
+
+// ✅ DO: Add dark: variants for specific needs
+<h1 className="text-gray-900 dark:text-gray-100">Title</h1>
+
+// ✅ DO: Accent colors always need dark: variants
+<a className="text-blue-600 dark:text-blue-400">Link</a>
+```
+
+#### Replacement Guide
+
+- **Empty states**: `text-gray-500` → `text-soft-muted`
+- **Helper text**: `text-gray-500` → `text-soft-muted`
+- **Labels**: `text-gray-600` → `text-soft`
+- **Interactive hover**: `text-gray-600 hover:text-gray-800` → `text-soft hover:text-gray-900 dark:hover:text-white transition-colors`
+- **Close buttons**: `text-gray-500 hover:text-gray-700` → `text-soft hover:text-gray-900 dark:hover:text-white`
+
+**Full Style Guide**: See [`docs/text-color-style-guide.md`](text-color-style-guide.md) for comprehensive examples and testing checklist.
+
+**Audit Report**: See [`docs/text-color-audit.md`](text-color-audit.md) for current status of text color fixes (202 instances across 31 files).
+
 ## Current Status (October 26, 2025)
 
 ### Project Health

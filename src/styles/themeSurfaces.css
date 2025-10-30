@@ -87,7 +87,7 @@ textarea.surface-input-muted {
 
 .surface-input::placeholder,
 .surface-input-muted::placeholder {
-  color: rgba(100, 116, 139, 0.72);
+  color: rgba(71, 85, 105, 0.85);
 }
 
 .surface-input:focus,
