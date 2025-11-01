@@ -333,7 +333,7 @@ export function Setup() {
       <div className="flex justify-between items-center">
         <div>
           <h2 className="text-2xl font-bold">Teaching Structure Setup</h2>
-          <p className="text-sm text-gray-500">
+          <p className="text-sm text-slate-700 dark:text-slate-300">
             Manage your schools, subjects, and groups in one place
           </p>
         </div>
@@ -379,7 +379,7 @@ export function Setup() {
                   setShowAddSchool(false)
                   setNewSchoolName('')
                 }}
-                className="surface-chip text-slate-700 px-4 py-2 hover:opacity-85"
+                className="surface-chip text-slate-700 dark:text-slate-200 px-4 py-2 hover:opacity-85"
               >
                 Cancel
               </button>
@@ -391,7 +391,7 @@ export function Setup() {
       {/* Hierarchical Tree */}
       <div className="space-y-3">
         {schools.length === 0 ? (
-          <div className="text-center py-8 text-gray-500">
+          <div className="text-center py-8 text-slate-700 dark:text-slate-300">
             No schools yet. Add your first school to get started!
           </div>
         ) : (
@@ -403,7 +403,7 @@ export function Setup() {
                   <div className="flex items-center gap-3">
                     <button
                       onClick={() => toggleExpansion('school', school.id)}
-                      className="text-gray-500 hover:text-gray-700"
+                      className="text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white transition-colors"
                     >
                       {expandedSchools.has(school.id) ? '📂' : '📁'}
                     </button>
@@ -436,7 +436,7 @@ export function Setup() {
                             setEditingSchool(null)
                             setEditSchoolName('')
                           }}
-                          className="text-gray-600 hover:text-gray-800 text-sm"
+                          className="text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white text-sm transition-colors"
                         >
                           ✕
                         </button>
@@ -444,7 +444,7 @@ export function Setup() {
                     ) : (
                       <>
                         <span className="text-lg font-semibold">🏫 {school.name}</span>
-                        <span className="text-sm text-gray-500">
+                        <span className="text-sm text-slate-600 dark:text-slate-400">
                           ({school.subjects.length} subjects, {school.subjects.reduce((acc, s) => acc + s.groups.length, 0)} groups)
                         </span>
                       </>
@@ -501,7 +501,7 @@ export function Setup() {
                           setShowAddSubject('')
                           setNewSubjectName('')
                         }}
-                        className="surface-chip text-slate-700 px-3 py-2 hover:opacity-85"
+                        className="surface-chip text-slate-700 dark:text-slate-200 px-3 py-2 hover:opacity-85"
                       >
                         Cancel
                       </button>
@@ -514,7 +514,7 @@ export function Setup() {
               {expandedSchools.has(school.id) && (
                 <div className="pl-8">
                   {school.subjects.length === 0 ? (
-                    <div className="p-4 text-gray-500 italic">
+                    <div className="p-4 text-slate-700 dark:text-slate-300 italic">
                       No subjects yet. Click "Add Subject" to get started.
                     </div>
                   ) : (
@@ -524,7 +524,7 @@ export function Setup() {
                           <div className="flex items-center gap-3">
                             <button
                               onClick={() => toggleExpansion('subject', subject.id)}
-                              className="text-gray-500 hover:text-gray-700"
+                              className="text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white transition-colors"
                             >
                               {expandedSubjects.has(subject.id) ? '📖' : '📕'}
                             </button>
@@ -557,7 +557,7 @@ export function Setup() {
                                     setEditingSubject(null)
                                     setEditSubjectName('')
                                   }}
-                                  className="text-gray-600 hover:text-gray-800 text-sm"
+                                  className="text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white text-sm transition-colors"
                                 >
                                   ✕
                                 </button>
@@ -565,7 +565,7 @@ export function Setup() {
                             ) : (
                               <>
                                 <span className="font-medium">{subject.name}</span>
-                                <span className="text-sm text-gray-500">
+                                <span className="text-sm text-slate-600 dark:text-slate-400">
                                   ({subject.groups.length} groups, {subject.groups.reduce((acc, g) => acc + g.roster_count, 0)} students)
                                 </span>
                               </>
@@ -622,7 +622,7 @@ export function Setup() {
                                   setShowAddGroup('')
                                   setNewGroupName('')
                                 }}
-                                className="surface-chip text-slate-700 px-3 py-2 hover:opacity-85"
+                                className="surface-chip text-slate-700 dark:text-slate-200 px-3 py-2 hover:opacity-85"
                               >
                                 Cancel
                               </button>
@@ -634,7 +634,7 @@ export function Setup() {
                         {expandedSubjects.has(subject.id) && (
                           <div className="pl-6 mt-2">
                             {subject.groups.length === 0 ? (
-                              <div className="text-gray-500 italic text-sm">
+                              <div className="text-slate-700 dark:text-slate-300 italic text-sm">
                                 No groups yet. Click "Add Group" to get started.
                               </div>
                             ) : (
@@ -644,7 +644,7 @@ export function Setup() {
                                     <div className="flex items-center gap-3">
                                       <button
                                         onClick={() => toggleExpansion('group', group.id)}
-                                        className="text-gray-500 hover:text-gray-700"
+                                        className="text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white transition-colors"
                                       >
                                         {expandedGroups.has(group.id) ? '👥' : '👤'}
                                       </button>
@@ -677,7 +677,7 @@ export function Setup() {
                                               setEditingGroup(null)
                                               setEditGroupName('')
                                             }}
-                                            className="text-gray-600 hover:text-gray-800 text-sm"
+                                            className="text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white text-sm transition-colors"
                                           >
                                             ✕
                                           </button>
@@ -685,7 +685,7 @@ export function Setup() {
                                       ) : (
                                         <>
                                           <span className="font-medium">{group.name}</span>
-                                          <span className="text-sm text-gray-500">
+                                          <span className="text-sm text-slate-600 dark:text-slate-400">
                                             ({group.roster_count} students)
                                           </span>
                                         </>
@@ -758,7 +758,7 @@ export function Setup() {
                                           ))}
                                         </div>
                                       ) : (
-                                        <div className="text-gray-500 italic text-sm">
+                                        <div className="text-slate-700 dark:text-slate-300 italic text-sm">
                                           No students yet. Add students to this group.
                                         </div>
                                       )}

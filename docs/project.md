@@ -151,7 +151,14 @@ Use these **theme-aware** classes instead of hardcoded gray/slate colors:
 - **Component extraction**: Complete ✅
 
 ### Recent Milestones
-- **Oct 26**: Lessons modal performance - modal opens 80% faster, typing lag 95% reduced ([lessons-performance-fixes.md](lessons-performance-fixes.md))
+- **Oct 26 (PM)**: Text color & visibility fixes - All lessons components dark/light mode compliant
+  - Fixed 20+ hardcoded color instances across 6 lessons components
+  - Global placeholder fix (themeSurfaces.css) - 85% opacity for better light mode visibility
+  - Dropdown options styling - explicit text/bg colors for select elements
+  - Calendar today highlight - subtle blue tint instead of white in dark mode
+  - Enhanced hover effects - scale animations on close buttons
+  - See [text-color-audit.md](text-color-audit.md) and [text-color-style-guide.md](text-color-style-guide.md)
+- **Oct 26 (AM)**: Lessons modal performance - modal opens 80% faster, typing lag 95% reduced ([lessons-performance-fixes.md](lessons-performance-fixes.md))
 - **Oct 5**: Lessons UI modernization - animations, borders, list view optimization
 - **Oct 3-4**: Schools page complete rebuild - search, animations, toast notifications, 1443 lines
 - **Sept-Oct**: Subjects architecture - three migrations to perfect global subjects pattern

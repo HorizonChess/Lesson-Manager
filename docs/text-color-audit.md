@@ -55,19 +55,59 @@
 - Dropdown options properly styled in both modes
 
 ### Pages (8 files)
-- `Schools.tsx` - ~30 instances (highest)
-- `Setup.tsx` - ~15 instances
-- `Tasks.tsx` - Needs count
-- `Lessons.tsx` - Needs count
-- `Groups.tsx` - Needs count
+- `Schools.tsx` - ✅ **COMPLETE** (Oct 26, 2025)
+  - Search icon: `text-gray-400 dark:text-gray-500`
+  - Cancel buttons (3 sizes): `text-slate-700 dark:text-slate-200` on all surface-chip
+  - Empty states (2): `text-slate-700 dark:text-slate-300`
+  - Helper text (5): `text-slate-700 dark:text-slate-300`
+  - Interactive X buttons (4): `text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white transition-colors`
+  - Group counters: `text-slate-600 dark:text-slate-400`
+  - 19 instances fixed with proper hover transitions
+- `Setup.tsx` - ✅ **COMPLETE** (Oct 30, 2025)
+  - Page description: `text-slate-700 dark:text-slate-300`
+  - Cancel buttons (3): `text-slate-700 dark:text-slate-200` on all surface-chip
+  - Empty states (4): `text-slate-700 dark:text-slate-300` italic
+  - Icon toggle buttons (3): `text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white transition-colors`
+  - Interactive X buttons (3): `text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white transition-colors`
+  - Count labels (3): `text-slate-600 dark:text-slate-400`
+  - 17 instances fixed with consistent hover transitions
+- `Tasks.tsx` - ✅ **COMPLETE** (Oct 30, 2025)
+  - Page description: `text-slate-700 dark:text-slate-300`
+  - Cancel button: `text-slate-700 dark:text-slate-200` on surface-chip
+  - Empty state: `text-slate-700 dark:text-slate-300`
+  - Edit cancel button: `text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white transition-colors`
+  - Completed task title: `text-slate-600 dark:text-slate-400`
+  - Task description: `text-slate-700 dark:text-slate-300`
+  - Task metadata: `text-slate-600 dark:text-slate-400`
+  - 7 instances fixed with proper hover transitions
+- `Lessons.tsx` - ✅ **COMPLETE** (Previously fixed)
+  - All text colors already have dark mode variants
+  - 0 additional instances to fix
+- `Groups.tsx` - ✅ **COMPLETE** (Previously fixed)
+  - All text colors already have dark mode variants
+  - 0 additional instances to fix
 - `Materials.tsx` - Needs count
 - `Dashboard.tsx` - Needs count
 - `Reports.tsx` - Needs count
 
 ### Other Components (17 files)
+- `GroupOverview.tsx` - ✅ **COMPLETE** (Oct 30, 2025)
+  - **Status badges (2 instances)**: Attendance percentages and status labels
+    - Added `dark:bg-*-900/40` + `dark:text-*-200` for all status colors (green/yellow/red)
+  - **Section headings (3 instances)**: "Upcoming Lessons", "Recent Lessons", "(Cancelled)" label
+    - All now have `dark:text-*-400` variants
+  - **Button text colors (9 instances)**: Edit, Remove, Cancel, Delete, Restore, Add Timeslot
+    - Pattern: `text-*-600 dark:text-*-400 hover:text-*-700 dark:hover:text-*-300`
+  - **Error messages (4 instances)**: All error alerts
+    - Background: `dark:bg-red-900/20`
+    - Border: `dark:border-red-800`
+    - Text: `dark:text-red-200`
+  - **Student edit cancel button**: Uses semantic `text-soft` with hover states
+  - **Attendance note**: Removed redundant `dark:text-slate-300`, semantic class handles it
+  - **32+ instances** fixed with comprehensive dark mode support
 - Material components (4 files)
 - Schedule wizard components (3 files)
-- Group components (3 files)
+- Other Group components (2 files remaining)
 - Auth components (2 files)
 - UI components (1 file)
 - Modal components (2 files)

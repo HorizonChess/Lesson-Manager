@@ -647,7 +647,7 @@ export function Schools() {
       {/* Search & Controls */}
       <div className="flex flex-col sm:flex-row gap-2 sm:gap-3 sm:items-center">
         <div className="flex-1 relative">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={18} />
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 dark:text-gray-500" size={18} />
           <input
             type="text"
             value={searchQuery}
@@ -732,7 +732,7 @@ export function Schools() {
                   setShowAddSchool(false)
                   setNewSchoolName('')
                 }}
-                className="surface-chip text-slate-700 px-4 py-2 hover:opacity-85"
+                className="surface-chip text-slate-700 dark:text-slate-200 px-4 py-2 hover:opacity-85"
               >
                 Cancel
               </button>
@@ -745,11 +745,11 @@ export function Schools() {
       {/* Schools List */}
       <div className="grid gap-4">
         {schools.length === 0 ? (
-          <div className="text-center py-8 text-gray-500">
+          <div className="text-center py-8 text-slate-700 dark:text-slate-300">
             No schools yet. Add your first school to get started!
           </div>
         ) : filteredSchools.length === 0 ? (
-          <div className="text-center py-8 text-gray-500">
+          <div className="text-center py-8 text-slate-700 dark:text-slate-300">
             <p className="text-lg">No results found</p>
             <p className="text-sm mt-2">Try adjusting your search query</p>
           </div>
@@ -807,7 +807,7 @@ export function Schools() {
                               setEditingSchool(null)
                               setEditSchoolName('')
                             }}
-                            className="text-gray-600 hover:text-gray-700 flex-shrink-0"
+                            className="text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white flex-shrink-0 transition-colors"
                           >
                             <X size={16} className="sm:w-[18px] sm:h-[18px]" />
                           </Button>
@@ -890,7 +890,7 @@ export function Schools() {
                               required
                               autoFocus
                             />
-                            <p className="text-xs text-gray-500 mt-1">
+                            <p className="text-xs text-slate-700 dark:text-slate-300 mt-1">
                               Tip: If a subject with this name exists, it will be used instead of creating a duplicate.
                             </p>
                           </div>
@@ -907,7 +907,7 @@ export function Schools() {
                                 setShowAddSubject(null)
                                 setNewSubjectName('')
                               }}
-                              className="surface-chip text-slate-700 px-4 py-2 hover:opacity-85"
+                              className="surface-chip text-slate-700 dark:text-slate-200 px-4 py-2 hover:opacity-85"
                             >
                               Cancel
                             </button>
@@ -919,7 +919,7 @@ export function Schools() {
                     {/* Subjects List */}
                     <div className="space-y-3">
                       {(schoolSubjectsBySchool[school.id] || []).length === 0 ? (
-                        <p className="text-gray-500 italic">No subjects yet. Add a subject to this school.</p>
+                        <p className="text-slate-700 dark:text-slate-300 italic">No subjects yet. Add a subject to this school.</p>
                       ) : (
                         (schoolSubjectsBySchool[school.id] || [])
                           .filter(subject => subjectMatchesSearch(subject, school.id))
@@ -975,7 +975,7 @@ export function Schools() {
                                               setEditingSubject(null)
                                               setEditSubjectName('')
                                             }}
-                                            className="text-gray-600 hover:text-gray-700 flex-shrink-0 p-1"
+                                            className="text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white flex-shrink-0 p-1 transition-colors"
                                           >
                                             <X size={14} className="sm:w-4 sm:h-4" />
                                           </Button>
@@ -1050,7 +1050,7 @@ export function Schools() {
                                             </button>
                                           </div>
                                           {newGroupTimeslots.length === 0 ? (
-                                            <p className="text-gray-500 text-xs italic">No timeslots added</p>
+                                            <p className="text-slate-700 dark:text-slate-300 text-xs italic">No timeslots added</p>
                                           ) : (
                                             <div className="space-y-1">
                                               {newGroupTimeslots.map((slot, index) => (
@@ -1108,7 +1108,7 @@ export function Schools() {
                                               setNewGroupName('')
                                               setNewGroupTimeslots([])
                                             }}
-                                            className="surface-chip text-xs text-slate-700 px-3 py-1 hover:opacity-85"
+                                            className="surface-chip text-xs text-slate-700 dark:text-slate-200 px-3 py-1 hover:opacity-85"
                                           >
                                             Cancel
                                           </button>
@@ -1120,7 +1120,7 @@ export function Schools() {
                                   {/* Groups List */}
                                   <div className="space-y-2">
                                     {subjectGroups.length === 0 ? (
-                                      <p className="text-gray-500 text-sm italic">No groups yet</p>
+                                      <p className="text-slate-700 dark:text-slate-300 text-sm italic">No groups yet</p>
                                     ) : (
                                       subjectGroups.filter(groupMatchesSearch).map((group) => (
                                         <div key={group.id} className="surface-panel p-2 sm:p-2.5 hover:-translate-y-0.5 transition-all duration-200">
@@ -1138,7 +1138,7 @@ export function Schools() {
                                                   >
                                                     {group.name}
                                                   </h5>
-                                                  <div className="text-xs text-gray-500 mt-1">
+                                                  <div className="text-xs text-slate-700 dark:text-slate-300 mt-1">
                                                     {group.timeslots && group.timeslots.length > 0 ? (
                                                       <div className="space-y-0.5">
                                                         {group.timeslots.map((slot: any, index: number) => (
@@ -1201,7 +1201,7 @@ export function Schools() {
                                                       setShowAddStudent(null)
                                                       setNewStudentName('')
                                                     }}
-                                                    className="surface-chip text-xs text-slate-700 px-2 py-1 hover:opacity-85"
+                                                    className="surface-chip text-xs text-slate-700 dark:text-slate-200 px-2 py-1 hover:opacity-85"
                                                   >
                                                     Cancel
                                                   </button>
@@ -1261,7 +1261,7 @@ export function Schools() {
                                                               setEditingStudent(null)
                                                               setEditStudentName('')
                                                             }}
-                                                            className="text-gray-600 hover:text-gray-800"
+                                                            className="text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white transition-colors"
                                                           >
                                                             <X size={16} />
                                                           </button>
@@ -1349,7 +1349,7 @@ export function Schools() {
 
           <div className="space-y-2">
             {allSubjects.length === 0 ? (
-              <p className="text-gray-500 italic">No subjects yet. Add a subject when creating a group.</p>
+              <p className="text-slate-700 dark:text-slate-300 italic">No subjects yet. Add a subject when creating a group.</p>
             ) : (
               allSubjects.map((subject) => (
                 <div key={subject.id} className="surface-section-muted flex justify-between items-center p-3">
@@ -1380,7 +1380,7 @@ export function Schools() {
                           setEditingSubject(null)
                           setEditSubjectName('')
                         }}
-                        className="text-gray-600 hover:text-gray-800"
+                        className="text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white transition-colors"
                       >
                         <X size={18} />
                       </button>
@@ -1390,7 +1390,7 @@ export function Schools() {
                       <div className="flex-1">
                         <span className="font-medium">
                           {subject.name}
-                          <span className="text-sm text-gray-500 ml-2">
+                          <span className="text-sm text-slate-600 dark:text-slate-400 ml-2">
                             ({groupsBySubject[subject.id]?.length || 0} groups)
                           </span>
                         </span>
@@ -1403,7 +1403,7 @@ export function Schools() {
 
                           if (schoolsUsingSubject.length > 0) {
                             return (
-                              <div className="text-xs text-gray-500 mt-1">
+                              <div className="text-xs text-slate-700 dark:text-slate-300 mt-1">
                                 📁 {schoolsUsingSubject.map(s => s.name).join(', ')}
                               </div>
                             )

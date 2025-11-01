@@ -173,7 +173,7 @@ export function Tasks() {
       <div className="flex justify-between items-center">
         <div>
           <h2 className="text-2xl font-bold">Tasks</h2>
-          <p className="text-sm text-gray-500">
+          <p className="text-sm text-slate-700 dark:text-slate-300">
             {openTasksCount} open • {completedTasksCount} completed
           </p>
         </div>
@@ -307,7 +307,7 @@ export function Tasks() {
                   setShowAddTask(false)
                   setNewTask({ title: '', description: '', group_id: '', lesson_id: '' })
                 }}
-                className="surface-chip text-slate-700 px-4 py-2 hover:opacity-85"
+                className="surface-chip text-slate-700 dark:text-slate-200 px-4 py-2 hover:opacity-85"
               >
                 Cancel
               </button>
@@ -319,7 +319,7 @@ export function Tasks() {
       {/* Tasks List */}
       <div className="space-y-3">
         {filteredTasks.length === 0 ? (
-          <div className="text-center py-8 text-gray-500">
+          <div className="text-center py-8 text-slate-700 dark:text-slate-300">
             {tasks.length === 0
               ? 'No tasks yet. Add your first task to get started!'
               : 'No tasks match the current filters.'
@@ -402,7 +402,7 @@ export function Tasks() {
                         setEditingTask(null)
                         setEditTask({ title: '', description: '', group_id: '', lesson_id: '' })
                       }}
-                      className="text-gray-600 hover:text-gray-800 text-sm"
+                      className="text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white text-sm transition-colors"
                     >
                       Cancel
                     </button>
@@ -422,15 +422,15 @@ export function Tasks() {
                   </button>
 
                   <div className="flex-1 min-w-0">
-                    <div className={`font-medium ${task.is_completed ? 'line-through text-gray-500' : ''}`}>
+                    <div className={`font-medium ${task.is_completed ? 'line-through text-slate-600 dark:text-slate-400' : ''}`}>
                       {task.title}
                     </div>
 
                     {task.description && (
-                      <div className="text-sm text-gray-600 mt-1">{task.description}</div>
+                      <div className="text-sm text-slate-700 dark:text-slate-300 mt-1">{task.description}</div>
                     )}
 
-                    <div className="flex items-center gap-4 mt-2 text-xs text-gray-500">
+                    <div className="flex items-center gap-4 mt-2 text-xs text-slate-600 dark:text-slate-400">
                       <span>Created: {new Date(task.created_at).toLocaleDateString()}</span>
 
                       {task.group && task.group_id && (

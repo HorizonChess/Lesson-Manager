@@ -369,7 +369,7 @@ export function GroupOverview({
             </div>
 
             {error && (
-              <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded mb-4">
+              <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 text-red-700 dark:text-red-200 px-4 py-3 rounded mb-4">
                 {error}
               </div>
             )}
@@ -441,7 +441,7 @@ export function GroupOverview({
                           onClick={() => updateStudent(student.id, editStudentName)}
                           variant="ghost"
                           size="sm"
-                          className="text-green-600 hover:text-green-700"
+                          className="text-green-600 dark:text-green-400 hover:text-green-700 dark:hover:text-green-300"
                         >
                           ✓
                         </Button>
@@ -452,7 +452,7 @@ export function GroupOverview({
                           }}
                           variant="ghost"
                           size="sm"
-                          className="text-soft hover:text-soft dark:hover:text-slate-100"
+                          className="text-soft hover:text-gray-900 dark:hover:text-white transition-colors"
                         >
                           ✕
                         </Button>
@@ -475,7 +475,7 @@ export function GroupOverview({
                             onClick={() => deleteStudent(student.id)}
                             variant="ghost"
                             size="sm"
-                            className="text-red-600 hover:text-red-700"
+                            className="text-red-600 dark:text-red-400 hover:text-red-700 dark:hover:text-red-300"
                           >
                             Remove
                           </Button>
@@ -522,7 +522,7 @@ export function GroupOverview({
             </div>
 
             {error && (
-              <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded mb-4">
+              <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 text-red-700 dark:text-red-200 px-4 py-3 rounded mb-4">
                 {error}
               </div>
             )}
@@ -550,17 +550,17 @@ export function GroupOverview({
 
                     return (
                       <>
-                        <div className="bg-blue-50 dark:bg-blue-900/20 p-4 rounded-lg">
+                        <div className="surface-section-muted p-4 rounded-lg">
                           <div className="text-2xl font-bold text-blue-600 dark:text-blue-400">{totalLessons}</div>
-                          <div className="text-sm text-soft">Total Lessons</div>
+                          <div className="text-sm text-slate-800 dark:text-slate-200">Total Lessons</div>
                         </div>
-                        <div className="bg-green-50 dark:bg-green-900/20 p-4 rounded-lg">
+                        <div className="surface-section-muted p-4 rounded-lg">
                           <div className="text-2xl font-bold text-green-600 dark:text-green-400">{lessonsWithAttendance}</div>
-                          <div className="text-sm text-soft">With Attendance</div>
+                          <div className="text-sm text-slate-800 dark:text-slate-200">With Attendance</div>
                         </div>
-                        <div className="bg-purple-50 dark:bg-purple-900/20 p-4 rounded-lg">
+                        <div className="surface-section-muted p-4 rounded-lg">
                           <div className="text-2xl font-bold text-purple-600 dark:text-purple-400">{averageAttendance}%</div>
-                          <div className="text-sm text-soft">Average Attendance</div>
+                          <div className="text-sm text-slate-800 dark:text-slate-200">Average Attendance</div>
                         </div>
                       </>
                     )
@@ -590,9 +590,9 @@ export function GroupOverview({
                               </div>
                             </div>
                             <div className={`px-3 py-1 rounded text-sm font-medium ${
-                              attendancePercentage >= 80 ? 'bg-green-100 text-green-800' :
-                              attendancePercentage >= 60 ? 'bg-yellow-100 text-yellow-800' :
-                              'bg-red-100 text-red-800'
+                              attendancePercentage >= 80 ? 'bg-green-100 dark:bg-green-900/40 text-green-800 dark:text-green-200' :
+                              attendancePercentage >= 60 ? 'bg-yellow-100 dark:bg-yellow-900/40 text-yellow-800 dark:text-yellow-200' :
+                              'bg-red-100 dark:bg-red-900/40 text-red-800 dark:text-red-200'
                             }`}>
                               {attendancePercentage}%
                             </div>
@@ -604,9 +604,9 @@ export function GroupOverview({
                                 <div key={record.id} className="flex items-center justify-between surface-section-muted p-2 rounded">
                                   <span className="text-sm font-medium">{record.student_name}</span>
                                   <span className={`px-2 py-1 rounded text-xs font-medium ${
-                                    record.status === 'present' ? 'bg-green-100 text-green-800' :
-                                    record.status === 'late' ? 'bg-yellow-100 text-yellow-800' :
-                                    'bg-red-100 text-red-800'
+                                    record.status === 'present' ? 'bg-green-100 dark:bg-green-900/40 text-green-800 dark:text-green-200' :
+                                    record.status === 'late' ? 'bg-yellow-100 dark:bg-yellow-900/40 text-yellow-800 dark:text-yellow-200' :
+                                    'bg-red-100 dark:bg-red-900/40 text-red-800 dark:text-red-200'
                                   }`}>
                                     {record.status}
                                   </span>
@@ -649,7 +649,7 @@ export function GroupOverview({
             </div>
 
             {error && (
-              <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded mb-4">
+              <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 text-red-700 dark:text-red-200 px-4 py-3 rounded mb-4">
                 {error}
               </div>
             )}
@@ -675,7 +675,7 @@ export function GroupOverview({
 
                   return upcomingLessons.length > 0 && (
                     <div>
-                      <h4 className="text-md font-medium mb-3 text-green-600">Upcoming Lessons</h4>
+                      <h4 className="text-md font-medium mb-3 text-green-600 dark:text-green-400">Upcoming Lessons</h4>
                       <div className="space-y-2">
                         {upcomingLessons.map(lesson => {
                           const lessonDate = new Date(lesson.start_time)
@@ -683,13 +683,13 @@ export function GroupOverview({
                           const hasRecord = lessonRecords[lesson.id]
 
                           return (
-                            <div key={lesson.id} className="bg-green-50 dark:bg-green-900/20 border border-green-200 p-3 rounded-lg">
+                            <div key={lesson.id} className="surface-body p-3 rounded-lg border-l-4 border-l-green-500">
                               <div className="flex justify-between items-center">
                                 <div>
                                   <div className="font-medium">
                                     {lessonDate.toLocaleDateString('en-GB')} - {lessonDate.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })} to {endDate.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                                   </div>
-                                  <div className="text-sm text-soft">
+                                  <div className="text-sm text-slate-700 dark:text-slate-300">
                                     {hasRecord ? '✅ Has lesson record' : '⚠️ No lesson record yet'}
                                   </div>
                                 </div>
@@ -705,7 +705,7 @@ export function GroupOverview({
                                     onClick={() => toggleLessonCancellation(lesson.id, lesson.is_cancelled)}
                                     variant="outline"
                                     size="sm"
-                                    className="text-yellow-600 hover:text-yellow-700"
+                                    className="text-yellow-600 dark:text-yellow-400 hover:text-yellow-700 dark:hover:text-yellow-300"
                                   >
                                     Cancel
                                   </Button>
@@ -713,7 +713,7 @@ export function GroupOverview({
                                     onClick={() => deleteLesson(lesson.id)}
                                     variant="outline"
                                     size="sm"
-                                    className="text-red-600 hover:text-red-700"
+                                    className="text-red-600 dark:text-red-400 hover:text-red-700 dark:hover:text-red-300"
                                   >
                                     Delete
                                   </Button>
@@ -737,7 +737,7 @@ export function GroupOverview({
 
                   return pastLessons.length > 0 && (
                     <div>
-                      <h4 className="text-md font-medium mb-3 text-blue-600">Recent Lessons</h4>
+                      <h4 className="text-md font-medium mb-3 text-blue-600 dark:text-blue-400">Recent Lessons</h4>
                       <div className="space-y-2">
                         {pastLessons.map(lesson => {
                           const lessonDate = new Date(lesson.start_time)
@@ -748,17 +748,17 @@ export function GroupOverview({
                           return (
                             <div
                               key={lesson.id}
-                              className={`border p-3 rounded-lg ${
+                              className={`surface-body p-3 rounded-lg ${
                                 lesson.is_cancelled
-                                  ? 'bg-red-50 dark:bg-red-900/20 border-red-200 opacity-75'
-                                  : 'bg-blue-50 dark:bg-blue-900/20 border-blue-200'
+                                  ? 'border-l-4 border-l-red-500 opacity-75'
+                                  : 'border-l-4 border-l-blue-500'
                               }`}
                             >
                               <div className="flex justify-between items-start">
                                 <div className="flex-1">
                                   <div className={`font-medium ${lesson.is_cancelled ? 'line-through' : ''}`}>
                                     {lessonDate.toLocaleDateString('en-GB')} - {lessonDate.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })} to {endDate.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-                                    {lesson.is_cancelled && <span className="ml-2 text-red-600 text-sm">(Cancelled)</span>}
+                                    {lesson.is_cancelled && <span className="ml-2 text-red-600 dark:text-red-400 text-sm">(Cancelled)</span>}
                                   </div>
 
                                   {hasRecord && record && (
@@ -805,7 +805,7 @@ export function GroupOverview({
                                         onClick={() => toggleLessonCancellation(lesson.id, lesson.is_cancelled)}
                                         variant="outline"
                                         size="sm"
-                                        className="text-yellow-600 hover:text-yellow-700"
+                                        className="text-yellow-600 dark:text-yellow-400 hover:text-yellow-700 dark:hover:text-yellow-300"
                                       >
                                         Cancel
                                       </Button>
@@ -813,7 +813,7 @@ export function GroupOverview({
                                         onClick={() => deleteLesson(lesson.id)}
                                         variant="outline"
                                         size="sm"
-                                        className="text-red-600 hover:text-red-700"
+                                        className="text-red-600 dark:text-red-400 hover:text-red-700 dark:hover:text-red-300"
                                       >
                                         Delete
                                       </Button>
@@ -824,7 +824,7 @@ export function GroupOverview({
                                         onClick={() => toggleLessonCancellation(lesson.id, lesson.is_cancelled)}
                                         variant="outline"
                                         size="sm"
-                                        className="text-green-600 hover:text-green-700"
+                                        className="text-green-600 dark:text-green-400 hover:text-green-700 dark:hover:text-green-300"
                                       >
                                         Restore
                                       </Button>
@@ -832,7 +832,7 @@ export function GroupOverview({
                                         onClick={() => deleteLesson(lesson.id)}
                                         variant="outline"
                                         size="sm"
-                                        className="text-red-600 hover:text-red-700"
+                                        className="text-red-600 dark:text-red-400 hover:text-red-700 dark:hover:text-red-300"
                                       >
                                         Delete
                                       </Button>
@@ -888,7 +888,7 @@ export function GroupOverview({
                     <Button
                       onClick={deleteGroup}
                       variant="outline"
-                      className="text-red-600 hover:text-red-700"
+                      className="text-red-600 dark:text-red-400 hover:text-red-700 dark:hover:text-red-300"
                     >
                       Delete Group
                     </Button>
@@ -917,7 +917,7 @@ export function GroupOverview({
             </div>
 
             {error && (
-              <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded mb-4">
+              <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 text-red-700 dark:text-red-200 px-4 py-3 rounded mb-4">
                 {error}
               </div>
             )}
@@ -971,7 +971,7 @@ export function GroupOverview({
                       onClick={addTimeslot}
                       variant="outline"
                       size="sm"
-                      className="text-green-600 hover:text-green-700"
+                      className="text-green-600 dark:text-green-400 hover:text-green-700 dark:hover:text-green-300"
                     >
                       Add Timeslot
                     </Button>
@@ -1015,7 +1015,7 @@ export function GroupOverview({
                             onClick={() => removeTimeslot(index)}
                             variant="ghost"
                             size="sm"
-                            className="text-red-600 hover:text-red-700"
+                            className="text-red-600 dark:text-red-400 hover:text-red-700 dark:hover:text-red-300"
                           >
                             Remove
                           </Button>
@@ -1234,7 +1234,7 @@ export function GroupOverview({
                             </div>
 
                             {studentAttendance?.note && (
-                              <div className="surface-section-muted text-xs text-soft dark:text-slate-300 italic p-1">
+                              <div className="surface-section-muted text-xs text-soft italic p-1">
                                 {studentAttendance.note}
                               </div>
                             )}
