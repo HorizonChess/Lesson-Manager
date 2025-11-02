@@ -663,8 +663,60 @@ export function Lessons() {
     return acc
   }, {} as Record<string, NormalizedLesson[]>)
 
-  const goToPreviousWeek = () => setCurrentDate(moment(currentDate).subtract(1, 'week').toDate())
-  const goToNextWeek = () => setCurrentDate(moment(currentDate).add(1, 'week').toDate())
+  // Detect if we're in mobile mode to use half-week navigation
+  const [isMobileView, setIsMobileView] = useState(false)
+
+  useEffect(() => {
+    const checkMobile = () => {
+      setIsMobileView(window.innerWidth < 640)
+    }
+    checkMobile()
+    window.addEventListener('resize', checkMobile)
+    return () => window.removeEventListener('resize', checkMobile)
+  }, [])
+
+  const goToPreviousWeek = () => {
+    if (isMobileView) {
+      // Mobile half-week navigation
+      const firstVisibleDate = currentDate
+      const dayOfWeek = firstVisibleDate.getDay()
+      const isInSecondHalf = dayOfWeek >= 4
+      const weekStart = moment(firstVisibleDate).startOf('week').toDate()
+
+      if (isInSecondHalf) {
+        // From second half (Thu-Sat) go to first half of same week (Sun)
+        setCurrentDate(weekStart)
+      } else {
+        // From first half (Sun-Wed) go to second half of previous week (Thu)
+        setCurrentDate(moment(weekStart).subtract(3, 'days').toDate())
+      }
+    } else {
+      // Desktop full-week navigation
+      setCurrentDate(moment(currentDate).subtract(1, 'week').toDate())
+    }
+  }
+
+  const goToNextWeek = () => {
+    if (isMobileView) {
+      // Mobile half-week navigation
+      const firstVisibleDate = currentDate
+      const dayOfWeek = firstVisibleDate.getDay()
+      const isInSecondHalf = dayOfWeek >= 4
+      const weekStart = moment(firstVisibleDate).startOf('week').toDate()
+
+      if (isInSecondHalf) {
+        // From second half (Thu-Sat) go to first half of next week (Sun)
+        setCurrentDate(moment(weekStart).add(7, 'days').toDate())
+      } else {
+        // From first half (Sun-Wed) go to second half of same week (Thu)
+        setCurrentDate(moment(weekStart).add(4, 'days').toDate())
+      }
+    } else {
+      // Desktop full-week navigation
+      setCurrentDate(moment(currentDate).add(1, 'week').toDate())
+    }
+  }
+
   const goToToday = () => setCurrentDate(new Date())
 
   // Convert lessons to calendar events

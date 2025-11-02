@@ -86,25 +86,24 @@
 - `Groups.tsx` - ✅ **COMPLETE** (Previously fixed)
   - All text colors already have dark mode variants
   - 0 additional instances to fix
-- `Materials.tsx` - Needs count
-- `Dashboard.tsx` - Needs count
-- `Reports.tsx` - Needs count
+- `Materials.tsx` - ✅ **COMPLETE** (Previously fixed - 0 additional instances)
+- `Dashboard.tsx` - ✅ **COMPLETE** (Previously fixed - 0 additional instances)
+- `Reports.tsx` - ✅ **COMPLETE** (Previously fixed - 0 additional instances)
 
 ### Other Components (17 files)
 - `GroupOverview.tsx` - ✅ **COMPLETE** (Oct 30, 2025)
-  - **Status badges (2 instances)**: Attendance percentages and status labels
-    - Added `dark:bg-*-900/40` + `dark:text-*-200` for all status colors (green/yellow/red)
-  - **Section headings (3 instances)**: "Upcoming Lessons", "Recent Lessons", "(Cancelled)" label
-    - All now have `dark:text-*-400` variants
-  - **Button text colors (9 instances)**: Edit, Remove, Cancel, Delete, Restore, Add Timeslot
-    - Pattern: `text-*-600 dark:text-*-400 hover:text-*-700 dark:hover:text-*-300`
-  - **Error messages (4 instances)**: All error alerts
-    - Background: `dark:bg-red-900/20`
-    - Border: `dark:border-red-800`
-    - Text: `dark:text-red-200`
-  - **Student edit cancel button**: Uses semantic `text-soft` with hover states
-  - **Attendance note**: Removed redundant `dark:text-slate-300`, semantic class handles it
-  - **32+ instances** fixed with comprehensive dark mode support
+  - **CRITICAL GLOBAL FIX in themeSurfaces.css**: Fixed semantic class opacity for ALL app
+    - `.text-soft` light mode: `0.7` → **`0.88`** (88% opacity, nearly black instead of gray)
+    - `.text-soft-muted` light mode: `rgba(71, 85, 105, 0.6)` → **`rgba(51, 65, 85, 0.82)`** (darker, 82% opacity)
+    - Dark mode unchanged (was already correct)
+    - **Affects entire app globally** - all components using semantic text classes
+  - **Lesson cards**: Changed from solid colored backgrounds → `surface-body` (glass morphism)
+  - **Stat cards**: Changed from solid colors → `surface-section-muted` (glass morphism)
+  - **Status badges (2 instances)**: Added `dark:bg-*-900/40` + `dark:text-*-200`
+  - **Section headings (3 instances)**: Added `dark:text-*-400` variants
+  - **Button text colors (9 instances)**: Pattern `text-*-600 dark:text-*-400 hover:text-*-700 dark:hover:text-*-300`
+  - **Error messages (4 instances)**: Full dark mode support (bg/border/text)
+  - **35+ instances** fixed with proper glass morphism + semantic classes
 - Material components (4 files)
 - Schedule wizard components (3 files)
 - Other Group components (2 files remaining)
@@ -157,9 +156,11 @@ From `src/styles/themeSurfaces.css`:
 
 | Class | Light Mode | Dark Mode | Use Case |
 |-------|-----------|-----------|----------|
-| `text-soft` | `rgba(15, 23, 42, 0.7)` | `rgba(226, 232, 240, 0.72)` | Secondary text, labels |
-| `text-soft-muted` | `rgba(71, 85, 105, 0.6)` | `rgba(203, 213, 225, 0.55)` | Tertiary text, hints |
+| `text-soft` | `rgba(15, 23, 42, 0.88)` ✅ **FIXED Oct 30** | `rgba(226, 232, 240, 0.72)` | Secondary text, labels |
+| `text-soft-muted` | `rgba(51, 65, 85, 0.82)` ✅ **FIXED Oct 30** | `rgba(203, 213, 225, 0.55)` | Tertiary text, hints |
 | Default surface text | `rgba(15, 23, 42, 0.82)` | `rgba(226, 232, 240, 0.92)` | Primary text (inherited) |
+
+**Critical Fix (Oct 30, 2025)**: Increased light mode opacity for `text-soft` (70%→88%) and `text-soft-muted` (60%→82%) to fix gray text visibility across entire app.
 
 ## Fix Strategy
 
