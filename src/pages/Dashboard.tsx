@@ -4,13 +4,15 @@ import { Link } from 'react-router-dom'
 import { israeliCalendar } from '../services/israeliCalendar'
 import { ScheduleWizard } from '../components/ScheduleWizard'
 import { Button } from '../components/ui/button'
+import { QuickAttendanceModal } from '../components/dashboard/QuickAttendanceModal'
 import type { Task, Material } from '../types/database'
 import {
   fetchDashboardCounts,
   fetchLessonsBetween,
-  fetchLessonsForDay,
+  fetchTodayLessonsWithAttendance,
   fetchOpenTasks,
-  fetchRecentMaterials as fetchRecentMaterialsService
+  fetchRecentMaterials as fetchRecentMaterialsService,
+  type TodayLessonWithAttendance
 } from '../services/dashboard'
 
 interface DashboardStats {
@@ -23,17 +25,6 @@ interface DashboardStats {
   thisWeekLessons: number
 }
 
-interface TodayLesson {
-  id: string
-  start_time: string
-  end_time: string
-  group: {
-    name: string
-    school: { name: string }
-    subject: { name: string }
-  }
-  is_cancelled: boolean
-}
 
 export function Dashboard() {
   const { user } = useAuth()
@@ -48,9 +39,13 @@ export function Dashboard() {
     pendingTasks: 0,
     thisWeekLessons: 0
   })
-  const [todayLessons, setTodayLessons] = useState<TodayLesson[]>([])
+  const [todayLessons, setTodayLessons] = useState<TodayLessonWithAttendance[]>([])
   const [recentTasks, setRecentTasks] = useState<Task[]>([])
   const [recentMaterials, setRecentMaterials] = useState<Material[]>([])
+
+  // Quick attendance modal state
+  const [quickAttendanceOpen, setQuickAttendanceOpen] = useState(false)
+  const [selectedLessonForAttendance, setSelectedLessonForAttendance] = useState<TodayLessonWithAttendance | null>(null)
 
   // Calendar update prompt state
   const [calendarUpdateNeeded, setCalendarUpdateNeeded] = useState<{needsUpdate: boolean, missingYear: string}>({needsUpdate: false, missingYear: ''})
@@ -61,6 +56,7 @@ export function Dashboard() {
       fetchDashboardData()
     }
   }, [user])
+
 
   // Check for calendar update needs
   useEffect(() => {
@@ -129,19 +125,18 @@ export function Dashboard() {
     const endOfDay = new Date(startOfDay)
     endOfDay.setDate(startOfDay.getDate() + 1)
 
-    const lessons = await fetchLessonsForDay(startOfDay.toISOString(), endOfDay.toISOString())
+    const lessons = await fetchTodayLessonsWithAttendance(startOfDay.toISOString(), endOfDay.toISOString())
+    setTodayLessons(lessons)
+  }
 
-    setTodayLessons(lessons.map(lesson => ({
-      id: lesson.id,
-      start_time: lesson.start_time,
-      end_time: lesson.end_time,
-      is_cancelled: lesson.is_cancelled,
-      group: {
-        name: lesson.group_name,
-        school: { name: lesson.school_name },
-        subject: { name: lesson.subject_name }
-      }
-    })))
+  const handleOpenQuickAttendance = (lesson: TodayLessonWithAttendance) => {
+    setSelectedLessonForAttendance(lesson)
+    setQuickAttendanceOpen(true)
+  }
+
+  const handleAttendanceSuccess = async () => {
+    // Refresh today's lessons to show updated attendance data
+    await fetchTodayLessons()
   }
 
   const fetchRecentTasks = async () => {
@@ -256,26 +251,66 @@ ${templateJson}
             {todayLessons.map(lesson => (
               <div
                 key={lesson.id}
-                className={`flex items-center justify-between p-3 rounded border ${
+                className={`surface-body p-4 rounded-lg border ${
                   lesson.is_cancelled
-                    ? 'bg-red-50 dark:bg-red-900/20 border-red-200 dark:border-red-800 text-red-700 dark:text-red-300'
-                    : 'bg-blue-50 dark:bg-blue-900/20 border-blue-200 dark:border-blue-800 text-blue-700 dark:text-blue-300'
+                    ? 'border-red-200 dark:border-red-800'
+                    : lesson.has_attendance
+                    ? 'border-green-200 dark:border-green-800'
+                    : 'border-blue-200 dark:border-blue-800'
                 }`}
               >
-                <div>
-                  <div className="font-medium">
-                    {lesson.group.school.name} - {lesson.group.subject.name}
+                <div className="flex items-start justify-between gap-4 mb-3">
+                  <div className="flex-1 min-w-0">
+                    <div className="font-semibold text-base">
+                      {lesson.school_name} - {lesson.subject_name}
+                    </div>
+                    <div className="text-sm text-soft mt-0.5">{lesson.group_name}</div>
                   </div>
-                  <div className="text-sm">{lesson.group.name}</div>
-                </div>
-                <div className="text-right">
-                  <div className="font-medium">
-                    {formatTime(lesson.start_time)} - {formatTime(lesson.end_time)}
+                  <div className="text-right flex-shrink-0">
+                    <div className="font-medium text-sm">
+                      {formatTime(lesson.start_time)} - {formatTime(lesson.end_time)}
+                    </div>
+                    {lesson.is_cancelled ? (
+                      <div className="text-xs text-red-600 dark:text-red-400 mt-1">Cancelled</div>
+                    ) : lesson.has_attendance ? (
+                      <div className="text-xs text-green-600 dark:text-green-400 mt-1 font-medium">
+                        ✓ {lesson.attendance_count}/{lesson.roster_count} ({lesson.attendance_percentage}%)
+                      </div>
+                    ) : (
+                      <div className="text-xs text-soft-muted mt-1">No attendance yet</div>
+                    )}
                   </div>
-                  {lesson.is_cancelled && (
-                    <div className="text-xs text-red-600 dark:text-red-400">Cancelled</div>
-                  )}
                 </div>
+
+                {/* Action Buttons */}
+                {!lesson.is_cancelled && lesson.roster_count > 0 && (
+                  <div className="flex gap-2 pt-3 border-t border-white/10">
+                    <Button
+                      size="sm"
+                      onClick={() => handleOpenQuickAttendance(lesson)}
+                      className="flex-1 bg-green-600 hover:bg-green-700 text-white"
+                    >
+                      {lesson.has_attendance ? 'Update Attendance' : 'Mark Attendance'}
+                    </Button>
+                    <Link to="/lessons" className="flex-1">
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        className="w-full"
+                      >
+                        View Full Record
+                      </Button>
+                    </Link>
+                  </div>
+                )}
+
+                {!lesson.is_cancelled && lesson.roster_count === 0 && (
+                  <div className="pt-3 border-t border-white/10">
+                    <p className="text-xs text-soft-muted italic">
+                      No students in this group. Add students in School Overview.
+                    </p>
+                  </div>
+                )}
               </div>
             ))}
           </div>
@@ -416,6 +451,29 @@ ${templateJson}
             </div>
           )}
         </div>
+      )}
+
+      {/* Quick Attendance Modal */}
+      {selectedLessonForAttendance && (
+        <QuickAttendanceModal
+          isOpen={quickAttendanceOpen}
+          lessonId={selectedLessonForAttendance.id}
+          lessonTitle={`${selectedLessonForAttendance.school_name} - ${selectedLessonForAttendance.subject_name}`}
+          lessonDate={new Date(selectedLessonForAttendance.start_time).toLocaleDateString('en-GB', {
+            weekday: 'long',
+            year: 'numeric',
+            month: 'long',
+            day: 'numeric'
+          })}
+          lessonTime={`${formatTime(selectedLessonForAttendance.start_time)} - ${formatTime(selectedLessonForAttendance.end_time)}`}
+          roster={selectedLessonForAttendance.roster}
+          initialAttendance={selectedLessonForAttendance.attendance}
+          onClose={() => {
+            setQuickAttendanceOpen(false)
+            setSelectedLessonForAttendance(null)
+          }}
+          onSuccess={handleAttendanceSuccess}
+        />
       )}
     </div>
   )

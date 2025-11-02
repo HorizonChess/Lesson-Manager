@@ -112,7 +112,7 @@ Use these **theme-aware** classes instead of hardcoded gray/slate colors:
 
 **Audit Report**: See [`docs/text-color-audit.md`](text-color-audit.md) for current status of text color fixes (202 instances across 31 files).
 
-## Current Status (October 26, 2025)
+## Current Status (November 2, 2025)
 
 ### Project Health
 ✅ **MVP Complete & Production-Ready**
@@ -120,6 +120,7 @@ Use these **theme-aware** classes instead of hardcoded gray/slate colors:
 - Service layer architecture fully implemented and validated
 - Glass morphism UI with dark mode, animations, mobile-responsive
 - Performance optimized (80-95% improvements in Oct 26 update)
+- Mobile calendar navigation fully functional (Nov 2 fix)
 
 ### Code Statistics (Validated Oct 26, 2025)
 **Pages**: 8 files (1443-1455 lines each for Schools/Lessons)
@@ -151,6 +152,12 @@ Use these **theme-aware** classes instead of hardcoded gray/slate colors:
 - **Component extraction**: Complete ✅
 
 ### Recent Milestones
+- **Nov 2, 2025**: Mobile calendar navigation fix - Half-week navigation now works correctly
+  - **Problem**: Custom toolbar buttons in Lessons.tsx bypassed MobileWeekView.navigate(), always jumping full weeks (7 days) instead of half-weeks (3-4 days)
+  - **Root Cause**: `goToPreviousWeek()` and `goToNextWeek()` functions used full-week arithmetic regardless of screen size
+  - **Solution**: Added mobile view detection to navigation handlers, implemented half-week logic matching MobileWeekView.range()
+  - **Result**: Clicking "Next" from second half (Thu-Sat) now correctly shows first half of next week (Sun-Wed) ✅
+  - Files modified: [src/pages/Lessons.tsx](../src/pages/Lessons.tsx) (lines 666-720)
 - **Oct 26 (PM)**: Text color & visibility fixes - All lessons components dark/light mode compliant
   - Fixed 20+ hardcoded color instances across 6 lessons components
   - Global placeholder fix (themeSurfaces.css) - 85% opacity for better light mode visibility
