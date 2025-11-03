@@ -73,14 +73,14 @@ export function LessonsListView({
                   <div className="flex gap-1 flex-shrink-0">
                     <button
                       onClick={() => onOpenLessonRecord(lesson.id)}
-                      className="bg-indigo-600 hover:bg-indigo-700 dark:bg-indigo-500 dark:hover:bg-indigo-600 text-white p-1.5 rounded transition-all hover:scale-105 active:scale-95"
+                      className="bg-indigo-600 hover:bg-indigo-700 dark:bg-indigo-500 dark:hover:bg-indigo-600 text-white p-1.5 rounded transition-all hover:scale-105 active:scale-95 cursor-pointer"
                       title="View Lesson"
                     >
                       <Eye size={14} />
                     </button>
                     <button
                       onClick={() => onToggleLessonCancellation(lesson.id, lesson.is_cancelled)}
-                      className={`p-1.5 rounded transition-all hover:scale-105 active:scale-95 ${
+                      className={`p-1.5 rounded transition-all hover:scale-105 active:scale-95 cursor-pointer ${
                         lesson.is_cancelled
                           ? 'bg-emerald-600 hover:bg-emerald-700 dark:bg-emerald-500 dark:hover:bg-emerald-600 text-white'
                           : 'bg-amber-600 hover:bg-amber-700 dark:bg-amber-500 dark:hover:bg-amber-600 text-white'
@@ -91,7 +91,7 @@ export function LessonsListView({
                     </button>
                     <button
                       onClick={() => onDeleteLesson(lesson.id)}
-                      className="bg-rose-600 hover:bg-rose-700 dark:bg-rose-500 dark:hover:bg-rose-600 text-white p-1.5 rounded transition-all hover:scale-105 active:scale-95"
+                      className="bg-rose-600 hover:bg-rose-700 dark:bg-rose-500 dark:hover:bg-rose-600 text-white p-1.5 rounded transition-all hover:scale-105 active:scale-95 cursor-pointer"
                       title="Delete"
                     >
                       <Trash2 size={14} />

@@ -60,7 +60,7 @@ export function RecurringLessonsModal({
           <button
             type="button"
             onClick={onClose}
-            className="text-xl text-slate-600 dark:text-slate-300 transition-colors hover:text-slate-900 dark:hover:text-white hover:scale-110"
+            className="text-xl text-slate-600 dark:text-slate-300 transition-colors hover:text-slate-900 dark:hover:text-white hover:scale-110 cursor-pointer"
           >
             x
           </button>
@@ -119,7 +119,7 @@ export function RecurringLessonsModal({
                                   newEndTime: pattern.time.split('-')[1]
                                 })
                               }}
-                              className="rounded bg-blue-600 px-3 py-1 text-sm text-white hover:bg-blue-700"
+                              className="rounded bg-blue-600 px-3 py-1 text-sm text-white hover:bg-blue-700 cursor-pointer"
                             >
                               {formData.editingPatternId === pattern.id ? 'Cancel' : 'Edit'}
                             </button>
@@ -177,7 +177,7 @@ export function RecurringLessonsModal({
                                     })
                                     updateForm({ editingPatternId: '' })
                                   }}
-                                  className="rounded bg-green-600 px-3 py-1 text-sm text-white hover:bg-green-700"
+                                  className="rounded bg-green-600 px-3 py-1 text-sm text-white hover:bg-green-700 cursor-pointer"
                                 >
                                   Update All {pattern.lessonsCount} Lessons
                                 </button>
@@ -191,14 +191,14 @@ export function RecurringLessonsModal({
                                     await onDeletePattern(pattern)
                                     updateForm({ editingPatternId: '' })
                                   }}
-                                  className="rounded bg-red-600 px-3 py-1 text-sm text-white hover:bg-red-700"
+                                  className="rounded bg-red-600 px-3 py-1 text-sm text-white hover:bg-red-700 cursor-pointer"
                                 >
                                   Delete Pattern
                                 </button>
                                 <button
                                   type="button"
                                   onClick={() => updateForm({ editingPatternId: '' })}
-                                  className="surface-chip px-3 py-1 text-sm text-slate-700 dark:text-slate-200 hover:opacity-85"
+                                  className="surface-chip px-3 py-1 text-sm text-slate-700 dark:text-slate-200 hover:opacity-85 cursor-pointer"
                                 >
                                   Cancel
                                 </button>
@@ -215,7 +215,7 @@ export function RecurringLessonsModal({
                   <button
                     type="button"
                     onClick={() => onShowCreateFormChange(!showCreateForm)}
-                    className="w-full rounded bg-blue-600 px-3 py-2 text-sm font-medium text-white transition hover:bg-blue-700"
+                    className="w-full rounded bg-blue-600 px-3 py-2 text-sm font-medium text-white transition hover:bg-blue-700 cursor-pointer"
                   >
                     {showCreateForm ? 'Hide creation form' : 'Create new recurring lessons'}
                   </button>
@@ -234,7 +234,7 @@ export function RecurringLessonsModal({
                               key={option.value}
                               type="button"
                               onClick={() => updateForm({ template: option.value, weeks: option.weeks })}
-                              className={`rounded border px-3 py-2 transition ${
+                              className={`rounded border px-3 py-2 transition cursor-pointer ${
                                 formData.template === option.value
                                   ? 'border-green-500 bg-green-100 text-green-700'
                                   : 'border-transparent bg-white/30 hover:bg-white/50 dark:bg-white/5 dark:hover:bg-white/10'
@@ -300,14 +300,14 @@ export function RecurringLessonsModal({
                             onShowCreateFormChange(false)
                           }}
                           disabled={!formData.groupId}
-                          className="rounded bg-green-600 px-4 py-2 text-sm font-medium text-white transition hover:bg-green-700 disabled:cursor-not-allowed disabled:opacity-50"
+                          className="rounded bg-green-600 px-4 py-2 text-sm font-medium text-white transition hover:bg-green-700 disabled:cursor-not-allowed disabled:opacity-50 cursor-pointer"
                         >
                           Create {formData.weeks} Week{formData.weeks !== 1 ? 's' : ''}
                         </button>
                         <button
                           type="button"
                           onClick={() => onShowCreateFormChange(false)}
-                          className="surface-chip px-4 py-2 text-sm font-medium text-slate-700 dark:text-slate-200 hover:opacity-85"
+                          className="surface-chip px-4 py-2 text-sm font-medium text-slate-700 dark:text-slate-200 hover:opacity-85 cursor-pointer"
                         >
                           Cancel
                         </button>
@@ -324,7 +324,7 @@ export function RecurringLessonsModal({
           <button
             type="button"
             onClick={onClose}
-            className="surface-panel-strong px-6 py-2 text-sm font-semibold text-slate-800 dark:text-slate-100 hover:opacity-95 hover:scale-105 transition-all"
+            className="surface-panel-strong px-6 py-2 text-sm font-semibold text-slate-800 dark:text-slate-100 hover:opacity-95 hover:scale-105 transition-all cursor-pointer"
           >
             Close
           </button>

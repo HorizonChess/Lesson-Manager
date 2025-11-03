@@ -155,7 +155,8 @@ Use these **theme-aware** classes instead of hardcoded gray/slate colors:
 - **Component extraction**: Complete ✅
 
 ### Recent Milestones
-- **Nov 3, 2025**: Dashboard attendance marking & LessonsRecordModal refactor
+- **Nov 3, 2025 (PM)**: UI polish - Added `cursor-pointer` to all interactive elements across the app (buttons, links, tabs, report generation, schedule wizard, modals)
+- **Nov 3, 2025 (AM)**: Dashboard attendance marking & LessonsRecordModal refactor
   - **Problem**: Dashboard was read-only, required 3-4 clicks through Lessons page to mark attendance
   - **Root Cause**:
     1. Database table misnamed (`roster` instead of `roster_items`) causing 404 errors

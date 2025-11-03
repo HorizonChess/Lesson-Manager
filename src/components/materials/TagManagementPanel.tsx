@@ -53,7 +53,7 @@ export function TagManagementPanel({
         <button
           type="button"
           onClick={() => onToggleSection('tags-root')}
-          className="flex items-center gap-2 text-base font-medium text-gray-800 transition hover:text-blue-600 dark:text-gray-100"
+          className="flex items-center gap-2 text-base font-medium text-gray-800 transition hover:text-blue-600 dark:text-gray-100 cursor-pointer"
         >
           <span className="text-lg">{collapsedSections.has('tags-root') ? '+' : '-'}</span>
           Tags ({tags.length})
@@ -104,14 +104,14 @@ export function TagManagementPanel({
               <div className="flex gap-2">
                 <button
                   type="submit"
-                  className="rounded bg-green-600 px-4 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2"
+                  className="rounded bg-green-600 px-4 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2 cursor-pointer"
                 >
                   Add Tag
                 </button>
                 <button
                   type="button"
                   onClick={handleCancel}
-                  className="surface-chip text-sm font-medium px-4 py-2 transition hover:opacity-85"
+                  className="surface-chip text-sm font-medium px-4 py-2 transition hover:opacity-85 cursor-pointer"
                 >
                   Cancel
                 </button>
@@ -192,7 +192,7 @@ function TagSection({
       <button
         type="button"
         onClick={() => onToggle(sectionId)}
-        className="mb-2 flex items-center gap-2 text-sm font-medium text-gray-700 transition hover:text-blue-600 dark:text-gray-300"
+        className="mb-2 flex items-center gap-2 text-sm font-medium text-gray-700 transition hover:text-blue-600 dark:text-gray-300 cursor-pointer"
       >
         <span className="text-xs">{isCollapsed ? '+' : '-'}</span>
         {title}
@@ -209,7 +209,7 @@ function TagSection({
               <button
                 type="button"
                 onClick={() => onDeleteTag(tag.id)}
-                className="text-red-600 transition hover:text-red-800"
+                className="text-red-600 transition hover:text-red-800 cursor-pointer"
               >
                 Delete
               </button>

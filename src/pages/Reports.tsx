@@ -932,7 +932,7 @@ export function Reports() {
         <h2 className="text-2xl font-bold">Reports</h2>
         <button
           onClick={() => setShowWagesModal(true)}
-          className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+          className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors cursor-pointer"
         >
           Manage Wages
         </button>
@@ -1020,7 +1020,7 @@ export function Reports() {
           <button
             onClick={generateAttendanceReport}
             disabled={loading}
-            className="w-full bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700 disabled:opacity-50"
+            className="w-full bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700 disabled:opacity-50 cursor-pointer"
           >
             {loading ? 'Generating...' : 'Generate Report'}
           </button>
@@ -1032,7 +1032,7 @@ export function Reports() {
           <button
             onClick={generateHoursReport}
             disabled={loading}
-            className="w-full bg-orange-600 text-white px-4 py-2 rounded hover:bg-orange-700 disabled:opacity-50"
+            className="w-full bg-orange-600 text-white px-4 py-2 rounded hover:bg-orange-700 disabled:opacity-50 cursor-pointer"
           >
             {loading ? 'Generating...' : 'Generate Report'}
           </button>
@@ -1044,7 +1044,7 @@ export function Reports() {
           <button
             onClick={generateCoverageReport}
             disabled={loading}
-            className="w-full bg-purple-600 text-white px-4 py-2 rounded hover:bg-purple-700 disabled:opacity-50"
+            className="w-full bg-purple-600 text-white px-4 py-2 rounded hover:bg-purple-700 disabled:opacity-50 cursor-pointer"
           >
             {loading ? 'Generating...' : 'Generate Report'}
           </button>
@@ -1056,7 +1056,7 @@ export function Reports() {
           <button
             onClick={generateSalaryReport}
             disabled={loading}
-            className="w-full bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700 disabled:opacity-50"
+            className="w-full bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700 disabled:opacity-50 cursor-pointer"
           >
             {loading ? 'Generating...' : 'Generate Report'}
           </button>
@@ -1070,7 +1070,7 @@ export function Reports() {
             <h3 className="text-lg font-semibold">Attendance Report</h3>
             <button
               onClick={exportAttendanceToExcel}
-              className="px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700"
+              className="px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700 cursor-pointer"
             >
               Export to Excel
             </button>
@@ -1121,7 +1121,7 @@ export function Reports() {
             <h3 className="text-lg font-semibold">Hours Report</h3>
             <button
               onClick={exportHoursToExcel}
-              className="px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700"
+              className="px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700 cursor-pointer"
             >
               Export to Excel
             </button>
@@ -1158,7 +1158,7 @@ export function Reports() {
                       <td className="py-2 px-3 text-center">
                         <button
                           onClick={() => toggleRowExpansion(index)}
-                          className="text-blue-600 hover:text-blue-800 font-medium text-sm"
+                          className="text-blue-600 hover:text-blue-800 font-medium text-sm cursor-pointer"
                         >
                           {expandedRows.has(index) ? '▼ Hide' : '▶ Show'}
                         </button>
@@ -1200,7 +1200,7 @@ export function Reports() {
             <h3 className="text-lg font-semibold">Coverage Report</h3>
             <button
               onClick={exportCoverageToExcel}
-              className="px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700"
+              className="px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700 cursor-pointer"
             >
               Export to Excel
             </button>
@@ -1243,7 +1243,7 @@ export function Reports() {
             <h3 className="text-lg font-semibold">Expected Salary Report</h3>
             <button
               onClick={exportSalaryToExcel}
-              className="bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700"
+              className="bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700 cursor-pointer"
             >
               Export to Excel
             </button>

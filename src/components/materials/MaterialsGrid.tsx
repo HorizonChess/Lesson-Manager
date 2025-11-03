@@ -148,14 +148,14 @@ function MaterialCard({
             <button
               type="button"
               onClick={() => onSave(material.id)}
-              className="text-xs font-medium text-green-600 transition hover:text-green-700"
+              className="text-xs font-medium text-green-600 transition hover:text-green-700 cursor-pointer"
             >
               Save
             </button>
             <button
               type="button"
               onClick={onCancel}
-              className="text-xs font-medium text-gray-600 transition hover:text-gray-700"
+              className="text-xs font-medium text-gray-600 transition hover:text-gray-700 cursor-pointer"
             >
               Cancel
             </button>
@@ -169,14 +169,14 @@ function MaterialCard({
               <button
                 type="button"
                 onClick={() => onStartEdit(material)}
-                className="rounded px-2 py-1 text-xs font-medium text-blue-600 transition hover:bg-blue-50 hover:text-blue-700 dark:hover:bg-blue-900/40"
+                className="rounded px-2 py-1 text-xs font-medium text-blue-600 transition hover:bg-blue-50 hover:text-blue-700 dark:hover:bg-blue-900/40 cursor-pointer"
               >
                 Edit
               </button>
               <button
                 type="button"
                 onClick={() => onDelete(material.id)}
-                className="rounded px-2 py-1 text-xs font-medium text-red-600 transition hover:bg-red-50 hover:text-red-700 dark:hover:bg-red-900/40"
+                className="rounded px-2 py-1 text-xs font-medium text-red-600 transition hover:bg-red-50 hover:text-red-700 dark:hover:bg-red-900/40 cursor-pointer"
               >
                 Delete
               </button>
@@ -192,7 +192,7 @@ function MaterialCard({
               href={material.file_url}
               target="_blank"
               rel="noopener noreferrer"
-              className="inline-block break-all text-xs font-medium text-blue-600 hover:text-blue-700 dark:text-blue-300"
+              className="inline-block break-all text-xs font-medium text-blue-600 hover:text-blue-700 dark:text-blue-300 cursor-pointer"
             >
               View file
             </a>

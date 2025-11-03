@@ -306,7 +306,7 @@ export function SchoolConfigStep({ wizard }: SchoolConfigStepProps) {
                 onClick={() => updateSchool(draft => {
                   draft.customGroupDurations = [...defaultDistribution]
                 })}
-                className="text-blue-600 dark:text-blue-400 hover:underline"
+                className="text-blue-600 dark:text-blue-400 hover:underline cursor-pointer"
               >
                 Reset to smart defaults
               </button>

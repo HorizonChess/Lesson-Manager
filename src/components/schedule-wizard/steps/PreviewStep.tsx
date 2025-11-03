@@ -31,20 +31,20 @@ export function PreviewStep({ wizard }: PreviewStepProps) {
         <div className="flex items-center gap-2">
           <button
             onClick={() => setPreviewMode('summary')}
-            className={`surface-chip px-3 py-1 text-[11px] ${previewMode === 'summary' ? 'font-semibold' : 'opacity-70 hover:opacity-100'}`}
+            className={`surface-chip px-3 py-1 text-[11px] cursor-pointer ${previewMode === 'summary' ? 'font-semibold' : 'opacity-70 hover:opacity-100'}`}
           >
             Summary view
           </button>
           <button
             onClick={() => setPreviewMode('detailed')}
-            className={`surface-chip px-3 py-1 text-[11px] ${previewMode === 'detailed' ? 'font-semibold' : 'opacity-70 hover:opacity-100'}`}
+            className={`surface-chip px-3 py-1 text-[11px] cursor-pointer ${previewMode === 'detailed' ? 'font-semibold' : 'opacity-70 hover:opacity-100'}`}
           >
             Detailed view
           </button>
         </div>
         <button
           onClick={() => setPreviewMode(prev => (prev === 'summary' ? 'detailed' : 'summary'))}
-          className="text-blue-600 dark:text-blue-400 hover:underline"
+          className="text-blue-600 dark:text-blue-400 hover:underline cursor-pointer"
         >
           Toggle view
         </button>
@@ -59,7 +59,7 @@ export function PreviewStep({ wizard }: PreviewStepProps) {
             <div key={schoolIndex} className="surface-panel">
               <button
                 onClick={() => toggleSchoolPreview(schoolIndex)}
-                className="w-full px-4 py-3 flex justify-between items-center text-left"
+                className="w-full px-4 py-3 flex justify-between items-center text-left cursor-pointer"
               >
                 <div>
                   <div className="text-sm font-semibold text-gray-900 dark:text-white">
@@ -89,7 +89,7 @@ export function PreviewStep({ wizard }: PreviewStepProps) {
                     </span>
                     <button
                       onClick={() => goToSchoolConfig(schoolIndex)}
-                      className="text-blue-600 dark:text-blue-400 hover:underline"
+                      className="text-blue-600 dark:text-blue-400 hover:underline cursor-pointer"
                     >
                       Edit configuration
                     </button>

@@ -1084,7 +1084,7 @@ export function GroupOverview({
             <button
               key={tab.id}
               onClick={() => handleTabChange(tab.id)}
-              className={`py-4 px-1 border-b-2 font-medium text-sm whitespace-nowrap focus:outline-none focus:ring-2 focus:ring-blue-500 ${
+              className={`py-4 px-1 border-b-2 font-medium text-sm whitespace-nowrap focus:outline-none focus:ring-2 focus:ring-blue-500 cursor-pointer ${
                 currentActiveTab === tab.id
                   ? 'border-blue-500 text-blue-600 dark:text-blue-400'
                   : 'border-transparent text-soft-muted hover:text-soft hover:border-white/40 dark:text-slate-300 dark:hover:text-slate-100'

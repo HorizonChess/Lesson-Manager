@@ -23,7 +23,7 @@ export function ScheduleWizard() {
     <>
       <button
         onClick={openWizard}
-        className="bg-gradient-to-r from-purple-600 to-blue-600 text-white px-6 py-3 rounded-lg font-semibold shadow-lg hover:from-purple-700 hover:to-blue-700 transition-all duration-200 transform hover:scale-105"
+        className="bg-gradient-to-r from-purple-600 to-blue-600 text-white px-6 py-3 rounded-lg font-semibold shadow-lg hover:from-purple-700 hover:to-blue-700 transition-all duration-200 transform hover:scale-105 cursor-pointer"
       >
         <div className="flex items-center gap-2">
           <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -70,14 +70,14 @@ export function ScheduleWizard() {
             <div className="surface-toolbar flex justify-between items-center px-6 py-4 rounded-b-xl">
               <button
                 onClick={currentStep === 0 ? closeWizard : goToPreviousStep}
-                className="text-gray-600 dark:text-gray-400 hover:text-gray-800 dark:hover:text-gray-200"
+                className="text-gray-600 dark:text-gray-400 hover:text-gray-800 dark:hover:text-gray-200 cursor-pointer"
               >
                 {currentStep === 0 ? 'Cancel' : 'Back'}
               </button>
               {currentStep === wizardSteps.length - 1 ? (
                 <button
                   onClick={closeWizard}
-                  className="bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700"
+                  className="bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 cursor-pointer"
                 >
                   Done
                 </button>
@@ -85,7 +85,7 @@ export function ScheduleWizard() {
                 <button
                   onClick={goToNextStep}
                   disabled={!canProceed() || loading}
-                  className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+                  className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2 cursor-pointer"
                 >
                   {loading && (
                     <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white" />
