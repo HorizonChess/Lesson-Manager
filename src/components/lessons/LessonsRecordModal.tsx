@@ -13,28 +13,16 @@ interface LessonsRecordModalProps {
   lessons: NormalizedLesson[]
   lessonRecords: Record<string, LessonRecord>
   initialRecordData: LessonRecordData
-  lessonViewMode: 'simple' | 'advanced'
-  setLessonViewMode: Dispatch<SetStateAction<'simple' | 'advanced'>>
-  isEditingTime: boolean
-  setIsEditingTime: Dispatch<SetStateAction<boolean>>
-  editTimeData: EditTimeData
-  setEditTimeData: Dispatch<SetStateAction<EditTimeData>>
   previousLessonData: LessonRecord | null
   groupRoster: RosterItem[]
   attendance: Record<string, Attendance>
-  editingAttendanceNote: string | null
-  setEditingAttendanceNote: Dispatch<SetStateAction<string | null>>
-  attendanceNoteText: string
-  setAttendanceNoteText: Dispatch<SetStateAction<string>>
-  bulkAttendanceStatus: 'present' | 'absent' | 'late'
-  setBulkAttendanceStatus: Dispatch<SetStateAction<'present' | 'absent' | 'late'>>
   lessonMaterials: Record<string, Material[]>
   onClose: () => void
-  onUpdateLessonTime: () => Promise<void>
+  onUpdateLessonTime: (lessonId: string, date: string, startTime: string, endTime: string) => Promise<void>
   onSaveRecord: (data: LessonRecordData) => Promise<void>
   onMarkAllAttendance: (status: 'present' | 'absent' | 'late') => Promise<void>
   onUpdateStudentAttendance: (studentId: string, status: 'present' | 'absent' | 'late', note?: string) => Promise<void>
-  onSaveAttendanceNote: (studentId: string) => Promise<void>
+  onSaveAttendanceNote: (studentId: string, note: string) => Promise<void>
   onOpenMaterialSelector: (lessonRecordId: string) => void
   onRemoveMaterial: (lessonRecordId: string, materialId: string) => Promise<void>
 }
@@ -45,21 +33,9 @@ export function LessonsRecordModal({
   lessons,
   lessonRecords,
   initialRecordData,
-  lessonViewMode,
-  setLessonViewMode,
-  isEditingTime,
-  setIsEditingTime,
-  editTimeData,
-  setEditTimeData,
   previousLessonData,
   groupRoster,
   attendance,
-  editingAttendanceNote,
-  setEditingAttendanceNote,
-  attendanceNoteText,
-  setAttendanceNoteText,
-  bulkAttendanceStatus,
-  setBulkAttendanceStatus,
   lessonMaterials,
   onClose,
   onUpdateLessonTime,
@@ -72,6 +48,14 @@ export function LessonsRecordModal({
 }: LessonsRecordModalProps) {
   // Internal state for form data - prevents re-rendering parent on every keystroke
   const [localRecordData, setLocalRecordData] = useState<LessonRecordData>(initialRecordData)
+
+  // Internal UI state (no longer lifted to parent!)
+  const [lessonViewMode, setLessonViewMode] = useState<'simple' | 'advanced'>('simple')
+  const [isEditingTime, setIsEditingTime] = useState(false)
+  const [editTimeData, setEditTimeData] = useState<EditTimeData>({ date: '', startTime: '', endTime: '' })
+  const [editingAttendanceNote, setEditingAttendanceNote] = useState<string | null>(null)
+  const [attendanceNoteText, setAttendanceNoteText] = useState('')
+  const [bulkAttendanceStatus, setBulkAttendanceStatus] = useState<'present' | 'absent' | 'late'>('present')
 
   // Sync with initial data when modal opens or lesson changes
   useEffect(() => {
@@ -204,7 +188,12 @@ export function LessonsRecordModal({
               />
               <Button
                 size="sm"
-                onClick={onUpdateLessonTime}
+                onClick={async () => {
+                  if (openLessonRecord) {
+                    await onUpdateLessonTime(openLessonRecord, editTimeData.date, editTimeData.startTime, editTimeData.endTime)
+                    setIsEditingTime(false)
+                  }
+                }}
               >
                 Save
               </Button>
@@ -499,7 +488,11 @@ export function LessonsRecordModal({
                             />
                             <Button
                               size="sm"
-                              onClick={() => onSaveAttendanceNote(student.id)}
+                              onClick={async () => {
+                                await onSaveAttendanceNote(student.id, attendanceNoteText)
+                                setEditingAttendanceNote(null)
+                                setAttendanceNoteText('')
+                              }}
                             >
                               Save
                             </Button>

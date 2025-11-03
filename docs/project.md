@@ -69,6 +69,7 @@ Create a new component when:
 ### Migration Examples
 - **Before**: 800-line `Lessons.tsx` with embedded modals and direct Supabase calls
 - **After**: Clean `Lessons.tsx` orchestrator + extracted `LessonsRecordModal`, `RecurringLessonsModal` components using service layer
+- **Modal Refactor (Nov 3, 2025)**: `LessonsRecordModal` reduced from 40 props to 17 props by internalizing all UI state (view mode, time editing, attendance notes, bulk status). Result: Modal is now truly reusable across pages without complex state lifting.
 
 ### Text Color & Visibility Guidelines
 
@@ -112,7 +113,7 @@ Use these **theme-aware** classes instead of hardcoded gray/slate colors:
 
 **Audit Report**: See [`docs/text-color-audit.md`](text-color-audit.md) for current status of text color fixes (202 instances across 31 files).
 
-## Current Status (November 2, 2025)
+## Current Status (November 3, 2025)
 
 ### Project Health
 ✅ **MVP Complete & Production-Ready**
@@ -121,22 +122,24 @@ Use these **theme-aware** classes instead of hardcoded gray/slate colors:
 - Glass morphism UI with dark mode, animations, mobile-responsive
 - Performance optimized (80-95% improvements in Oct 26 update)
 - Mobile calendar navigation fully functional (Nov 2 fix)
+- Dashboard attendance marking workflow complete (Nov 3)
 
 ### Code Statistics (Validated Oct 26, 2025)
 **Pages**: 8 files (1443-1455 lines each for Schools/Lessons)
 - [Dashboard.tsx](src/pages/Dashboard.tsx), [Schools.tsx](src/pages/Schools.tsx), [Lessons.tsx](src/pages/Lessons.tsx), [Materials.tsx](src/pages/Materials.tsx), [Tasks.tsx](src/pages/Tasks.tsx), [Reports.tsx](src/pages/Reports.tsx), [Setup.tsx](src/pages/Setup.tsx), [Groups.tsx](src/pages/Groups.tsx)
 
-**Components**: 36 files organized by domain
+**Components**: 38 files organized by domain
 - `/ui` (8): Button, Input, Card, Badge, Select, Textarea, Switch, Label
-- `/lessons` (6): CalendarView, ListView, RecordModal (564 lines), RecurringModal, AddLessonModal, MaterialSelector
+- `/dashboard` (2): QuickAttendanceModal, SimpleLessonRecordModal (planned)
+- `/lessons` (6): CalendarView, ListView, RecordModal (refactored to 17 props), RecurringModal, AddLessonModal, MaterialSelector
 - `/materials` (4): Header, Grid, Filters, CreateForm, TagManagement
 - `/groups` (4): GroupOverview, SummaryCard, SummaryList, FilterBar
 - `/schedule-wizard` (3): ScheduleWizard, StepContent, steps/*
 - Modal.tsx, BackgroundPatternModal, ManageWagesModal, auth components
 
-**Services**: 15 files (full service layer coverage)
+**Services**: 16 files (full service layer coverage)
 - Page orchestrators: `lessonsPage.ts`, `materials.ts`, `groupsPage.ts`, `setupPage.ts`, `tasksPage.ts`, `dashboard.ts`
-- CRUD services: `schools.ts`, `subjects.ts`, `groups.ts`, `lessons.ts`, `lessonRecords.ts`, `roster.ts`
+- CRUD services: `schools.ts`, `subjects.ts`, `groups.ts`, `lessons.ts`, `lessonRecords.ts`, `roster.ts`, `attendance.ts` (NEW)
 - Mutations: `lessonsMutations.ts`
 - Utilities: `israeliCalendar.ts`, `groups.view.ts`
 
@@ -152,6 +155,30 @@ Use these **theme-aware** classes instead of hardcoded gray/slate colors:
 - **Component extraction**: Complete ✅
 
 ### Recent Milestones
+- **Nov 3, 2025**: Dashboard attendance marking & LessonsRecordModal refactor
+  - **Problem**: Dashboard was read-only, required 3-4 clicks through Lessons page to mark attendance
+  - **Root Cause**:
+    1. Database table misnamed (`roster` instead of `roster_items`) causing 404 errors
+    2. LessonsRecordModal had 40 props (13 were setState functions) - overly complex state lifting
+  - **Solution**:
+    1. Created attendance service layer (`src/services/attendance.ts`) with functions for marking, bulk operations
+    2. Enhanced dashboard service to fetch lessons with roster & attendance data in single query
+    3. **Refactored LessonsRecordModal** from 40 props → 17 props by internalizing all UI state
+    4. Created QuickAttendanceModal for fast attendance marking from Dashboard
+    5. Added full LessonsRecordModal access directly from Dashboard
+  - **Result**:
+    - Dashboard now shows attendance status at-a-glance (green border = marked, percentage display)
+    - "Mark Attendance" button opens quick modal (1 click instead of 3-4)
+    - "Full Record" button opens complete lesson record modal with all features
+    - Modal is now reusable across pages (no complex state lifting required)
+  - **Files Created**:
+    - [src/services/attendance.ts](../src/services/attendance.ts) (~230 lines)
+    - [src/components/dashboard/QuickAttendanceModal.tsx](../src/components/dashboard/QuickAttendanceModal.tsx) (~250 lines)
+  - **Files Modified**:
+    - [src/services/dashboard.ts](../src/services/dashboard.ts) - Added `fetchTodayLessonsWithAttendance()`
+    - [src/components/lessons/LessonsRecordModal.tsx](../src/components/lessons/LessonsRecordModal.tsx) - Internalized UI state
+    - [src/pages/Lessons.tsx](../src/pages/Lessons.tsx) - Updated to use simplified modal interface
+    - [src/pages/Dashboard.tsx](../src/pages/Dashboard.tsx) - Added both modals with full functionality
 - **Nov 2, 2025**: Mobile calendar navigation fix - Half-week navigation now works correctly
   - **Problem**: Custom toolbar buttons in Lessons.tsx bypassed MobileWeekView.navigate(), always jumping full weeks (7 days) instead of half-weeks (3-4 days)
   - **Root Cause**: `goToPreviousWeek()` and `goToNextWeek()` functions used full-week arithmetic regardless of screen size

@@ -1,11 +1,14 @@
 import { useAuth } from '../contexts/AuthContext'
 import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
+import moment from 'moment'
 import { israeliCalendar } from '../services/israeliCalendar'
 import { ScheduleWizard } from '../components/ScheduleWizard'
 import { Button } from '../components/ui/button'
 import { QuickAttendanceModal } from '../components/dashboard/QuickAttendanceModal'
-import type { Task, Material } from '../types/database'
+import { LessonsRecordModal } from '../components/lessons/LessonsRecordModal'
+import type { Task, Material, LessonRecord } from '../types/database'
+import type { NormalizedLesson } from '../services/lessonsPage'
 import {
   fetchDashboardCounts,
   fetchLessonsBetween,
@@ -14,6 +17,8 @@ import {
   fetchRecentMaterials as fetchRecentMaterialsService,
   type TodayLessonWithAttendance
 } from '../services/dashboard'
+import { updateLessonRecord, upsertAttendance, replaceAttendance } from '../services/lessonsMutations'
+import { supabase } from '../lib/supabase'
 
 interface DashboardStats {
   schools: number
@@ -46,6 +51,10 @@ export function Dashboard() {
   // Quick attendance modal state
   const [quickAttendanceOpen, setQuickAttendanceOpen] = useState(false)
   const [selectedLessonForAttendance, setSelectedLessonForAttendance] = useState<TodayLessonWithAttendance | null>(null)
+
+  // Full lesson record modal state
+  const [fullRecordOpen, setFullRecordOpen] = useState(false)
+  const [selectedLessonForFullRecord, setSelectedLessonForFullRecord] = useState<TodayLessonWithAttendance | null>(null)
 
   // Calendar update prompt state
   const [calendarUpdateNeeded, setCalendarUpdateNeeded] = useState<{needsUpdate: boolean, missingYear: string}>({needsUpdate: false, missingYear: ''})
@@ -132,6 +141,11 @@ export function Dashboard() {
   const handleOpenQuickAttendance = (lesson: TodayLessonWithAttendance) => {
     setSelectedLessonForAttendance(lesson)
     setQuickAttendanceOpen(true)
+  }
+
+  const handleOpenFullRecord = (lesson: TodayLessonWithAttendance) => {
+    setSelectedLessonForFullRecord(lesson)
+    setFullRecordOpen(true)
   }
 
   const handleAttendanceSuccess = async () => {
@@ -283,32 +297,28 @@ ${templateJson}
                 </div>
 
                 {/* Action Buttons */}
-                {!lesson.is_cancelled && lesson.roster_count > 0 && (
+                {!lesson.is_cancelled && (
                   <div className="flex gap-2 pt-3 border-t border-white/10">
                     <Button
                       size="sm"
                       onClick={() => handleOpenQuickAttendance(lesson)}
                       className="flex-1 bg-green-600 hover:bg-green-700 text-white"
+                      disabled={lesson.roster_count === 0}
                     >
-                      {lesson.has_attendance ? 'Update Attendance' : 'Mark Attendance'}
+                      {lesson.roster_count === 0
+                        ? 'No Students'
+                        : lesson.has_attendance
+                        ? 'Update Attendance'
+                        : 'Mark Attendance'}
                     </Button>
-                    <Link to="/lessons" className="flex-1">
-                      <Button
-                        size="sm"
-                        variant="outline"
-                        className="w-full"
-                      >
-                        View Full Record
-                      </Button>
-                    </Link>
-                  </div>
-                )}
-
-                {!lesson.is_cancelled && lesson.roster_count === 0 && (
-                  <div className="pt-3 border-t border-white/10">
-                    <p className="text-xs text-soft-muted italic">
-                      No students in this group. Add students in School Overview.
-                    </p>
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={() => handleOpenFullRecord(lesson)}
+                      className="flex-1"
+                    >
+                      Full Record
+                    </Button>
                   </div>
                 )}
               </div>
@@ -473,6 +483,132 @@ ${templateJson}
             setSelectedLessonForAttendance(null)
           }}
           onSuccess={handleAttendanceSuccess}
+        />
+      )}
+
+      {/* Full Lesson Record Modal */}
+      {selectedLessonForFullRecord && (
+        <LessonsRecordModal
+          isOpen={fullRecordOpen}
+          openLessonRecord={selectedLessonForFullRecord.id}
+          lessons={[{
+            id: selectedLessonForFullRecord.id,
+            start_time: selectedLessonForFullRecord.start_time,
+            end_time: selectedLessonForFullRecord.end_time,
+            is_cancelled: selectedLessonForFullRecord.is_cancelled,
+            group_id: selectedLessonForFullRecord.group_id,
+            group: {
+              name: selectedLessonForFullRecord.group_name,
+              school: { name: selectedLessonForFullRecord.school_name },
+              subject: { name: selectedLessonForFullRecord.subject_name }
+            }
+          } as NormalizedLesson]}
+          lessonRecords={selectedLessonForFullRecord.lesson_record_id ? {
+            [selectedLessonForFullRecord.id]: {
+              id: selectedLessonForFullRecord.lesson_record_id,
+              lesson_id: selectedLessonForFullRecord.id,
+              covered: '',
+              planned: '',
+              homework: '',
+              notes: '',
+              created_at: '',
+              updated_at: ''
+            }
+          } : {}}
+          initialRecordData={{
+            covered: '',
+            planned: '',
+            homework: '',
+            notes: ''
+          }}
+          previousLessonData={null}
+          groupRoster={selectedLessonForFullRecord.roster}
+          attendance={selectedLessonForFullRecord.attendance}
+          lessonMaterials={{}}
+          onClose={() => {
+            setFullRecordOpen(false)
+            setSelectedLessonForFullRecord(null)
+          }}
+          onUpdateLessonTime={async (lessonId, date, startTime, endTime) => {
+            const newStartDateTime = moment(`${date} ${startTime}`)
+            const newEndDateTime = moment(`${date} ${endTime}`)
+
+            if (!newStartDateTime.isValid() || !newEndDateTime.isValid()) {
+              alert('Invalid date or time format')
+              return
+            }
+
+            if (newEndDateTime.isBefore(newStartDateTime)) {
+              alert('End time must be after start time')
+              return
+            }
+
+            const { error } = await supabase
+              .from('lessons')
+              .update({
+                start_time: newStartDateTime.toISOString(),
+                end_time: newEndDateTime.toISOString()
+              })
+              .eq('id', lessonId)
+
+            if (error) throw error
+
+            await fetchTodayLessons()
+            alert('Lesson time updated successfully!')
+          }}
+          onSaveRecord={async (data) => {
+            if (!selectedLessonForFullRecord.id) return
+
+            await updateLessonRecord({
+              lessonId: selectedLessonForFullRecord.id,
+              ...data
+            })
+
+            await fetchTodayLessons()
+          }}
+          onMarkAllAttendance={async (status) => {
+            if (!selectedLessonForFullRecord.lesson_record_id) return
+
+            await replaceAttendance({
+              lessonRecordId: selectedLessonForFullRecord.lesson_record_id,
+              records: selectedLessonForFullRecord.roster.map(student => ({
+                rosterItemId: student.id,
+                status,
+                note: null
+              }))
+            })
+
+            await fetchTodayLessons()
+          }}
+          onUpdateStudentAttendance={async (studentId, status, note) => {
+            if (!selectedLessonForFullRecord.lesson_record_id) return
+
+            await upsertAttendance({
+              lessonRecordId: selectedLessonForFullRecord.lesson_record_id,
+              rosterItemId: studentId,
+              status,
+              note: note || null
+            })
+
+            await fetchTodayLessons()
+          }}
+          onSaveAttendanceNote={async (studentId, note) => {
+            if (!selectedLessonForFullRecord.lesson_record_id) return
+
+            const existingAttendance = selectedLessonForFullRecord.attendance[studentId]
+            const currentStatus = existingAttendance?.status || 'present'
+
+            await upsertAttendance({
+              lessonRecordId: selectedLessonForFullRecord.lesson_record_id,
+              rosterItemId: studentId,
+              status: currentStatus,
+              note: note || null
+            })
+
+            await fetchTodayLessons()
+          }}
+          onOpenMaterialSelector={() => {}}
+          onRemoveMaterial={async () => {}}
         />
       )}
     </div>

@@ -112,22 +112,10 @@ export function Lessons() {
     notes: ''
   })
 
-  // Time editing states
-  const [isEditingTime, setIsEditingTime] = useState(false)
-  const [editTimeData, setEditTimeData] = useState<EditTimeData>({
-    date: '',
-    startTime: '',
-    endTime: ''
-  })
-  const [lessonViewMode, setLessonViewMode] = useState<'simple' | 'advanced'>('simple')
+  // Advanced modal data states (still needed by Lessons.tsx logic)
   const [previousLessonData, setPreviousLessonData] = useState<LessonRecord | null>(null)
-
-  // Attendance states
   const [groupRoster, setGroupRoster] = useState<RosterItem[]>([])
   const [attendance, setAttendance] = useState<Record<string, Attendance>>({})
-  const [bulkAttendanceStatus, setBulkAttendanceStatus] = useState<'present' | 'absent' | 'late'>('present')
-  const [editingAttendanceNote, setEditingAttendanceNote] = useState<string | null>(null)
-  const [attendanceNoteText, setAttendanceNoteText] = useState('')
 
   // Materials states
   const [materials, setMaterials] = useState<Material[]>([])
@@ -372,13 +360,10 @@ export function Lessons() {
       // 1. Check if we already have the record in memory
       const existingRecord = lessonRecords[lessonId]
 
-      const isMobile = window.innerWidth < 768
-
       console.timeEnd('⏱️ Step 1: Find lesson + prepare data')
       console.time('⏱️ Step 2: Set state to open modal')
 
       // 2. Open modal IMMEDIATELY with cached data or empty fields (no blocking!)
-      setLessonViewMode(isMobile ? 'simple' : 'advanced')
       setRecordData({
         covered: existingRecord?.covered || '',
         planned: existingRecord?.planned || '',
@@ -542,34 +527,6 @@ export function Lessons() {
     }
   }
 
-  const saveAttendanceNote = async (studentId: string) => {
-    if (!openLessonRecord) return
-
-    const currentRecord = lessonRecords[openLessonRecord]
-    if (!currentRecord) return
-
-    try {
-      const existingAttendance = attendance[studentId]
-      const currentStatus = existingAttendance?.status || 'present'
-
-      const updated = await upsertAttendance({
-        lessonRecordId: currentRecord.id,
-        rosterItemId: studentId,
-        status: currentStatus,
-        note: attendanceNoteText || null
-      })
-
-      setAttendance({
-        ...attendance,
-        [studentId]: updated as Attendance
-      })
-
-      setEditingAttendanceNote(null)
-      setAttendanceNoteText('')
-    } catch (err: any) {
-      setError(err.message)
-    }
-  }
 
   // Materials functions
   const openMaterialSelector = (lessonRecordId: string) => {
@@ -958,54 +915,6 @@ export function Lessons() {
   }
 
 
-  // Update lesson time manually from modal
-  const updateLessonTime = async () => {
-    if (!openLessonRecord) return
-
-    try {
-      const lesson = lessons.find(l => l.id === openLessonRecord)
-      if (!lesson) return
-
-      // Parse the edited date and times
-      const newStartDateTime = moment(`${editTimeData.date} ${editTimeData.startTime}`)
-      const newEndDateTime = moment(`${editTimeData.date} ${editTimeData.endTime}`)
-
-      // Validate times
-      if (!newStartDateTime.isValid() || !newEndDateTime.isValid()) {
-        alert('Invalid date or time format')
-        return
-      }
-
-      if (newEndDateTime.isBefore(newStartDateTime)) {
-        alert('End time must be after start time')
-        return
-      }
-
-      // Update in database
-      const { error } = await supabase
-        .from('lessons')
-        .update({
-          start_time: newStartDateTime.toISOString(),
-          end_time: newEndDateTime.toISOString()
-        })
-        .eq('id', openLessonRecord)
-
-      if (error) throw error
-
-      // Update local state
-      setLessons(prev => prev.map(l =>
-        l.id === openLessonRecord
-          ? { ...l, start_time: newStartDateTime.toISOString(), end_time: newEndDateTime.toISOString() }
-          : l
-      ))
-
-      setIsEditingTime(false)
-      alert('Lesson time updated successfully!')
-    } catch (error) {
-      console.error('Error updating lesson time:', error)
-      alert('Failed to update lesson time')
-    }
-  }
 
   const moveLessonToNewTime = async (lessonId: string, newStartTime: Date, newEndTime: Date) => {
     try {
@@ -1436,21 +1345,9 @@ export function Lessons() {
         lessons={lessons}
         lessonRecords={lessonRecords}
         initialRecordData={recordData}
-        lessonViewMode={lessonViewMode}
-        setLessonViewMode={setLessonViewMode}
-        isEditingTime={isEditingTime}
-        setIsEditingTime={setIsEditingTime}
-        editTimeData={editTimeData}
-        setEditTimeData={setEditTimeData}
         previousLessonData={previousLessonData}
         groupRoster={groupRoster}
         attendance={attendance}
-        editingAttendanceNote={editingAttendanceNote}
-        setEditingAttendanceNote={setEditingAttendanceNote}
-        attendanceNoteText={attendanceNoteText}
-        setAttendanceNoteText={setAttendanceNoteText}
-        bulkAttendanceStatus={bulkAttendanceStatus}
-        setBulkAttendanceStatus={setBulkAttendanceStatus}
         lessonMaterials={lessonMaterials}
         onClose={() => {
           setOpenLessonRecord(null)
@@ -1459,14 +1356,45 @@ export function Lessons() {
           setPreviousLessonData(null)
           setGroupRoster([])
           setAttendance({})
-          setEditingAttendanceNote(null)
-          setAttendanceNoteText('')
           setShowMaterialSelector(false)
           setSelectedMaterials([])
-          setIsEditingTime(false)
-          setEditTimeData({ date: '', startTime: '', endTime: '' })
         }}
-        onUpdateLessonTime={updateLessonTime}
+        onUpdateLessonTime={async (lessonId, date, startTime, endTime) => {
+          // Parse the edited date and times
+          const newStartDateTime = moment(`${date} ${startTime}`)
+          const newEndDateTime = moment(`${date} ${endTime}`)
+
+          // Validate times
+          if (!newStartDateTime.isValid() || !newEndDateTime.isValid()) {
+            alert('Invalid date or time format')
+            return
+          }
+
+          if (newEndDateTime.isBefore(newStartDateTime)) {
+            alert('End time must be after start time')
+            return
+          }
+
+          // Update in database
+          const { error } = await supabase
+            .from('lessons')
+            .update({
+              start_time: newStartDateTime.toISOString(),
+              end_time: newEndDateTime.toISOString()
+            })
+            .eq('id', lessonId)
+
+          if (error) throw error
+
+          // Update local state
+          setLessons(prev => prev.map(l =>
+            l.id === lessonId
+              ? { ...l, start_time: newStartDateTime.toISOString(), end_time: newEndDateTime.toISOString() }
+              : l
+          ))
+
+          alert('Lesson time updated successfully!')
+        }}
         onSaveRecord={async (data) => {
           if (!openLessonRecord) return
 
@@ -1486,7 +1414,27 @@ export function Lessons() {
         }}
         onMarkAllAttendance={markAllAttendance}
         onUpdateStudentAttendance={updateStudentAttendance}
-        onSaveAttendanceNote={saveAttendanceNote}
+        onSaveAttendanceNote={async (studentId, note) => {
+          if (!openLessonRecord) return
+
+          const currentRecord = lessonRecords[openLessonRecord]
+          if (!currentRecord) return
+
+          const existingAttendance = attendance[studentId]
+          const currentStatus = existingAttendance?.status || 'present'
+
+          const updated = await upsertAttendance({
+            lessonRecordId: currentRecord.id,
+            rosterItemId: studentId,
+            status: currentStatus,
+            note: note || null
+          })
+
+          setAttendance({
+            ...attendance,
+            [studentId]: updated as Attendance
+          })
+        }}
         onOpenMaterialSelector={openMaterialSelector}
         onRemoveMaterial={removeMaterial}
       />
