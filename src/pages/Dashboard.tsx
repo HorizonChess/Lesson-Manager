@@ -7,6 +7,7 @@ import { ScheduleWizard } from '../components/ScheduleWizard'
 import { Button } from '../components/ui/button'
 import { QuickAttendanceModal } from '../components/dashboard/QuickAttendanceModal'
 import { LessonsRecordModal } from '../components/lessons/LessonsRecordModal'
+import { LessonMaterialSelector } from '../components/lessons/LessonMaterialSelector'
 import type { Task, Material, LessonRecord } from '../types/database'
 import type { NormalizedLesson } from '../services/lessonsPage'
 import {
@@ -47,6 +48,8 @@ export function Dashboard() {
   const [todayLessons, setTodayLessons] = useState<TodayLessonWithAttendance[]>([])
   const [recentTasks, setRecentTasks] = useState<Task[]>([])
   const [recentMaterials, setRecentMaterials] = useState<Material[]>([])
+  const [allMaterials, setAllMaterials] = useState<Material[]>([])
+  const [lessonMaterials, setLessonMaterials] = useState<Record<string, Material[]>>({})
 
   // Quick attendance modal state
   const [quickAttendanceOpen, setQuickAttendanceOpen] = useState(false)
@@ -55,6 +58,10 @@ export function Dashboard() {
   // Full lesson record modal state
   const [fullRecordOpen, setFullRecordOpen] = useState(false)
   const [selectedLessonForFullRecord, setSelectedLessonForFullRecord] = useState<TodayLessonWithAttendance | null>(null)
+
+  // Material selector modal state
+  const [showMaterialSelector, setShowMaterialSelector] = useState(false)
+  const [selectedMaterials, setSelectedMaterials] = useState<string[]>([])
 
   // Calendar update prompt state
   const [calendarUpdateNeeded, setCalendarUpdateNeeded] = useState<{needsUpdate: boolean, missingYear: string}>({needsUpdate: false, missingYear: ''})
@@ -85,7 +92,8 @@ export function Dashboard() {
         fetchStats(),
         fetchTodayLessons(),
         fetchRecentTasks(),
-        fetchRecentMaterials()
+        fetchRecentMaterials(),
+        fetchAllMaterials()
       ])
     } catch (err: any) {
       setError(err.message)
@@ -143,9 +151,29 @@ export function Dashboard() {
     setQuickAttendanceOpen(true)
   }
 
-  const handleOpenFullRecord = (lesson: TodayLessonWithAttendance) => {
+  const handleOpenFullRecord = async (lesson: TodayLessonWithAttendance) => {
     setSelectedLessonForFullRecord(lesson)
     setFullRecordOpen(true)
+
+    // Fetch materials for this lesson if it has a lesson record
+    if (lesson.lesson_record_id) {
+      const { data } = await supabase
+        .from('lesson_materials')
+        .select(`
+          material_id,
+          materials (*)
+        `)
+        .eq('lesson_record_id', lesson.lesson_record_id)
+
+      const materials = (data || [])
+        .filter((item: any) => item.materials)
+        .map((item: any) => item.materials as Material)
+
+      setLessonMaterials(prev => ({
+        ...prev,
+        [lesson.lesson_record_id!]: materials  // Use lesson_record_id as key, not lesson.id
+      }))
+    }
   }
 
   const handleAttendanceSuccess = async () => {
@@ -161,6 +189,56 @@ export function Dashboard() {
   const fetchRecentMaterials = async () => {
     const materials = await fetchRecentMaterialsService(3)
     setRecentMaterials(materials)
+  }
+
+  const fetchAllMaterials = async () => {
+    if (!user) return
+
+    const { data, error } = await supabase
+      .from('materials')
+      .select('*')
+      .eq('user_id', user.id)
+      .order('created_at', { ascending: false })
+
+    if (error) throw error
+    setAllMaterials(data || [])
+  }
+
+  const openMaterialSelector = async (lessonRecordId: string) => {
+    // Fetch materials for this lesson record
+    const { data } = await supabase
+      .from('lesson_materials')
+      .select(`
+        material_id,
+        materials (*)
+      `)
+      .eq('lesson_record_id', lessonRecordId)
+
+    const currentMaterials = (data || [])
+      .filter((item: any) => item.materials)
+      .map((item: any) => item.materials as Material)
+
+    setSelectedMaterials(currentMaterials.map(m => m.id))
+    setShowMaterialSelector(true)
+  }
+
+  const removeMaterial = async (lessonRecordId: string, materialId: string) => {
+    const { error } = await supabase
+      .from('lesson_materials')
+      .delete()
+      .eq('lesson_record_id', lessonRecordId)
+      .eq('material_id', materialId)
+
+    if (error) throw error
+
+    // Update local state - lessonRecordId is already the correct key
+    setLessonMaterials(prev => {
+      const updated = { ...prev }
+      if (updated[lessonRecordId]) {
+        updated[lessonRecordId] = updated[lessonRecordId].filter(m => m.id !== materialId)
+      }
+      return updated
+    })
   }
 
   if (loading) {
@@ -507,24 +585,24 @@ ${templateJson}
             [selectedLessonForFullRecord.id]: {
               id: selectedLessonForFullRecord.lesson_record_id,
               lesson_id: selectedLessonForFullRecord.id,
-              covered: '',
-              planned: '',
-              homework: '',
-              notes: '',
+              covered: selectedLessonForFullRecord.lesson_record_covered || '',
+              planned: selectedLessonForFullRecord.lesson_record_planned || '',
+              homework: selectedLessonForFullRecord.lesson_record_homework || '',
+              notes: selectedLessonForFullRecord.lesson_record_notes || '',
               created_at: '',
               updated_at: ''
             }
           } : {}}
           initialRecordData={{
-            covered: '',
-            planned: '',
-            homework: '',
-            notes: ''
+            covered: selectedLessonForFullRecord.lesson_record_covered || '',
+            planned: selectedLessonForFullRecord.lesson_record_planned || '',
+            homework: selectedLessonForFullRecord.lesson_record_homework || '',
+            notes: selectedLessonForFullRecord.lesson_record_notes || ''
           }}
           previousLessonData={null}
           groupRoster={selectedLessonForFullRecord.roster}
           attendance={selectedLessonForFullRecord.attendance}
-          lessonMaterials={{}}
+          lessonMaterials={lessonMaterials}
           onClose={() => {
             setFullRecordOpen(false)
             setSelectedLessonForFullRecord(null)
@@ -561,7 +639,19 @@ ${templateJson}
 
             await updateLessonRecord({
               lessonId: selectedLessonForFullRecord.id,
-              ...data
+              covered: data.covered,
+              planned: data.planned,
+              homework: data.homework,
+              notes: data.notes
+            })
+
+            // Update the selected lesson with the saved data to prevent modal from reverting
+            setSelectedLessonForFullRecord({
+              ...selectedLessonForFullRecord,
+              lesson_record_covered: data.covered,
+              lesson_record_planned: data.planned,
+              lesson_record_homework: data.homework,
+              lesson_record_notes: data.notes
             })
 
             await fetchTodayLessons()
@@ -607,10 +697,64 @@ ${templateJson}
 
             await fetchTodayLessons()
           }}
-          onOpenMaterialSelector={() => {}}
-          onRemoveMaterial={async () => {}}
+          onOpenMaterialSelector={openMaterialSelector}
+          onRemoveMaterial={removeMaterial}
         />
       )}
+
+      {/* Material Selector Modal */}
+      <LessonMaterialSelector
+        isOpen={showMaterialSelector}
+        materials={allMaterials}
+        selectedMaterialIds={selectedMaterials}
+        onClose={() => {
+          setShowMaterialSelector(false)
+          setSelectedMaterials([])
+        }}
+        onAttach={async (materialIds) => {
+          if (!selectedLessonForFullRecord?.lesson_record_id) return
+
+          const lessonRecordId = selectedLessonForFullRecord.lesson_record_id
+
+          // Remove all existing materials
+          await supabase
+            .from('lesson_materials')
+            .delete()
+            .eq('lesson_record_id', lessonRecordId)
+
+          // Add new materials
+          if (materialIds.length > 0) {
+            const insertData = materialIds.map(materialId => ({
+              lesson_record_id: lessonRecordId,
+              material_id: materialId
+            }))
+
+            await supabase
+              .from('lesson_materials')
+              .insert(insertData)
+          }
+
+          // Update local state
+          const { data } = await supabase
+            .from('lesson_materials')
+            .select(`
+              material_id,
+              materials (*)
+            `)
+            .eq('lesson_record_id', lessonRecordId)
+
+          const materials = (data || [])
+            .filter((item: any) => item.materials)
+            .map((item: any) => item.materials as Material)
+
+          setLessonMaterials(prev => ({
+            ...prev,
+            [lessonRecordId]: materials  // Use lessonRecordId, not selectedLessonForFullRecord.id
+          }))
+
+          setShowMaterialSelector(false)
+        }}
+      />
     </div>
   )
 }

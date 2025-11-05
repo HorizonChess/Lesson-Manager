@@ -67,6 +67,10 @@ export interface LessonWithGroup {
 export interface TodayLessonWithAttendance extends LessonWithGroup {
   group_id: string
   lesson_record_id: string | null
+  lesson_record_covered: string | null
+  lesson_record_planned: string | null
+  lesson_record_homework: string | null
+  lesson_record_notes: string | null
   has_attendance: boolean
   attendance_count: number
   roster_count: number
@@ -195,15 +199,24 @@ export async function fetchTodayLessonsWithAttendance(start: string, end: string
   const lessonIds = lessons.map(l => l.id)
   const groupIds = [...new Set(lessons.map(l => l.group_id))]
 
-  // Fetch lesson records for all lessons
+  // Fetch lesson records for all lessons with all fields
   const { data: lessonRecords } = await supabase
     .from('lesson_records')
-    .select('id, lesson_id')
+    .select('id, lesson_id, covered, planned, homework, notes')
     .in('lesson_id', lessonIds)
 
-  const recordMap = new Map<string, string>()
+  type LessonRecordRow = {
+    id: string
+    lesson_id: string
+    covered: string | null
+    planned: string | null
+    homework: string | null
+    notes: string | null
+  }
+
+  const recordMap = new Map<string, LessonRecordRow>()
   lessonRecords?.forEach(record => {
-    recordMap.set(record.lesson_id, record.id)
+    recordMap.set(record.lesson_id, record as LessonRecordRow)
   })
 
   // Fetch roster for all groups
@@ -238,9 +251,9 @@ export async function fetchTodayLessonsWithAttendance(start: string, end: string
 
   // Build the result
   return lessons.map(lesson => {
-    const lessonRecordId = recordMap.get(lesson.id) || null
+    const lessonRecord = recordMap.get(lesson.id) || null
     const roster = rosterByGroup.get(lesson.group_id) || []
-    const attendanceList = lessonRecordId ? (attendanceByRecord.get(lessonRecordId) || []) : []
+    const attendanceList = lessonRecord ? (attendanceByRecord.get(lessonRecord.id) || []) : []
 
     // Convert attendance array to Record keyed by roster_item_id
     const attendance: Record<string, Attendance> = {}
@@ -261,7 +274,11 @@ export async function fetchTodayLessonsWithAttendance(start: string, end: string
       group_name: lesson.groups?.name ?? 'Unknown Group',
       school_name: lesson.groups?.schools?.name ?? 'Unknown School',
       subject_name: lesson.groups?.subjects?.name ?? 'Unknown Subject',
-      lesson_record_id: lessonRecordId,
+      lesson_record_id: lessonRecord?.id || null,
+      lesson_record_covered: lessonRecord?.covered || null,
+      lesson_record_planned: lessonRecord?.planned || null,
+      lesson_record_homework: lessonRecord?.homework || null,
+      lesson_record_notes: lessonRecord?.notes || null,
       has_attendance: attendanceList.length > 0,
       attendance_count: attendanceCount,
       roster_count: rosterCount,

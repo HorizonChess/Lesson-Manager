@@ -155,6 +155,25 @@ Use these **theme-aware** classes instead of hardcoded gray/slate colors:
 - **Component extraction**: Complete ✅
 
 ### Recent Milestones
+- **Nov 5, 2025**: Dashboard lesson record modal bug fixes - Full feature parity with Lessons view
+  - **Problem**: Dashboard modal couldn't save lesson records, didn't display saved data, and "Attach Plan" button didn't work
+  - **Root Causes**:
+    1. Service call used spread operator (`...data`) instead of explicit field names
+    2. Modal's `useEffect` reset state to stale snapshot after save due to unchanged `selectedLessonForFullRecord`
+    3. Material selector modal missing implementation (empty functions)
+    4. Materials indexed by lesson ID instead of lesson_record_id (modal expects record ID)
+  - **Solution**:
+    1. Fixed `updateLessonRecord()` call to pass explicit fields (`covered`, `planned`, `homework`, `notes`)
+    2. Updated `selectedLessonForFullRecord` state immediately after save to prevent modal revert
+    3. Implemented full material selector functionality (fetch all materials, open/attach/remove handlers)
+    4. Fixed material indexing to use `lesson_record_id` as key throughout Dashboard
+  - **Result**:
+    - Dashboard modal now saves and displays lesson record data correctly ✅
+    - "Attach Plan" button works identically to Lessons view ✅
+    - Both modals share single source of truth (database, indexed by lesson_record_id) ✅
+  - **Files Modified**:
+    - [src/pages/Dashboard.tsx](../src/pages/Dashboard.tsx) - Fixed save logic, added material selector functionality
+    - [src/services/dashboard.ts](../src/services/dashboard.ts) - Added lesson_record content fields to fetch query
 - **Nov 3, 2025 (PM)**: UI polish - Added `cursor-pointer` to all interactive elements across the app (buttons, links, tabs, report generation, schedule wizard, modals)
 - **Nov 3, 2025 (AM)**: Dashboard attendance marking & LessonsRecordModal refactor
   - **Problem**: Dashboard was read-only, required 3-4 clicks through Lessons page to mark attendance
