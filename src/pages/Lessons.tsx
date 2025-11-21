@@ -1,7 +1,6 @@
 ﻿import { useState, useEffect, useMemo } from 'react'
 import moment from 'moment'
 import { useAuth } from '../contexts/AuthContext'
-import { supabase } from '../lib/supabase'
 import {
   fetchGroupsWithDetails,
   fetchLessonsWithGroups,
