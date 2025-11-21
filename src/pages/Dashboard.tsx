@@ -18,8 +18,13 @@ import {
   fetchRecentMaterials as fetchRecentMaterialsService,
   type TodayLessonWithAttendance
 } from '../services/dashboard'
-import { updateLessonRecord, upsertAttendance, replaceAttendance } from '../services/lessonsMutations'
-import { supabase } from '../lib/supabase'
+import { updateLessonRecord, upsertAttendance, replaceAttendance, updateLessonTime } from '../services/lessonsMutations'
+import {
+  fetchAllUserMaterials,
+  fetchLessonMaterials,
+  attachMaterialsToLesson,
+  removeMaterialFromLesson
+} from '../services/lessonMaterials'
 
 interface DashboardStats {
   schools: number
@@ -157,21 +162,11 @@ export function Dashboard() {
 
     // Fetch materials for this lesson if it has a lesson record
     if (lesson.lesson_record_id) {
-      const { data } = await supabase
-        .from('lesson_materials')
-        .select(`
-          material_id,
-          materials (*)
-        `)
-        .eq('lesson_record_id', lesson.lesson_record_id)
-
-      const materials = (data || [])
-        .filter((item: any) => item.materials)
-        .map((item: any) => item.materials as Material)
+      const materials = await fetchLessonMaterials(lesson.lesson_record_id)
 
       setLessonMaterials(prev => ({
         ...prev,
-        [lesson.lesson_record_id!]: materials  // Use lesson_record_id as key, not lesson.id
+        [lesson.lesson_record_id!]: materials  // Use lesson_record_id as key
       }))
     }
   }
@@ -194,42 +189,20 @@ export function Dashboard() {
   const fetchAllMaterials = async () => {
     if (!user) return
 
-    const { data, error } = await supabase
-      .from('materials')
-      .select('*')
-      .eq('user_id', user.id)
-      .order('created_at', { ascending: false })
-
-    if (error) throw error
-    setAllMaterials(data || [])
+    const materials = await fetchAllUserMaterials(user.id)
+    setAllMaterials(materials)
   }
 
   const openMaterialSelector = async (lessonRecordId: string) => {
     // Fetch materials for this lesson record
-    const { data } = await supabase
-      .from('lesson_materials')
-      .select(`
-        material_id,
-        materials (*)
-      `)
-      .eq('lesson_record_id', lessonRecordId)
-
-    const currentMaterials = (data || [])
-      .filter((item: any) => item.materials)
-      .map((item: any) => item.materials as Material)
+    const currentMaterials = await fetchLessonMaterials(lessonRecordId)
 
     setSelectedMaterials(currentMaterials.map(m => m.id))
     setShowMaterialSelector(true)
   }
 
   const removeMaterial = async (lessonRecordId: string, materialId: string) => {
-    const { error } = await supabase
-      .from('lesson_materials')
-      .delete()
-      .eq('lesson_record_id', lessonRecordId)
-      .eq('material_id', materialId)
-
-    if (error) throw error
+    await removeMaterialFromLesson(lessonRecordId, materialId)
 
     // Update local state - lessonRecordId is already the correct key
     setLessonMaterials(prev => {
@@ -621,15 +594,11 @@ ${templateJson}
               return
             }
 
-            const { error } = await supabase
-              .from('lessons')
-              .update({
-                start_time: newStartDateTime.toISOString(),
-                end_time: newEndDateTime.toISOString()
-              })
-              .eq('id', lessonId)
-
-            if (error) throw error
+            await updateLessonTime(
+              lessonId,
+              newStartDateTime.toISOString(),
+              newEndDateTime.toISOString()
+            )
 
             await fetchTodayLessons()
             alert('Lesson time updated successfully!')
@@ -716,40 +685,14 @@ ${templateJson}
 
           const lessonRecordId = selectedLessonForFullRecord.lesson_record_id
 
-          // Remove all existing materials
-          await supabase
-            .from('lesson_materials')
-            .delete()
-            .eq('lesson_record_id', lessonRecordId)
+          // Attach materials using service layer
+          await attachMaterialsToLesson(lessonRecordId, materialIds)
 
-          // Add new materials
-          if (materialIds.length > 0) {
-            const insertData = materialIds.map(materialId => ({
-              lesson_record_id: lessonRecordId,
-              material_id: materialId
-            }))
-
-            await supabase
-              .from('lesson_materials')
-              .insert(insertData)
-          }
-
-          // Update local state
-          const { data } = await supabase
-            .from('lesson_materials')
-            .select(`
-              material_id,
-              materials (*)
-            `)
-            .eq('lesson_record_id', lessonRecordId)
-
-          const materials = (data || [])
-            .filter((item: any) => item.materials)
-            .map((item: any) => item.materials as Material)
-
+          // Update local state with attached materials
+          const attachedMaterials = allMaterials.filter(m => materialIds.includes(m.id))
           setLessonMaterials(prev => ({
             ...prev,
-            [lessonRecordId]: materials  // Use lessonRecordId, not selectedLessonForFullRecord.id
+            [lessonRecordId]: attachedMaterials
           }))
 
           setShowMaterialSelector(false)

@@ -22,8 +22,13 @@ import {
   upsertAttendance,
   replaceAttendance,
   attachMaterial as attachLessonMaterial,
-  detachMaterial as detachLessonMaterial
+  detachMaterial as detachLessonMaterial,
+  generateRecurringLessons as generateRecurringLessonsService,
+  deleteRecurringPattern as deleteRecurringPatternService,
+  updateRecurringPattern as updateRecurringPatternService,
+  updateLessonTime as updateLessonTimeService
 } from '../services/lessonsMutations'
+import { removeMaterialFromLesson } from '../services/lessonMaterials'
 import { fetchRosters } from '../services/groupsPage'
 import { fetchAttendanceForRecord } from '../services/groups.view'
 import { israeliCalendar } from '../services/israeliCalendar'
@@ -238,83 +243,30 @@ export function Lessons() {
       return
     }
 
-    const lessonsToCreate = []
-    const today = new Date()
-    let skippedVacationDays = 0
-
-    for (let week = 0; week < weeks; week++) {
-      const lessonDate = getNextDateForDay(day, week)
-      if (lessonDate < today && week === 0) continue // Skip past dates in first week
-
-      // Check if the lesson date falls on a vacation day
-      if (israeliCalendar.isVacationDay(lessonDate)) {
-        skippedVacationDays++
-        console.log(`Skipping lesson on ${lessonDate.toLocaleDateString()} - vacation day: ${israeliCalendar.getVacationPeriod(lessonDate)?.name}`)
-        continue // Skip this lesson - it's during vacation
-      }
-
-      // Check if it's during summer break or outside school year
-      if (!israeliCalendar.isSchoolDay(lessonDate)) {
-        skippedVacationDays++
-        console.log(`Skipping lesson on ${lessonDate.toLocaleDateString()} - not a school day`)
-        continue
-      }
-
-      const startDateTime = new Date(`${lessonDate.toISOString().split('T')[0]}T${startTime}`)
-      const endDateTime = new Date(`${lessonDate.toISOString().split('T')[0]}T${endTime}`)
-
-      lessonsToCreate.push({
-        group_id: groupId,
-        start_time: startDateTime.toISOString(),
-        end_time: endDateTime.toISOString(),
-        is_cancelled: false,
-      })
-    }
-
-    // Show user how many vacation days were automatically skipped
-    if (skippedVacationDays > 0) {
-      console.log(`Automatically skipped ${skippedVacationDays} lessons during vacation periods`)
-    }
-
     try {
-      const { data, error } = await supabase
-        .from('lessons')
-        .insert(lessonsToCreate)
-        .select(`
-          *,
-          group:groups(
-            name,
-            school:schools(name),
-            subject:subjects(name)
-          )
-        `)
+      const { lessons: newLessons, skippedVacationDays } = await generateRecurringLessonsService({
+        groupId,
+        weeks,
+        day,
+        startTime,
+        endTime
+      })
 
-      if (error) throw error
+      // Show user how many vacation days were automatically skipped
+      if (skippedVacationDays > 0) {
+        console.log(`Automatically skipped ${skippedVacationDays} lessons during vacation periods`)
+      }
 
-      const normalizedNewLessons = (data ?? []).map(normalizeLesson)
+      const normalizedNewLessons = newLessons.map(normalizeLesson)
       console.log('📅 Created lessons:', normalizedNewLessons.length)
       console.log('🔄 Updating lessons state with new lessons')
       setLessons([...lessons, ...normalizedNewLessons])
-      alert(`Successfully created ${normalizedNewLessons.length} lessons!`)
+      alert(`Successfully created ${normalizedNewLessons.length} lessons!${skippedVacationDays > 0 ? `\n\nAutomatically skipped ${skippedVacationDays} vacation day${skippedVacationDays !== 1 ? 's' : ''}.` : ''}`)
     } catch (err: any) {
       console.error('❌ Database error:', err)
       setError(err.message)
       alert('Database error: ' + err.message)
     }
-  }
-
-  const getNextDateForDay = (dayName: string, weeksFromNow: number = 0): Date => {
-    const days = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday']
-    const targetDay = days.indexOf(dayName)
-    const today = new Date()
-    const currentDay = today.getDay()
-
-    let daysUntilTarget = targetDay - currentDay
-    if (daysUntilTarget < 0) daysUntilTarget += 7
-
-    const targetDate = new Date(today)
-    targetDate.setDate(today.getDate() + daysUntilTarget + (weeksFromNow * 7))
-    return targetDate
   }
 
   const toggleLessonCancellation = async (lessonId: string, currentStatus: boolean) => {
@@ -582,13 +534,7 @@ export function Lessons() {
 
   const removeMaterial = async (lessonRecordId: string, materialId: string) => {
     try {
-      const { error } = await supabase
-        .from('lesson_materials')
-        .delete()
-        .eq('lesson_record_id', lessonRecordId)
-        .eq('material_id', materialId)
-
-      if (error) throw error
+      await removeMaterialFromLesson(lessonRecordId, materialId)
 
       // Update local state
       const currentMaterials = lessonMaterials[lessonRecordId] || []
@@ -918,27 +864,10 @@ export function Lessons() {
 
   const moveLessonToNewTime = async (lessonId: string, newStartTime: Date, newEndTime: Date) => {
     try {
-      const { data, error } = await supabase
-        .from('lessons')
-        .update({
-          start_time: newStartTime.toISOString(),
-          end_time: newEndTime.toISOString()
-        })
-        .eq('id', lessonId)
-        .select(`
-          *,
-          group:groups(
-            name,
-            school:schools(name),
-            subject:subjects(name)
-          )
-        `)
-        .single()
-
-      if (error) throw error
+      const updatedLesson = await updateLessonTimeService(lessonId, newStartTime, newEndTime)
 
       // Update local state
-      const normalized = normalizeLesson(data)
+      const normalized = normalizeLesson(updatedLesson)
       setLessons(prev => prev.map(lesson =>
         lesson.id === lessonId ? normalized : lesson
       ))
@@ -1066,95 +995,30 @@ export function Lessons() {
     newStartTime,
     newEndTime
   }: { lessonIds: string[]; newDay: string; newStartTime: string; newEndTime: string }) => {
-    await bulkUpdateRecurringLessons(lessonIds, newDay, newStartTime, newEndTime)
+    try {
+      // Pass the lesson data needed for date calculations
+      await updateRecurringPatternService(
+        lessonIds,
+        lessons.map(l => ({ id: l.id, start_time: l.start_time })),
+        newDay,
+        newStartTime,
+        newEndTime
+      )
+
+      // Refresh lessons data
+      await fetchData()
+    } catch (err: any) {
+      setError(`Failed to update recurring lessons: ${err.message}`)
+      console.error('Bulk update error:', err)
+    }
   }
 
   const handleDeleteRecurringPattern = async (pattern: RecurringPattern) => {
     try {
-      const { error } = await supabase
-        .from('lessons')
-        .delete()
-        .in('id', pattern.lessonIds)
-
-      if (error) {
-        throw error
-      }
-
+      await deleteRecurringPatternService(pattern.lessonIds)
       await fetchData()
     } catch (err: any) {
       setError(`Failed to delete pattern: ${err.message}`)
-    }
-  }
-
-
-  // Function to bulk update recurring lesson timeslots
-  const bulkUpdateRecurringLessons = async (
-    lessonIds: string[],
-    newDay: string,
-    newStartTime: string,
-    newEndTime: string
-  ) => {
-    try {
-      // Calculate new times for each lesson
-      const updates = lessonIds.map(lessonId => {
-        const lesson = lessons.find(l => l.id === lessonId)
-        if (!lesson) return null
-
-        const originalDate = moment(lesson.start_time)
-        const weekStart = originalDate.clone().startOf('week')
-
-        // Convert day name to day number (0=Sunday, 1=Monday, etc.)
-        const dayNames = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday']
-        const targetDayNumber = dayNames.indexOf(newDay)
-        const newDate = weekStart.clone().day(targetDayNumber)
-
-        // Parse time properly - handle both 12-hour and 24-hour formats
-        const [startHour, startMinute] = newStartTime.split(':').map(Number)
-        const [endHour, endMinute] = newEndTime.split(':').map(Number)
-
-        const newStartDateTime = newDate.clone().set({
-          hour: startHour,
-          minute: startMinute,
-          second: 0,
-          millisecond: 0
-        })
-        const newEndDateTime = newDate.clone().set({
-          hour: endHour,
-          minute: endMinute,
-          second: 0,
-          millisecond: 0
-        })
-
-        return {
-          id: lessonId,
-          start_time: newStartDateTime.toISOString(),
-          end_time: newEndDateTime.toISOString()
-        }
-      }).filter((update): update is { id: string; start_time: string; end_time: string } => Boolean(update))
-
-      if (updates.length === 0) {
-        throw new Error('No valid lessons to update')
-      }
-
-      // Use individual updates instead of upsert to avoid conflicts
-      for (const update of updates) {
-        const { error } = await supabase
-          .from('lessons')
-          .update({
-            start_time: update.start_time,
-            end_time: update.end_time
-          })
-          .eq('id', update.id)
-
-        if (error) throw error
-      }
-
-      // Refresh lessons data
-      await fetchData()
-
-    } catch (err: any) {
-      setError(`Failed to update recurring lessons: ${err.message}`)
-      console.error('Bulk update error:', err)
     }
   }
 
@@ -1375,22 +1239,17 @@ export function Lessons() {
             return
           }
 
-          // Update in database
-          const { error } = await supabase
-            .from('lessons')
-            .update({
-              start_time: newStartDateTime.toISOString(),
-              end_time: newEndDateTime.toISOString()
-            })
-            .eq('id', lessonId)
-
-          if (error) throw error
+          // Update in database using service
+          const updatedLesson = await updateLessonTimeService(
+            lessonId,
+            newStartDateTime.toISOString(),
+            newEndDateTime.toISOString()
+          )
 
           // Update local state
+          const normalized = normalizeLesson(updatedLesson)
           setLessons(prev => prev.map(l =>
-            l.id === lessonId
-              ? { ...l, start_time: newStartDateTime.toISOString(), end_time: newEndDateTime.toISOString() }
-              : l
+            l.id === lessonId ? normalized : l
           ))
 
           alert('Lesson time updated successfully!')
