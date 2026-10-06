@@ -48,19 +48,6 @@ export async function fetchLessonsWithGroups(): Promise<LessonWithGroup[]> {
   return (data ?? []) as LessonWithGroup[]
 }
 
-export async function deleteLessonsByIds(ids: string[]): Promise<void> {
-  if (ids.length === 0) return
-
-  const { error } = await supabase
-    .from('lessons')
-    .delete()
-    .in('id', ids)
-
-  if (error) {
-    throw error
-  }
-}
-
 export async function fetchLessonRecordsMap(): Promise<Record<string, LessonRecord>> {
   const { data, error } = await supabase
     .from('lesson_records')

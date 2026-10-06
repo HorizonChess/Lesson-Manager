@@ -4,7 +4,6 @@ import { useAuth } from '../contexts/AuthContext'
 import {
   fetchGroupsWithDetails,
   fetchLessonsWithGroups,
-  deleteLessonsByIds,
   fetchLessonRecordsMap,
   fetchMaterialsList,
   fetchLessonMaterialsMap,
@@ -149,27 +148,7 @@ export function Lessons() {
         fetchRosters()
       ])
 
-      const lessonsToDelete: string[] = []
-      const filteredLessons = lessonsRaw.filter(lesson => {
-        const lessonDate = new Date(lesson.start_time)
-        const onVacation = israeliCalendar.isVacationDay(lessonDate)
-        if (onVacation) {
-          lessonsToDelete.push(lesson.id)
-          console.log(`Found lesson on vacation day: ${lessonDate.toLocaleDateString()} - ${lesson.group?.name}`)
-        }
-        return !onVacation
-      })
-
-      const normalizedLessons = filteredLessons.map(normalizeLesson)
-
-      if (lessonsToDelete.length > 0) {
-        console.log(`Deleting ${lessonsToDelete.length} lessons scheduled on vacation days`)
-        try {
-          await deleteLessonsByIds(lessonsToDelete)
-        } catch (deleteError) {
-          console.error('Error deleting vacation lessons:', deleteError)
-        }
-      }
+      const normalizedLessons = lessonsRaw.map(normalizeLesson)
 
       // Group materials by lesson record id
       const materialsByLessonRecord: Record<string, Material[]> = { ...lessonMaterialsMap }
