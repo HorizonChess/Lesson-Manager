@@ -638,7 +638,7 @@ export function Lessons() {
 
     // Set up form for new lesson creation
     setAddLessonInitialValues({
-      date: start.toISOString().split('T')[0],
+      date: moment(start).format('YYYY-MM-DD'),
       startTime: moment(start).format('HH:mm'),
       endTime: moment(end).format('HH:mm')
     })

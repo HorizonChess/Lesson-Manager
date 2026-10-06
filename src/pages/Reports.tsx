@@ -1,4 +1,5 @@
-import { useState, useEffect } from 'react'
+import moment from 'moment'
+import { Fragment, useState, useEffect } from 'react'
 import { useAuth } from '../contexts/AuthContext'
 import { supabase } from '../lib/supabase'
 import type { School, Subject, Group } from '../types/database'
@@ -107,8 +108,8 @@ export function Reports() {
     const endDate = new Date(currentYear, currentMonth, 24)
 
     return {
-      start: startDate.toISOString().split('T')[0],
-      end: endDate.toISOString().split('T')[0]
+      start: moment(startDate).format('YYYY-MM-DD'),
+      end: moment(endDate).format('YYYY-MM-DD')
     }
   })
 
@@ -633,7 +634,7 @@ export function Reports() {
     ]
     worksheet['!cols'] = cols
 
-    const fileName = `Attendance_Report_${new Date().toISOString().split('T')[0]}.xlsx`
+    const fileName = `Attendance_Report_${moment().format('YYYY-MM-DD')}.xlsx`
 
     // Write file with proper options for Excel format
     XLSX.writeFile(workbook, fileName, {
@@ -680,7 +681,7 @@ export function Reports() {
     ]
     worksheet['!cols'] = cols
 
-    const fileName = `Teaching_Hours_${new Date().toISOString().split('T')[0]}.xlsx`
+    const fileName = `Teaching_Hours_${moment().format('YYYY-MM-DD')}.xlsx`
 
     // Write file with proper options for Excel format
     XLSX.writeFile(workbook, fileName, {
@@ -719,7 +720,7 @@ export function Reports() {
     ]
     worksheet['!cols'] = cols
 
-    const fileName = `Coverage_Report_${new Date().toISOString().split('T')[0]}.xlsx`
+    const fileName = `Coverage_Report_${moment().format('YYYY-MM-DD')}.xlsx`
 
     // Write file with proper options for Excel format
     XLSX.writeFile(workbook, fileName, {
@@ -740,7 +741,7 @@ export function Reports() {
         .from('wage_settings')
         .select('*')
         .eq('user_id', user.id)
-        .single()
+        .maybeSingle()
 
       const defaultRate = wageSettings?.default_hourly_rate || 0
       const userCurrency = wageSettings?.currency || 'NIS'
@@ -918,7 +919,7 @@ export function Reports() {
       { wch: 15 }  // Expected Salary
     ]
 
-    const fileName = `Salary_Report_${new Date().toISOString().split('T')[0]}.xlsx`
+    const fileName = `Salary_Report_${moment().format('YYYY-MM-DD')}.xlsx`
 
     XLSX.writeFile(workbook, fileName, {
       bookType: 'xlsx',
@@ -1144,8 +1145,8 @@ export function Reports() {
               </thead>
               <tbody>
                 {hoursReport.map((row, index) => (
-                  <>
-                    <tr key={index} className="border-b hover:bg-white/25 dark:hover:bg-white/10">
+                  <Fragment key={index}>
+                    <tr className="border-b hover:bg-white/25 dark:hover:bg-white/10">
                       <td className="py-2 px-3">{row.school}</td>
                       {hoursReport.some(r => r.subject) && <td className="py-2 px-3">{row.subject || '-'}</td>}
                       {hoursReport.some(r => r.group) && <td className="py-2 px-3">{row.group || '-'}</td>}
@@ -1181,7 +1182,7 @@ export function Reports() {
                         </td>
                       </tr>
                     )}
-                  </>
+                  </Fragment>
                 ))}
               </tbody>
             </table>

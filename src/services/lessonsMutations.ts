@@ -1,3 +1,4 @@
+import moment from 'moment'
 import { supabase } from '../lib/supabase'
 import { israeliCalendar } from './israeliCalendar'
 import type { Lesson, LessonRecord } from '../types/database'
@@ -297,8 +298,8 @@ export async function generateRecurringLessons(
       continue
     }
 
-    const startDateTime = new Date(`${lessonDate.toISOString().split('T')[0]}T${startTime}`)
-    const endDateTime = new Date(`${lessonDate.toISOString().split('T')[0]}T${endTime}`)
+    const startDateTime = new Date(`${moment(lessonDate).format('YYYY-MM-DD')}T${startTime}`)
+    const endDateTime = new Date(`${moment(lessonDate).format('YYYY-MM-DD')}T${endTime}`)
 
     lessonsToCreate.push({
       group_id: groupId,

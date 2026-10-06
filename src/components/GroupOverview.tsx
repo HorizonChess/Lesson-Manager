@@ -1,3 +1,4 @@
+import moment from 'moment'
 import { useState, useEffect } from 'react'
 import type { Group, School, Subject, RosterItem, Lesson, LessonRecord } from '../types/database'
 import { addRosterStudent, updateRosterStudent, deleteRosterStudent } from '../services/roster'
@@ -65,8 +66,8 @@ export function GroupOverview({
   const [attendanceData, setAttendanceData] = useState<Record<string, AttendanceWithStudent[]>>({})
   const [attendanceLoading, setAttendanceLoading] = useState(false)
   const [dateFilter, setDateFilter] = useState<{ start: string; end: string }>({
-    start: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0], // 30 days ago
-    end: new Date().toISOString().split('T')[0] // today
+    start: moment().subtract(30, 'days').format('YYYY-MM-DD'), // 30 days ago
+    end: moment().format('YYYY-MM-DD') // today
   })
 
   // Lesson record modal states (reuse existing data from lessons tab)
