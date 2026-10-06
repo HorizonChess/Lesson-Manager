@@ -235,7 +235,7 @@ export async function fetchTodayLessonsWithAttendance(start: string, end: string
   })
 
   // Fetch attendance for all lesson records
-  const recordIds = Array.from(recordMap.values())
+  const recordIds = Array.from(recordMap.values()).map(record => record.id)
   const { data: attendanceData } = await supabase
     .from('attendance')
     .select('*')
