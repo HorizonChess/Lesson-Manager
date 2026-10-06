@@ -36,7 +36,7 @@ export function ScheduleWizard() {
       <Dialog open={isOpen} onClose={() => {}} className="relative z-50">
         <div className="fixed inset-0 bg-black/30" aria-hidden="true" />
         <div className="fixed inset-0 flex w-screen items-center justify-center p-4">
-          <DialogPanel className="surface-modal w-full max-w-md">
+          <DialogPanel className="surface-modal w-full max-w-md overflow-hidden">
             <div className="px-6 pt-6">
               <div className="flex items-center justify-between mb-4">
                 <div className="text-sm font-medium text-gray-900 dark:text-white">
