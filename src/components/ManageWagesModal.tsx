@@ -49,9 +49,9 @@ export function ManageWagesModal({ isOpen, onClose, userId }: ManageWagesModalPr
         .from('wage_settings')
         .select('*')
         .eq('user_id', userId)
-        .single()
+        .maybeSingle()
 
-      if (settingsError && settingsError.code !== 'PGRST116') { // PGRST116 = no rows
+      if (settingsError) {
         throw settingsError
       }
 
