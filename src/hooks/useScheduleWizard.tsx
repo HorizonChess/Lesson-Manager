@@ -3,7 +3,7 @@ import moment from 'moment'
 import { useAuth } from '../contexts/AuthContext'
 import { buildScheduleDetails } from '../lib/scheduling'
 import { deleteSchoolsByUser, createSchool } from '../services/schools'
-import { createSubject } from '../services/subjects'
+import { ensureSchoolSubject } from '../services/subjects'
 import { createGroup } from '../services/groups'
 import { hasAnyLessons, insertLessons, type LessonInsert } from '../services/lessons'
 
@@ -184,7 +184,7 @@ export function useScheduleWizard(): UseScheduleWizardState {
 
       for (const schoolConfig of schools) {
         const school = await createSchool({ name: schoolConfig.name, userId: user.id })
-        const subject = await createSubject({ name: 'General Teaching', schoolId: school.id })
+        const subject = await ensureSchoolSubject({ name: 'General Teaching', schoolId: school.id, userId: user.id })
 
         const scheduleDetails = buildScheduleDetails(schoolConfig)
         const availablePeriods = scheduleDetails.slots
