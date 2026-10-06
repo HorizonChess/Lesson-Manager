@@ -23,3 +23,16 @@ dist-ssr
 *.sln
 *.sw?
 nul
+
+# Secrets: real keys live only in your local .env (copy from .env.example)
+.env
+.env.*
+!.env.example
+
+# Local-only data and tool output
+backups/
+.tmp/
+.playwright-mcp/
+playwright-report/
+test-results/
+.claude/settings.local.json

@@ -1,109 +1,73 @@
-# Teacher Scheduler — React + Supabase MVP
+# Lesson Manager
 
-A single-teacher application for managing multiple schools, subjects, groups, lessons, materials, attendance, and tasks. Built with React + TypeScript, Supabase, and designed mobile-first with RTL support.
+A scheduling and record-keeping app for a teacher who works across several schools.
+I built it for my own work teaching chess and debate in multiple schools, where I
+needed one place to plan the week, take attendance, track what each group covered,
+and work out how many hours (and how much pay) I had earned.
 
-## 🎯 Project Vision
+![Build](https://github.com/HorizonChess/Lesson-Manager/actions/workflows/ci.yml/badge.svg)
 
-Single-teacher app to manage multiple schools, multiple subjects per school, groups, lessons, lesson records, materials, attendance, tasks, and basic reports. Mobile-first, offline-friendly, RTL-ready.
+## What it does
 
-## ✅ Current Status
+- **Dashboard**: today's and this week's lessons, open tasks, and one-tap attendance.
+- **Schools and groups**: each school has its subjects and groups, with weekly timeslots and a student roster.
+- **Schedule wizard**: generates a term of recurring lessons from a group's timeslots, mapped onto the standard school day periods (45-minute academic hours).
+- **Lesson records**: attendance, what was planned versus covered, homework, notes, and attached lesson plans.
+- **Lesson plans library**: reusable, tagged materials that can be attached to any lesson.
+- **Reports**: attendance rates, hours taught, curriculum coverage, and wage calculation, exportable to Excel.
+- **Tasks**: a to-do list linked to groups and lessons.
+- Mobile-first layout, dark mode, and right-to-left (Hebrew) support.
 
-**Phase 2 Complete** — Schools & Subjects management fully implemented
+## Tech stack
 
-- **M0 ✅**: Project skeleton with React + TypeScript + Vite + Tailwind + RTL toggle
-- **M1 ✅**: Supabase Auth + User bootstrap - Authentication verified working
-- **M2 ✅**: Schools & Subjects CRUD - Full implementation with user testing
+| Area | Tools |
+| --- | --- |
+| Frontend | React 19, TypeScript, Vite |
+| Styling | Tailwind CSS, Headless UI, Framer Motion |
+| Data | Supabase (PostgreSQL, Auth, Row Level Security), TanStack Query, Zustand |
+| Calendar and export | react-big-calendar, SheetJS (xlsx) |
+| Testing | Node's built-in test runner, Playwright |
 
-**🎯 Next: M3** — Groups & Roster implementation
+Every table is protected by Row Level Security, so each signed-in teacher can only
+read and change their own data.
 
-## 🚀 Quick Start
+## Running it locally
 
-1. **Clone and install dependencies:**
-   ```bash
-   npm install
-   ```
-
-2. **Set up Supabase:**
-   - Create a new Supabase project
-   - Copy your project URL and anon key
-   - Create `.env.local` file with your Supabase credentials:
-     ```
-     VITE_SUPABASE_URL=your_supabase_url
-     VITE_SUPABASE_ANON_KEY=your_anon_key
-     ```
-
-3. **Run development server:**
-   ```bash
-   npm run dev
-   ```
-
-## 🏗️ Tech Stack
-
-- **Frontend**: React 18 + TypeScript + Vite
-- **Styling**: Tailwind CSS with RTL support
-- **Backend**: Supabase (Auth, Database, Storage)
-- **State Management**: TanStack Query + Context
-- **Database**: PostgreSQL with Row Level Security (RLS)
-
-## 📊 Database Schema
-
-Current entities implemented:
-- **Users**: Authentication and user management
-- **Schools**: Multiple schools per user
-- **Subjects**: Multiple subjects per school
-
-Planned entities:
-- Groups, Lessons, LessonRecords, Attendance, Materials, Tasks, Tags
-
-## 🔐 Authentication
-
-Authentication system verified working:
-- Email/password sign-in
-- User bootstrapping on first login
-- Row Level Security (RLS) enabled
-- User-specific data isolation confirmed
-
-## 📱 Features Implemented
-
-- ✅ Responsive mobile-first design
-- ✅ Dark mode toggle
-- ✅ RTL language support toggle
-- ✅ User authentication & session management
-- ✅ Schools management (Create, Read, Update, Delete)
-- ✅ Subjects management per school
-- ✅ Real-time UI updates with optimistic updates
-
-## 🎯 Next Milestone: Groups & Roster
-
-Implementing group creation with:
-- School + Subject selection
-- Timeslots metadata
-- Student roster CRUD functionality
-
-## 📋 Development Workflow
+You need Node.js 20 or newer and a free [Supabase](https://supabase.com) project.
 
 ```bash
-# Development
+git clone https://github.com/HorizonChess/Lesson-Manager.git
+cd Lesson-Manager
+npm install
+cp .env.example .env    # then fill in your Supabase URL and anon key
 npm run dev
-
-# Build
-npm run build
-
-# Preview production build
-npm run preview
-
-# Lint
-npm run lint
 ```
 
-## 🗂️ Project Structure
+Create the database tables by running the SQL files in `supabase/migrations/`, in
+order, in the Supabase SQL editor.
+
+## Scripts
+
+| Command | What it does |
+| --- | --- |
+| `npm run dev` | Start the development server with hot reload |
+| `npm run build` | Type-check and build the production bundle into `dist/` |
+| `npm run preview` | Serve the production build locally |
+| `node --test tests/scheduling.test.ts` | Run the scheduling unit tests |
+| `npm run lint` | Run ESLint |
+
+## Project structure
 
 ```
 src/
-├── components/       # Reusable UI components
-├── contexts/        # React contexts (Auth, Theme)
-├── lib/            # Supabase client and utilities
-├── pages/          # Page components (Dashboard, Schools)
-├── types/          # TypeScript type definitions
-└── utils/          # Helper functions and test utilities
+  pages/       one file per screen (Dashboard, Schools, Lessons, Reports, ...)
+  components/  reusable UI, grouped by feature
+  services/    all Supabase queries and mutations
+  lib/         scheduling math and the Supabase client
+  hooks/, stores/, contexts/, types/
+supabase/migrations/  database schema
+tests/                unit tests
+docs/                 design notes and refactoring plans
 ```
+
+More detail on the architecture is in [docs/project.md](docs/project.md).

@@ -76,9 +76,6 @@ export function Schools() {
   const [showAddGroup, setShowAddGroup] = useState<{ schoolId: string; subjectId: string } | null>(null)
   const [newGroupName, setNewGroupName] = useState('')
   const [newGroupTimeslots, setNewGroupTimeslots] = useState<Timeslot[]>([])
-  const [editingGroup, setEditingGroup] = useState<string | null>(null) // groupId
-  const [editGroupName, setEditGroupName] = useState('')
-  const [editGroupTimeslots, setEditGroupTimeslots] = useState<Timeslot[]>([])
 
   // UI state - Roster CRUD
   const [showAddStudent, setShowAddStudent] = useState<string | null>(null) // groupId
@@ -301,35 +298,6 @@ export function Schools() {
     }
   }
 
-  const handleUpdateGroup = async (groupId: string, schoolId: string, subjectId: string) => {
-    if (!editGroupName.trim()) return
-
-    try {
-      const group = await groupsPageService.updateGroupWithRelations({
-        groupId,
-        schoolId,
-        subjectId,
-        name: editGroupName.trim(),
-        timeslots: editGroupTimeslots.filter(t => t.day && t.startTime && t.endTime)
-      })
-
-      setGroupsBySchool({
-        ...groupsBySchool,
-        [schoolId]: (groupsBySchool[schoolId] || []).map(g => g.id === groupId ? group : g)
-      })
-      setGroupsBySubject({
-        ...groupsBySubject,
-        [subjectId]: (groupsBySubject[subjectId] || []).map(g => g.id === groupId ? group : g)
-      })
-
-      setEditingGroup(null)
-      setEditGroupName('')
-      setEditGroupTimeslots([])
-    } catch (err: any) {
-      setError(err.message)
-    }
-  }
-
   const handleDeleteGroup = async (groupId: string, schoolId: string, subjectId: string) => {
     if (!confirm('Delete this group? All lessons and student records will be deleted.')) return
 
@@ -489,27 +457,6 @@ export function Schools() {
 
   const removeTimeslot = (index: number) => {
     setNewGroupTimeslots(newGroupTimeslots.filter((_, i) => i !== index))
-  }
-
-  const _addEditTimeslot = () => {
-    setEditGroupTimeslots([...editGroupTimeslots, { day: '', startTime: '', endTime: '' }])
-  }
-
-  const _updateEditTimeslot = (index: number, field: keyof Timeslot, value: string) => {
-    setEditGroupTimeslots(editGroupTimeslots.map((slot, i) =>
-      i === index ? { ...slot, [field]: value } : slot
-    ))
-  }
-
-  const _removeEditTimeslot = (index: number) => {
-    setEditGroupTimeslots(editGroupTimeslots.filter((_, i) => i !== index))
-  }
-
-  // Get subjects used by a school (via groups)
-  const _getSchoolSubjects = (schoolId: string): Subject[] => {
-    const schoolGroups = groupsBySchool[schoolId] || []
-    const subjectIds = new Set(schoolGroups.map(g => g.subject_id))
-    return allSubjects.filter(s => subjectIds.has(s.id))
   }
 
   // Get groups for a school+subject combination, sorted by schedule
