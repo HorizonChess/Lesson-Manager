@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo } from 'react'
+import { useState, useEffect, useMemo, useRef } from 'react'
 import moment from 'moment'
 import { Modal } from '../Modal'
 import { Button } from '../ui/button'
@@ -56,11 +56,16 @@ export function LessonsRecordModal({
   const [attendanceNoteText, setAttendanceNoteText] = useState('')
   const [bulkAttendanceStatus, setBulkAttendanceStatus] = useState<'present' | 'absent' | 'late'>('present')
 
-  // Sync with initial data when modal opens or lesson changes
+  // Sync with initial data only when the modal opens or switches lesson.
+  // Parents pass a fresh initialRecordData object on every render, so
+  // syncing on that alone would wipe whatever the user is typing.
+  const syncedLessonRef = useRef<string | null>(null)
   useEffect(() => {
-    if (isOpen && openLessonRecord) {
+    const lessonKey = isOpen ? openLessonRecord : null
+    if (lessonKey && syncedLessonRef.current !== lessonKey) {
       setLocalRecordData(initialRecordData)
     }
+    syncedLessonRef.current = lessonKey
   }, [isOpen, openLessonRecord, initialRecordData])
 
   // Memoize lesson lookup to prevent searching array on every render
