@@ -209,9 +209,11 @@ export function Lessons() {
     day: string
     startTime: string
     endTime: string
+    startDate?: string
+    endDate?: string
   }) => {
     console.log('🔄 generateRecurringLessons called with:', payload)
-    const { groupId, weeks, day, startTime, endTime } = payload
+    const { groupId, weeks, day, startTime, endTime, startDate, endDate } = payload
     const group = groups.find(g => g.id === groupId)
     console.log('📋 Found group:', group)
     console.log('⏰ Using provided timeslot:', { day, startTime, endTime })
@@ -227,7 +229,9 @@ export function Lessons() {
         weeks,
         day,
         startTime,
-        endTime
+        endTime,
+        startDate,
+        endDate
       })
 
       // Show user how many vacation days were automatically skipped

@@ -3,6 +3,48 @@ import type { Dispatch, SetStateAction } from 'react'
 import type { GroupWithDetails } from '../../services/lessonsPage'
 import type { RecurringLessonsFormState, RecurringPattern } from './types'
 
+const weekDays = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday']
+
+interface TimeslotFieldsProps {
+  formData: RecurringLessonsFormState
+  updateForm: (patch: Partial<RecurringLessonsFormState>) => void
+}
+
+function TimeslotFields({ formData, updateForm }: TimeslotFieldsProps) {
+  return (
+    <div className="grid grid-cols-3 gap-2">
+      <div>
+        <label className="mb-1 block text-xs font-medium">Day</label>
+        <select
+          value={formData.newDay}
+          onChange={(event) => updateForm({ newDay: event.target.value })}
+          className="surface-input w-full px-2 py-1 text-sm"
+        >
+          {weekDays.map(day => <option key={day} value={day}>{day}</option>)}
+        </select>
+      </div>
+      <div>
+        <label className="mb-1 block text-xs font-medium">Start Time</label>
+        <input
+          type="time"
+          value={formData.newStartTime}
+          onChange={(event) => updateForm({ newStartTime: event.target.value })}
+          className="surface-input w-full px-2 py-1 text-sm"
+        />
+      </div>
+      <div>
+        <label className="mb-1 block text-xs font-medium">End Time</label>
+        <input
+          type="time"
+          value={formData.newEndTime}
+          onChange={(event) => updateForm({ newEndTime: event.target.value })}
+          className="surface-input w-full px-2 py-1 text-sm"
+        />
+      </div>
+    </div>
+  )
+}
+
 interface RecurringLessonsModalProps {
   isOpen: boolean
   groups: GroupWithDetails[]
@@ -18,6 +60,8 @@ interface RecurringLessonsModalProps {
     day: string
     startTime: string
     endTime: string
+    startDate?: string
+    endDate?: string
   }) => Promise<void> | void
   onUpdatePattern: (payload: {
     lessonIds: string[]
@@ -72,7 +116,16 @@ export function RecurringLessonsModal({
               <label className="mb-2 block text-sm font-medium">Select Group</label>
               <select
                 value={formData.groupId}
-                onChange={(event) => updateForm({ groupId: event.target.value })}
+                onChange={(event) => {
+                  // Start from the group's own timeslot when it has one
+                  const slot = groups.find(group => group.id === event.target.value)?.timeslots?.[0]
+                  updateForm({
+                    groupId: event.target.value,
+                    ...(slot?.day && slot?.startTime && slot?.endTime
+                      ? { newDay: slot.day, newStartTime: slot.startTime, newEndTime: slot.endTime }
+                      : {})
+                  })
+                }}
                 className="surface-input w-full px-3 py-2 text-sm text-gray-900 dark:text-gray-100"
                 required
               >
@@ -128,42 +181,7 @@ export function RecurringLessonsModal({
                           {formData.editingPatternId === pattern.id && (
                             <div className="space-y-3 surface-panel border-0 p-3">
                               <h5 className="text-sm font-medium">Update Timeslot</h5>
-                              <div className="grid grid-cols-3 gap-2">
-                                <div>
-                                  <label className="mb-1 block text-xs font-medium">Day</label>
-                                  <select
-                                    value={formData.newDay}
-                                    onChange={(event) => updateForm({ newDay: event.target.value })}
-                                    className="surface-input w-full px-2 py-1 text-sm"
-                                  >
-                                    <option value="Sunday">Sunday</option>
-                                    <option value="Monday">Monday</option>
-                                    <option value="Tuesday">Tuesday</option>
-                                    <option value="Wednesday">Wednesday</option>
-                                    <option value="Thursday">Thursday</option>
-                                    <option value="Friday">Friday</option>
-                                    <option value="Saturday">Saturday</option>
-                                  </select>
-                                </div>
-                                <div>
-                                  <label className="mb-1 block text-xs font-medium">Start Time</label>
-                                  <input
-                                    type="time"
-                                    value={formData.newStartTime}
-                                    onChange={(event) => updateForm({ newStartTime: event.target.value })}
-                                    className="surface-input w-full px-2 py-1 text-sm"
-                                  />
-                                </div>
-                                <div>
-                                  <label className="mb-1 block text-xs font-medium">End Time</label>
-                                  <input
-                                    type="time"
-                                    value={formData.newEndTime}
-                                    onChange={(event) => updateForm({ newEndTime: event.target.value })}
-                                    className="surface-input w-full px-2 py-1 text-sm"
-                                  />
-                                </div>
-                              </div>
+                              <TimeslotFields formData={formData} updateForm={updateForm} />
 
                               <div className="flex gap-2">
                                 <button
@@ -222,6 +240,8 @@ export function RecurringLessonsModal({
 
                   {showCreateForm && (
                     <div className="mt-4 space-y-4">
+                      <TimeslotFields formData={formData} updateForm={updateForm} />
+
                       <div>
                         <label className="mb-2 block text-sm font-medium">Preset</label>
                         <div className="grid grid-cols-3 gap-2 text-center text-sm">
@@ -295,14 +315,18 @@ export function RecurringLessonsModal({
                               weeks: formData.weeks,
                               day: formData.newDay,
                               startTime: formData.newStartTime,
-                              endTime: formData.newEndTime
+                              endTime: formData.newEndTime,
+                              startDate: formData.startDate,
+                              endDate: formData.endDate || undefined
                             })
                             onShowCreateFormChange(false)
                           }}
                           disabled={!formData.groupId}
                           className="rounded bg-green-600 px-4 py-2 text-sm font-medium text-white transition hover:bg-green-700 disabled:cursor-not-allowed disabled:opacity-50 cursor-pointer"
                         >
-                          Create {formData.weeks} Week{formData.weeks !== 1 ? 's' : ''}
+                          {formData.endDate
+                            ? `Create until ${moment(formData.endDate).format('D MMM YYYY')}`
+                            : `Create ${formData.weeks} Week${formData.weeks !== 1 ? 's' : ''}`}
                         </button>
                         <button
                           type="button"

@@ -234,6 +234,8 @@ export interface GenerateRecurringLessonsPayload {
   day: string
   startTime: string
   endTime: string
+  startDate?: string
+  endDate?: string
 }
 
 export interface GenerateRecurringLessonsResult {
@@ -242,28 +244,11 @@ export interface GenerateRecurringLessonsResult {
 }
 
 /**
- * Helper function to calculate the next date for a given day of the week
- * @param dayName - Name of the day (e.g., 'Monday', 'Tuesday')
- * @param weeksFromNow - Number of weeks from today
- * @returns Date object for the target day
- */
-function getNextDateForDay(dayName: string, weeksFromNow: number = 0): Date {
-  const days = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday']
-  const targetDay = days.indexOf(dayName)
-  const today = new Date()
-  const currentDay = today.getDay()
-
-  let daysUntilTarget = targetDay - currentDay
-  if (daysUntilTarget < 0) daysUntilTarget += 7
-
-  const targetDate = new Date(today)
-  targetDate.setDate(today.getDate() + daysUntilTarget + (weeksFromNow * 7))
-  return targetDate
-}
-
-/**
  * Generate recurring lessons for a group
  * Automatically skips vacation days and invalid school days
+ *
+ * Lessons start on the first matching weekday on or after startDate (default
+ * today) and run until endDate when given, otherwise for the number of weeks.
  *
  * @param payload - Configuration for recurring lessons
  * @returns Array of created lessons and count of skipped vacation days
@@ -271,40 +256,38 @@ function getNextDateForDay(dayName: string, weeksFromNow: number = 0): Date {
 export async function generateRecurringLessons(
   payload: GenerateRecurringLessonsPayload
 ): Promise<GenerateRecurringLessonsResult> {
-  const { groupId, weeks, day, startTime, endTime } = payload
+  const { groupId, weeks, day, startTime, endTime, startDate, endDate } = payload
 
   const lessonsToCreate = []
-  const today = new Date()
   let skippedVacationDays = 0
 
-  // Generate lesson dates and times
-  for (let week = 0; week < weeks; week++) {
-    const lessonDate = getNextDateForDay(day, week)
+  const dayOfWeek = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'].indexOf(day)
+  const lessonDate = moment(startDate || undefined).startOf('day')
+  lessonDate.add((dayOfWeek - lessonDate.day() + 7) % 7, 'days')
+  const lastDate = endDate ? moment(endDate) : lessonDate.clone().add(weeks - 1, 'weeks')
 
-    // Skip past dates in first week
-    if (lessonDate < today && week === 0) continue
+  for (; lessonDate.isSameOrBefore(lastDate, 'day'); lessonDate.add(1, 'week')) {
+    const date = lessonDate.toDate()
 
     // Check if the lesson date falls on a vacation day
-    if (israeliCalendar.isVacationDay(lessonDate)) {
+    if (israeliCalendar.isVacationDay(date)) {
       skippedVacationDays++
-      console.log(`Skipping lesson on ${lessonDate.toLocaleDateString()} - vacation day: ${israeliCalendar.getVacationPeriod(lessonDate)?.name}`)
+      console.log(`Skipping lesson on ${date.toLocaleDateString()} - vacation day: ${israeliCalendar.getVacationPeriod(date)?.name}`)
       continue
     }
 
     // Check if it's during summer break or outside school year
-    if (!israeliCalendar.isSchoolDay(lessonDate)) {
+    if (!israeliCalendar.isSchoolDay(date)) {
       skippedVacationDays++
-      console.log(`Skipping lesson on ${lessonDate.toLocaleDateString()} - not a school day`)
+      console.log(`Skipping lesson on ${date.toLocaleDateString()} - not a school day`)
       continue
     }
 
-    const startDateTime = new Date(`${moment(lessonDate).format('YYYY-MM-DD')}T${startTime}`)
-    const endDateTime = new Date(`${moment(lessonDate).format('YYYY-MM-DD')}T${endTime}`)
-
+    const lessonDay = lessonDate.format('YYYY-MM-DD')
     lessonsToCreate.push({
       group_id: groupId,
-      start_time: startDateTime.toISOString(),
-      end_time: endDateTime.toISOString(),
+      start_time: new Date(`${lessonDay}T${startTime}`).toISOString(),
+      end_time: new Date(`${lessonDay}T${endTime}`).toISOString(),
       is_cancelled: false,
     })
   }
