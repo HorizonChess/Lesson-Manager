@@ -1,7 +1,6 @@
 ﻿import { useState, useEffect, useMemo } from 'react'
 import moment from 'moment'
 import { useAuth } from '../contexts/AuthContext'
-import { supabase } from '../lib/supabase'
 import {
   fetchGroupsWithDetails,
   fetchLessonsWithGroups,
@@ -39,7 +38,7 @@ import { RecurringLessonsModal } from '../components/lessons/RecurringLessonsMod
 import { LessonMaterialSelector } from '../components/lessons/LessonMaterialSelector'
 import { LessonsAddLessonModal } from '../components/lessons/LessonsAddLessonModal'
 import { LessonsRecordModal } from '../components/lessons/LessonsRecordModal'
-import type { RecurringLessonsFormState, RecurringPattern, LessonRecordData, EditTimeData } from '../components/lessons/types'
+import type { RecurringLessonsFormState, RecurringPattern, LessonRecordData } from '../components/lessons/types'
 import { Button } from '../components/ui/button'
 import { Plus, Repeat } from 'lucide-react'
 import { motion } from 'framer-motion'

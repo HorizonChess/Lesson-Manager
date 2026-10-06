@@ -2,7 +2,6 @@ import { useState, useEffect, useMemo } from 'react'
 import moment from 'moment'
 import { Modal } from '../Modal'
 import { Button } from '../ui/button'
-import type { Dispatch, SetStateAction } from 'react'
 import type { NormalizedLesson } from '../../services/lessonsPage'
 import type { Attendance, Material, LessonRecord, RosterItem } from '../../types/database'
 import type { LessonRecordData, EditTimeData } from './types'
@@ -336,7 +335,7 @@ export function LessonsRecordModal({
             <div className="surface-body p-4">
               <div className="flex justify-between items-center mb-3">
                 <h3 className="text-base font-semibold">
-                  Lesson Plans ({lessonMaterials[currentRecord?.id]?.length || 0})
+                  Lesson Plans ({(currentRecord ? lessonMaterials[currentRecord.id]?.length : 0) || 0})
                 </h3>
                 <Button
                   size="sm"

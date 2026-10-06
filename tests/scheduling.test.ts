@@ -4,7 +4,7 @@ import {
   analyzeTimeWindow,
   calculateGroupDistribution,
   buildScheduleDetails
-} from '../src/lib/scheduling/index.js'
+} from '../src/lib/scheduling/index.ts'
 
 test('analyzes a perfect match window', () => {
   const result = analyzeTimeWindow('08:00', '09:35', 2)
