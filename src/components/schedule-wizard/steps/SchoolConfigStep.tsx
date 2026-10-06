@@ -1,6 +1,7 @@
 import moment from 'moment'
 import { buildScheduleDetails, calculateGroupDistribution } from '../../../lib/scheduling'
 import type { UseScheduleWizardState } from '../../../hooks/useScheduleWizard'
+import { israeliCalendar } from '../../../services/israeliCalendar'
 
 interface SchoolConfigStepProps {
   wizard: UseScheduleWizardState
@@ -26,6 +27,7 @@ export function SchoolConfigStep({ wizard }: SchoolConfigStepProps) {
     setSchools(next)
   }
 
+  const schoolYear = israeliCalendar.getSchoolYearRange()
   const details = buildScheduleDetails(school)
   const distribution = details.distribution
   const analysis = details.analysis
@@ -152,7 +154,7 @@ export function SchoolConfigStep({ wizard }: SchoolConfigStepProps) {
                 className="h-4 w-4 text-blue-600"
               />
               <span className="ml-2 text-sm text-gray-700 dark:text-gray-300">
-                Full School Year (Sep {moment().month() >= 6 ? moment().year() : moment().year() - 1} - Jun {moment().month() >= 6 ? moment().year() + 1 : moment().year()})
+                Full School Year ({moment(schoolYear.start).format('D MMM YYYY')} - {moment(schoolYear.end).format('D MMM YYYY')})
               </span>
             </label>
             <label className="flex items-center">

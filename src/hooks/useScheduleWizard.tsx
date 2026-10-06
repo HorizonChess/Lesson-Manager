@@ -6,6 +6,7 @@ import { deleteSchoolsByUser, createSchool } from '../services/schools'
 import { ensureSchoolSubject } from '../services/subjects'
 import { createGroup } from '../services/groups'
 import { hasAnyLessons, insertLessons, type LessonInsert } from '../services/lessons'
+import { israeliCalendar } from '../services/israeliCalendar'
 
 export interface WizardStep {
   id: string
@@ -75,16 +76,20 @@ export interface UseScheduleWizardState {
   setPreviewMode: Dispatch<SetStateAction<PreviewMode>>
 }
 
-const createDefaultSchoolConfig = (): SchoolConfig => ({
-  name: '',
-  dayOfWeek: 'Monday',
-  startTime: '08:00',
-  endTime: '13:30',
-  groupCount: 6,
-  durationType: 'full-year',
-  startDate: '2024-09-01',
-  endDate: '2024-06-30'
-})
+const createDefaultSchoolConfig = (): SchoolConfig => {
+  const schoolYear = israeliCalendar.getSchoolYearRange()
+
+  return {
+    name: '',
+    dayOfWeek: 'Monday',
+    startTime: '08:00',
+    endTime: '13:30',
+    groupCount: 6,
+    durationType: 'full-year',
+    startDate: schoolYear.start,
+    endDate: schoolYear.end
+  }
+}
 
 export function useScheduleWizard(): UseScheduleWizardState {
   const { user } = useAuth()
@@ -132,6 +137,10 @@ export function useScheduleWizard(): UseScheduleWizardState {
     if (!school.dayOfWeek) return false
     if (!school.startTime || !school.endTime) return false
     if (school.groupCount < 1) return false
+    if (school.durationType === 'custom') {
+      if (!school.startDate || !school.endDate) return false
+      if (school.endDate < school.startDate) return false
+    }
 
     if (school.enableMultiPeriodCustomization) {
       const details = buildScheduleDetails(school)
@@ -206,40 +215,34 @@ export function useScheduleWizard(): UseScheduleWizardState {
             }]
           })
 
-          const now = moment()
-          const currentSchoolYear = now.month() >= 6 ? now.year() : now.year() - 1
+          const { start, end } = schoolConfig.durationType === 'full-year'
+            ? israeliCalendar.getSchoolYearRange()
+            : { start: schoolConfig.startDate, end: schoolConfig.endDate }
+          const endDate = moment(end)
 
-          const startDate = schoolConfig.durationType === 'full-year'
-            ? moment(`${currentSchoolYear}-09-01`)
-            : moment(schoolConfig.startDate)
-          const endDate = schoolConfig.durationType === 'full-year'
-            ? moment(`${currentSchoolYear + 1}-06-30`)
-            : moment(schoolConfig.endDate)
+          // First occurrence of the lesson day on or after the start date
+          const dayOfWeek = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'].indexOf(schoolConfig.dayOfWeek)
+          const lessonDate = moment(start)
+          lessonDate.add((dayOfWeek - lessonDate.day() + 7) % 7, 'days')
 
-          const currentDate = startDate.clone()
           const lessons: LessonInsert[] = []
 
-          while (currentDate.isBefore(endDate)) {
-            const dayOfWeek = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'].indexOf(schoolConfig.dayOfWeek)
-            const lessonDate = currentDate.clone().day(dayOfWeek)
+          while (lessonDate.isSameOrBefore(endDate, 'day')) {
+            const lessonStart = lessonDate.clone()
+              .hour(parseInt(period.start.split(':')[0]))
+              .minute(parseInt(period.start.split(':')[1]))
+            const lessonEnd = lessonDate.clone()
+              .hour(parseInt(period.end.split(':')[0]))
+              .minute(parseInt(period.end.split(':')[1]))
 
-            if (lessonDate.isSameOrAfter(startDate) && lessonDate.isSameOrBefore(endDate)) {
-              const lessonStart = lessonDate.clone()
-                .hour(parseInt(period.start.split(':')[0]))
-                .minute(parseInt(period.start.split(':')[1]))
-              const lessonEnd = lessonDate.clone()
-                .hour(parseInt(period.end.split(':')[0]))
-                .minute(parseInt(period.end.split(':')[1]))
+            lessons.push({
+              groupId: group.id,
+              startTime: lessonStart.toISOString(),
+              endTime: lessonEnd.toISOString(),
+              isCancelled: false
+            })
 
-              lessons.push({
-                groupId: group.id,
-                startTime: lessonStart.toISOString(),
-                endTime: lessonEnd.toISOString(),
-                isCancelled: false
-              })
-            }
-
-            currentDate.add(1, 'week')
+            lessonDate.add(1, 'week')
           }
 
           if (lessons.length > 0) {

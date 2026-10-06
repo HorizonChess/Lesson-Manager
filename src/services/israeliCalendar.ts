@@ -58,6 +58,30 @@ export class IsraeliCalendarService {
   }
 
   /**
+   * School year being planned for: from July onwards that's the year starting
+   * in September, since teachers set up their schedule over the summer.
+   */
+  getPlanningSchoolYear(date: Date = new Date()): string {
+    const year = date.getFullYear()
+    return date.getMonth() >= 6 ? `${year}-${year + 1}` : `${year - 1}-${year}`
+  }
+
+  /**
+   * First and last school day (YYYY-MM-DD) of a school year, from the
+   * calendar data when available, otherwise 1 September to 30 June.
+   */
+  getSchoolYearRange(schoolYear: string = this.getPlanningSchoolYear()): { start: string, end: string } {
+    const yearData = this.vacations[schoolYear]
+    const [startYear, endYear] = schoolYear.split('-')
+    const toIso = (dateStr: string) => dateStr.split('/').reverse().join('-')
+
+    return {
+      start: yearData ? toIso(yearData.schoolYearStart) : `${startYear}-09-01`,
+      end: yearData ? toIso(yearData.schoolYearEnd) : `${endYear}-06-30`
+    }
+  }
+
+  /**
    * Check if we have vacation data for a specific school year
    */
   hasDataForYear(schoolYear: string): boolean {
