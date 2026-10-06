@@ -8,7 +8,7 @@ import { Button } from '../components/ui/button'
 import { QuickAttendanceModal } from '../components/dashboard/QuickAttendanceModal'
 import { LessonsRecordModal } from '../components/lessons/LessonsRecordModal'
 import { LessonMaterialSelector } from '../components/lessons/LessonMaterialSelector'
-import type { Task, Material, LessonRecord } from '../types/database'
+import type { Task, Material } from '../types/database'
 import type { NormalizedLesson } from '../services/lessonsPage'
 import {
   fetchDashboardCounts,
