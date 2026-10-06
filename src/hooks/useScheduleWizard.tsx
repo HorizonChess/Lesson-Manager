@@ -227,7 +227,9 @@ export function useScheduleWizard(onComplete?: () => void): UseScheduleWizardSta
 
           const lessons: LessonInsert[] = []
 
-          while (lessonDate.isSameOrBefore(endDate, 'day')) {
+          for (; lessonDate.isSameOrBefore(endDate, 'day'); lessonDate.add(1, 'week')) {
+            if (israeliCalendar.isVacationDay(lessonDate.toDate())) continue
+
             const lessonStart = lessonDate.clone()
               .hour(parseInt(period.start.split(':')[0]))
               .minute(parseInt(period.start.split(':')[1]))
@@ -241,8 +243,6 @@ export function useScheduleWizard(onComplete?: () => void): UseScheduleWizardSta
               endTime: lessonEnd.toISOString(),
               isCancelled: false
             })
-
-            lessonDate.add(1, 'week')
           }
 
           if (lessons.length > 0) {

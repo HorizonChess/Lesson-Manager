@@ -29,12 +29,6 @@
         "end": "22/12/2025"
       },
       {
-        "name": "Tu BiShvat",
-        "start": "02/02/2026",
-        "end": "02/02/2026",
-        "note": "Regular school day - included for reference"
-      },
-      {
         "name": "Purim",
         "start": "03/03/2026",
         "end": "04/03/2026"
@@ -59,6 +53,53 @@
         "name": "Shavuot",
         "start": "21/05/2026",
         "end": "22/05/2026"
+      }
+    ]
+  },
+  "2026-2027": {
+    "schoolYearStart": "01/09/2026",
+    "schoolYearEnd": "30/06/2027",
+    "vacationPeriods": [
+      {
+        "name": "Rosh Hashana",
+        "start": "11/09/2026",
+        "end": "13/09/2026"
+      },
+      {
+        "name": "Yom Kippur",
+        "start": "20/09/2026",
+        "end": "24/09/2026"
+      },
+      {
+        "name": "Sukkot",
+        "start": "25/09/2026",
+        "end": "03/10/2026",
+        "note": "High schools return on 05/10/2026"
+      },
+      {
+        "name": "Chanukah",
+        "start": "06/12/2026",
+        "end": "12/12/2026"
+      },
+      {
+        "name": "Purim",
+        "start": "23/03/2027",
+        "end": "24/03/2027"
+      },
+      {
+        "name": "Passover",
+        "start": "13/04/2027",
+        "end": "28/04/2027"
+      },
+      {
+        "name": "Independence Day",
+        "start": "12/05/2027",
+        "end": "12/05/2027"
+      },
+      {
+        "name": "Shavuot",
+        "start": "10/06/2027",
+        "end": "11/06/2027"
       }
     ]
   }
