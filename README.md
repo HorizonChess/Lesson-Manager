@@ -7,6 +7,8 @@ and work out how many hours (and how much pay) I had earned.
 
 ![Build](https://github.com/HorizonChess/Lesson-Manager/actions/workflows/ci.yml/badge.svg)
 
+**Live app:** https://horizonchess.github.io/Lesson-Manager/ (sign in with Google)
+
 ## What it does
 
 - **Dashboard**: today's and this week's lessons, open tasks, and one-tap attendance.
@@ -27,6 +29,7 @@ and work out how many hours (and how much pay) I had earned.
 | Data | Supabase (PostgreSQL, Auth, Row Level Security), TanStack Query, Zustand |
 | Calendar and export | react-big-calendar, SheetJS (xlsx) |
 | Testing | Node's built-in test runner, Playwright |
+| Hosting | GitHub Pages, deployed by GitHub Actions on every push to `master` |
 
 Every table is protected by Row Level Security, so each signed-in teacher can only
 read and change their own data.
