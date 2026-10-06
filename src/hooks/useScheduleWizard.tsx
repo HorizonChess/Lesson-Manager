@@ -91,7 +91,7 @@ const createDefaultSchoolConfig = (): SchoolConfig => {
   }
 }
 
-export function useScheduleWizard(): UseScheduleWizardState {
+export function useScheduleWizard(onComplete?: () => void): UseScheduleWizardState {
   const { user } = useAuth()
   const [isOpen, setIsOpen] = useState(false)
   const [currentStep, setCurrentStep] = useState(0)
@@ -284,6 +284,7 @@ export function useScheduleWizard(): UseScheduleWizardState {
       try {
         await generateSchedule()
         setCurrentStep(currentStep + 1)
+        onComplete?.()
       } catch (error) {
         console.error('Error generating schedule:', error)
         alert('Failed to generate schedule. Please try again.')
@@ -299,6 +300,7 @@ export function useScheduleWizard(): UseScheduleWizardState {
     currentStep,
     generateSchedule,
     isSchoolConfigValid,
+    onComplete,
     schoolCount,
     schools
   ])

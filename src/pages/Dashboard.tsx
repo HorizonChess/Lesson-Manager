@@ -90,9 +90,11 @@ export function Dashboard() {
     }
   }, [])
 
-  const fetchDashboardData = async () => {
+  // A silent refresh keeps the page (and any open modal) mounted instead of
+  // swapping it for the loading spinner.
+  const fetchDashboardData = async ({ silent = false } = {}) => {
     try {
-      setLoading(true)
+      if (!silent) setLoading(true)
       await Promise.all([
         fetchStats(),
         fetchTodayLessons(),
@@ -269,7 +271,7 @@ ${templateJson}
           <p className="text-sm sm:text-base text-soft">
             Welcome back, {user?.email?.split('@')[0]}
           </p>
-          <ScheduleWizard />
+          <ScheduleWizard onComplete={() => fetchDashboardData({ silent: true })} />
         </div>
       </div>
 

@@ -2,8 +2,12 @@
 import { ScheduleWizardStepContent } from './schedule-wizard/StepContent'
 import { useScheduleWizard } from '../hooks/useScheduleWizard'
 
-export function ScheduleWizard() {
-  const wizard = useScheduleWizard()
+interface ScheduleWizardProps {
+  onComplete?: () => void
+}
+
+export function ScheduleWizard({ onComplete }: ScheduleWizardProps) {
+  const wizard = useScheduleWizard(onComplete)
   const {
     isOpen,
     loading,
