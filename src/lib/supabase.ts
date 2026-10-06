@@ -9,8 +9,6 @@ if (!supabaseUrl || !supabaseAnonKey) {
 
 // Custom storage wrapper with quota error handling
 const createStorageWithCleanup = () => {
-  const storageKey = 'sb-rabfrsssjxcjnmzhyscb-auth-token'
-
   return {
     getItem: (key: string) => {
       try {
@@ -70,6 +68,8 @@ export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
     storageKey: 'sb-rabfrsssjxcjnmzhyscb-auth-token',
     autoRefreshToken: true,
     persistSession: true,
-    detectSessionInUrl: true
+    detectSessionInUrl: true,
+    // PKCE returns ?code= instead of tokens in the #hash, which HashRouter would treat as a route
+    flowType: 'pkce'
   }
 })

@@ -12,6 +12,10 @@ interface AuthContextType {
   signInWithGoogle: () => Promise<void>
 }
 
+// Where Supabase sends people back after Google sign-in or an email link:
+// the page they started on, so it works on localhost and on the hosted site.
+const appUrl = () => window.location.origin + window.location.pathname
+
 const AuthContext = createContext<AuthContextType | undefined>(undefined)
 
 interface AuthProviderProps {
@@ -127,6 +131,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
     const { error } = await supabase.auth.signUp({
       email,
       password,
+      options: { emailRedirectTo: appUrl() },
     })
 
     if (error) {
@@ -145,6 +150,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
   const signInWithGoogle = async () => {
     const { error } = await supabase.auth.signInWithOAuth({
       provider: 'google',
+      options: { redirectTo: appUrl() },
     })
 
     if (error) {
